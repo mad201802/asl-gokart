@@ -15,6 +15,7 @@ export interface TabsSelectorProps {
   label: string;
   options: TabsSelectorOption[];
   defaultValue: string;
+  onValueChange: (value: string) => void;
 }
 
 export interface TabsSelectorOption {
