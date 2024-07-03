@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  debian_x_compilr:
+    build: .
+    container_name: gokart_arm_compilr
+    volumes:
+      - ../../../asl-gokart:/app/asl-gokart
+    tty: true
