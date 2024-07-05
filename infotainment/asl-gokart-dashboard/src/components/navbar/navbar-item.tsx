@@ -1,11 +1,12 @@
 import { NavBarItemData } from "@/data/models";
+import { Link } from "react-router-dom";
 
-const NavBarItem = ({ Icon, label }: NavBarItemData) => {
+const NavBarItem = ({ Icon, label, linkTo }: NavBarItemData) => {
   return (
-    <div className="flex flex-col items-center justify-center p-1 cursor-pointer">
+    <Link to={linkTo} className="flex flex-col items-center justify-center p-1 cursor-pointer">
       <Icon />
       <p>{label}</p>
-    </div>
+    </Link>
   );
 };
 

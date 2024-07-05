@@ -17,7 +17,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator";
-import React, { useContext, useState } from "react";
+import { useContext, useState } from "react";
 import { DriveModeContext } from "@/contexts/drive-mode-context";
 import { AdvancedSettingsContext } from "@/contexts/advanced-settings-context";
 

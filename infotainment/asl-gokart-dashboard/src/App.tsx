@@ -1,9 +1,10 @@
+import { Routes, Route } from "react-router-dom";
 import { Battery, Gauge, LifeBuoy, Settings } from "lucide-react";
 import { NavBarItemData } from "./data/models";
 import NavBar from "./components/navbar/navbar";
 import DriveNormalPage from "./pages/drive-normal";
 import SettingsPage from "./pages/settings";
-import { DriveModeContext, DriveModeProvider } from "./contexts/drive-mode-context";
+import { DriveModeProvider } from "./contexts/drive-mode-context";
 import { AdvancedSettingsProvider } from "./contexts/advanced-settings-context";
 
 function App() {
@@ -12,18 +13,22 @@ function App() {
     {
       Icon: Gauge,
       label: "Drive",
+      linkTo: "/",
     },
     {
       Icon: LifeBuoy,
       label: "Motor",
+      linkTo: "/motor",
     },
     {
       Icon: Battery,
       label: "Battery",
+      linkTo: "/battery",
     },
     {
       Icon: Settings,
       label: "Settings",
+      linkTo: "/settings",
     },
   ];
 
@@ -32,8 +37,12 @@ function App() {
       <div className="flex-1">
         <DriveModeProvider>
           <AdvancedSettingsProvider>
-            {/* <DriveNormalPage /> */}
-            <SettingsPage />
+            <>
+              <Routes>
+                <Route path="/" element={<DriveNormalPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+              </Routes>
+            </>
           </AdvancedSettingsProvider>
         </DriveModeProvider>
       </div>
