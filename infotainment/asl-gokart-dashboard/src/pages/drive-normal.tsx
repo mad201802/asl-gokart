@@ -1,5 +1,6 @@
 import BatteryIndicator from "@/components/shared/battery-indicator";
 import DigitalClock from "@/components/shared/clock";
+import TabsSelector from "@/components/shared/tabs-selector";
 import { Progress } from "@/components/ui/progress";
 
 import {
@@ -135,8 +136,17 @@ const DriveNormalPage = () => {
           </div>
           <div className="flex flex-col items-center justify-center">
             <div className="flex flex-row items-center gap-x-4">
-              <p className="text-2xl font-extrabold">D</p>
-              <p className="text-lg">R</p>
+              <TabsSelector 
+                label="" 
+                options={[
+                  {value: "p", label: "P"},
+                  {value: "d", label: "D"}, 
+                  {value: "n", label: "N"}, 
+                  {value: "r", label: "R"}]} 
+                defaultValue="p"  
+                onValueChange={() => {}}
+                readOnly={true}
+                  />
             </div>
             <p className="font-semibold text-9xl">{kmh}</p>
             <p className="font">km/h</p>
