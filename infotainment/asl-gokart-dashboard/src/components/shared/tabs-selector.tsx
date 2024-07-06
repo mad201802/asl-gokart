@@ -1,7 +1,6 @@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
 import { TabsSelectorProps } from "@/data/models";
-import { useState } from "react";
 
 
 const TabsSelector = (props: TabsSelectorProps) => {
