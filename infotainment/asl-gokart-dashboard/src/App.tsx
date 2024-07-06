@@ -1,11 +1,12 @@
 import { Routes, Route } from "react-router-dom";
-import { Battery, Gauge, LifeBuoy, Settings } from "lucide-react";
+import { Battery, Car, Gauge, LifeBuoy, Settings } from "lucide-react";
 import { NavBarItemData } from "./data/models";
 import NavBar from "./components/navbar/navbar";
 import DriveNormalPage from "./pages/drive-normal";
 import SettingsPage from "./pages/settings";
 import { DriveModeProvider } from "./contexts/drive-mode-context";
 import { AdvancedSettingsProvider } from "./contexts/advanced-settings-context";
+import CarPage from "./pages/car";
 
 function App() {
 
@@ -19,6 +20,11 @@ function App() {
       Icon: LifeBuoy,
       label: "Motor",
       linkTo: "/motor",
+    },
+    {
+      Icon: Car,
+      label: "Car",
+      linkTo: "/car",
     },
     {
       Icon: Battery,
@@ -40,6 +46,7 @@ function App() {
             <>
               <Routes>
                 <Route path="/" element={<DriveNormalPage />} />
+                <Route path="/car" element={<CarPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
               </Routes>
             </>
