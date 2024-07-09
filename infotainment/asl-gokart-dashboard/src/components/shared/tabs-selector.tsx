@@ -1,9 +1,7 @@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
 import { TabsSelectorProps } from "@/data/models";
-import { useState } from "react";
-import './tabs-selector.css'
-
+import { cn } from "@/lib/utils"
 
 const TabsSelector = (props: TabsSelectorProps) => {
 
@@ -21,7 +19,7 @@ const TabsSelector = (props: TabsSelectorProps) => {
             {
           props.options.map((option) => (
             <TabsTrigger
-              className={props.readOnly ? 'read-only' : ''}
+              className={props.readOnly ? cn('pointer-events-none cursor-default') : ''}
               key={option.value} 
               value={option.value}
               disabled={option.disabled}>
