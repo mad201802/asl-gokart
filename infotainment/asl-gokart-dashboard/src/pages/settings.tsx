@@ -18,8 +18,8 @@ import {
 } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator";
 import { useContext, useState } from "react";
-import { DriveModeContext } from "@/contexts/drive-mode-context";
-import { AdvancedSettingsContext } from "@/contexts/advanced-settings-context";
+import { DriveModeContext } from "@/stores/drive-mode-context";
+import { AdvancedSettingsContext } from "@/stores/advanced-settings-context";
 
 const SettingsPage = () => {
 

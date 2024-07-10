@@ -4,8 +4,8 @@ import { NavBarItemData } from "./data/models";
 import NavBar from "./components/navbar/navbar";
 import DriveNormalPage from "./pages/drive-normal";
 import SettingsPage from "./pages/settings";
-import { DriveModeProvider } from "./contexts/drive-mode-context";
-import { AdvancedSettingsProvider } from "./contexts/advanced-settings-context";
+import { DriveModeProvider } from "./stores/drive-mode-context";
+import { AdvancedSettingsProvider } from "./stores/advanced-settings-context";
 import CarPage from "./pages/car";
 
 function App() {

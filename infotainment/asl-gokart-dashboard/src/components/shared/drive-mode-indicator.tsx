@@ -1,4 +1,4 @@
-import { DriveModeContext } from "@/contexts/drive-mode-context";
+import { DriveModeContext } from "@/stores/drive-mode-context";
 import { Label } from "@/components/ui/label";
 import { useContext } from "react";
 
