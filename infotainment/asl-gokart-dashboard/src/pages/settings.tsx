@@ -62,7 +62,7 @@ const SettingsPage = () => {
               {value: "eco", label: "Eco"}, 
               {value: "comfort", label: "Comfort"}, 
               {value: "sport", label: "Sport"}]} 
-            defaultValue="eco"  
+            defaultValue={driveMode} 
             onValueChange={setDriveMode}
               />
           <div>

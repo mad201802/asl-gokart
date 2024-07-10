@@ -1,6 +1,6 @@
 import { DriveModeContext } from "@/contexts/drive-mode-context";
 import { Label } from "@/components/ui/label";
-import { useContext, useState } from "react";
+import { useContext } from "react";
 
 const DriveModeIndicator = () => {
 
