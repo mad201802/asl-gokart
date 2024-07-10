@@ -17,9 +17,11 @@ export interface TabsSelectorProps {
   options: TabsSelectorOption[];
   defaultValue: string;
   onValueChange: (value: string) => void;
+  readOnly?: boolean;
 }
 
 export interface TabsSelectorOption {
   value: string;
   label: string;
+  disabled?: boolean;
 }
