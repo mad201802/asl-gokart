@@ -3,6 +3,8 @@ import DigitalClock from "@/components/shared/clock";
 import TabsSelector from "@/components/shared/tabs-selector";
 import { Progress } from "@/components/ui/progress";
 
+import { useStore } from "@/stores/useStore";
+
 import {
   CircularProgressbarWithChildren,
   buildStyles,
@@ -84,9 +86,11 @@ function interpolateColorBetween(
 }
 
 const DriveNormalPage = () => {
+
+  const { gear, throttle } = useStore()
+
   const kmh = 0;
 
-  const throttle = 50;
   const throttleBoundaries = [0, 100];
   const throttleSegments: Segment[] = [
     { value: 0, color: "#339900" },
@@ -95,6 +99,8 @@ const DriveNormalPage = () => {
     { value: 100, color: "#cc3300" },
   ];
 
+  // TODO: Convert colors to tailwind-css colors
+  // TODO: Transfer color scaling boundaries to individual states (or only max. value) and multiply times 0.75 or 0.5 for the scale.
   const rpm = 6000;
   const rpmBoundaries = [0, 10000];
   const rpmSegments: Segment[] = [
@@ -115,11 +121,11 @@ const DriveNormalPage = () => {
           <div className="flex flex-col items-center justify-center">
             <div className="w-[200px]">
               <CircularProgressbarWithChildren
-                value={throttle}
+                value={throttle*100}
                 circleRatio={0.75}
                 styles={buildStyles({
                   pathColor: interpolateColor(
-                    throttle,
+                    throttle*100,
                     throttleBoundaries[0],
                     throttleBoundaries[1],
                     throttleSegments
@@ -129,7 +135,7 @@ const DriveNormalPage = () => {
                   trailColor: "#eee",
                 })}
               >
-                <p className="font-semibold text-4xl">{throttle}%</p>
+                <p className="font-semibold text-4xl">{throttle*100}%</p>
                 <p>Throttle</p>
               </CircularProgressbarWithChildren>
             </div>
@@ -143,7 +149,8 @@ const DriveNormalPage = () => {
                   {value: "d", label: "D"}, 
                   {value: "n", label: "N"}, 
                   {value: "r", label: "R"}]} 
-                defaultValue="p"  
+                defaultValue={gear}  
+                value={gear}
                 onValueChange={() => {}}
                 readOnly={true}
                   />
