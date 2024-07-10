@@ -1,8 +1,7 @@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
 import { TabsSelectorProps } from "@/data/models";
-import { useState } from "react";
-
+import { cn } from "@/lib/utils"
 
 const TabsSelector = (props: TabsSelectorProps) => {
 
@@ -15,19 +14,19 @@ const TabsSelector = (props: TabsSelectorProps) => {
     return (
       <div className="flex flex-row gap-2 items-center justify-center">
         <Label className="text-base ">{props.label}</Label>
-        <Tabs onValueChange={(v) => handleTabChange(v)} defaultValue={props.defaultValue} className="w-[400px]">
+        <Tabs onValueChange={(v) => handleTabChange(v)} defaultValue={props.defaultValue} className="">
         <TabsList>
             {
           props.options.map((option) => (
-            <TabsTrigger       
+            <TabsTrigger
+              className={props.readOnly ? cn('pointer-events-none cursor-default') : ''}
               key={option.value} 
-              value={option.value}>{option.label}
+              value={option.value}
+              disabled={option.disabled}>
+                {option.label}
             </TabsTrigger>
           ))
             }
-{/*             <TabsTrigger value="eco">Eco</TabsTrigger>
-            <TabsTrigger value="confort">Comfort</TabsTrigger>
-            <TabsTrigger value="race">Race</TabsTrigger> */}
         </TabsList>
 
         </Tabs>         
