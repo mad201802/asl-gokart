@@ -11,17 +11,3 @@ export interface LabeledSwitchProps {
   label: string;
   defaultValue: boolean;
 }
-
-export interface TabsSelectorProps {
-  label: string;
-  options: TabsSelectorOption[];
-  defaultValue: string;
-  onValueChange: (value: string) => void;
-  readOnly?: boolean;
-}
-
-export interface TabsSelectorOption {
-  value: string;
-  label: string;
-  disabled?: boolean;
-}

@@ -1,7 +1,21 @@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
-import { TabsSelectorProps } from "@/data/models";
 import { cn } from "@/lib/utils"
+
+export interface TabsSelectorOption {
+  value: string;
+  label: string;
+  disabled?: boolean;
+}
+
+export interface TabsSelectorProps {
+  label: string;
+  value?: string;
+  options: TabsSelectorOption[];
+  defaultValue: string;
+  onValueChange: (value: string) => void;
+  readOnly?: boolean;
+}
 
 const TabsSelector = (props: TabsSelectorProps) => {
 
@@ -14,7 +28,7 @@ const TabsSelector = (props: TabsSelectorProps) => {
     return (
       <div className="flex flex-row gap-2 items-center justify-center">
         <Label className="text-base ">{props.label}</Label>
-        <Tabs onValueChange={(v) => handleTabChange(v)} defaultValue={props.defaultValue} className="">
+        <Tabs onValueChange={(v) => handleTabChange(v)} value={props.value} defaultValue={props.defaultValue} className="">
         <TabsList>
             {
           props.options.map((option) => (
