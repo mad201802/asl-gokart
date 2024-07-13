@@ -1,0 +1,19 @@
+version: '3'
+services:
+  client:
+    build: .
+    tty: true
+    volumes:
+      - ..:/app
+    # IP: 172.18.0.2
+
+  server:
+    build: .
+    tty: true
+    volumes:
+      - ..:/app
+    # IP: 172.18.0.3
+    
+networks:
+  default:
+    internal: true
