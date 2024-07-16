@@ -18,7 +18,7 @@
         "close": false,
         "create": false,
         "hide": false,
-        "maximize": false,
+        "maximize": true,
         "minimize": false,
         "print": false,
         "requestUserAttention": false,
@@ -43,7 +43,7 @@
         "setSize": false,
         "setSkipTaskbar": false,
         "setTitle": false,
-        "show": true,
+        "show": false,
         "startDragging": false,
         "unmaximize": false,
         "unminimize": false
@@ -97,7 +97,7 @@
         "alwaysOnTop": true,
         "title": "ASL Go-Kart Dashboard",
         "width": 800,
-        "visible": false
+        "visible": true
       }
     ]
   }

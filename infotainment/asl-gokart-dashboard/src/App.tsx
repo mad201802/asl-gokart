@@ -5,8 +5,22 @@ import NavBar from "./components/navbar/navbar";
 import DriveNormalPage from "./pages/drive-normal";
 import SettingsPage from "./pages/settings";
 import CarPage from "./pages/car";
+import { appWindow } from '@tauri-apps/api/window';
+import { useEffect } from "react";
+
+function refreshApp() {
+  const exec = async () => {
+    await appWindow.maximize();
+  }
+  exec();
+}
 
 function App() {
+
+  useEffect(() => {
+    refreshApp();
+  }, [])
+  
 
   const navBarItems: NavBarItemData[] = [
     {
