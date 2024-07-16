@@ -7,8 +7,22 @@ import SettingsPage from "./pages/settings";
 import { DriveModeProvider } from "./contexts/drive-mode-context";
 import { AdvancedSettingsProvider } from "./contexts/advanced-settings-context";
 import CarPage from "./pages/car";
+import { appWindow } from '@tauri-apps/api/window';
+import { useEffect } from "react";
+
+function refreshApp() {
+  const exec = async () => {
+    await appWindow.maximize();
+  }
+  exec();
+}
 
 function App() {
+
+  useEffect(() => {
+    refreshApp();
+  }, [])
+  
 
   const navBarItems: NavBarItemData[] = [
     {
