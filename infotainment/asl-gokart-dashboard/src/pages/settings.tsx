@@ -17,16 +17,14 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator";
-import { useContext, useState } from "react";
-import { DriveModeContext } from "@/stores/drive-mode-context";
-import { AdvancedSettingsContext } from "@/stores/advanced-settings-context";
+import { useState } from "react";
+import { useStore } from "@/stores/useStore";
 
 const SettingsPage = () => {
 
   const [showBrightnessWarning, setShowBrightnessWarning] = useState(false);
 
-  const { driveMode, setDriveMode } = useContext(DriveModeContext);
-  const { screenBrightness, setScreenBrightness } = useContext(AdvancedSettingsContext);
+  const { screenBrightness, setScreenBrightness, driveMode, setDriveMode } = useStore()
 
   let handleSliderChange = (value: number) => {
     console.log(value);
@@ -62,7 +60,7 @@ const SettingsPage = () => {
               {value: "eco", label: "Eco"}, 
               {value: "comfort", label: "Comfort"}, 
               {value: "sport", label: "Sport"}]} 
-            defaultValue={driveMode} 
+            defaultValue={driveMode}
             onValueChange={setDriveMode}
               />
           <div>

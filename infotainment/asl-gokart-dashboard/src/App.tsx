@@ -4,8 +4,6 @@ import { NavBarItemData } from "./data/models";
 import NavBar from "./components/navbar/navbar";
 import DriveNormalPage from "./pages/drive-normal";
 import SettingsPage from "./pages/settings";
-import { DriveModeProvider } from "./stores/drive-mode-context";
-import { AdvancedSettingsProvider } from "./stores/advanced-settings-context";
 import CarPage from "./pages/car";
 
 function App() {
@@ -41,8 +39,6 @@ function App() {
   return (
     <div className="flex flex-row w-full h-full">
       <div className="flex-1">
-        <DriveModeProvider>
-          <AdvancedSettingsProvider>
             <>
               <Routes>
                 <Route path="/" element={<DriveNormalPage />} />
@@ -50,8 +46,6 @@ function App() {
                 <Route path="/settings" element={<SettingsPage />} />
               </Routes>
             </>
-          </AdvancedSettingsProvider>
-        </DriveModeProvider>
       </div>
       {<div className="w-[80px] border-l-2">
         <NavBar items={navBarItems} />

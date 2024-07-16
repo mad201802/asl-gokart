@@ -144,11 +144,7 @@ const DriveNormalPage = () => {
             <div className="flex flex-row items-center gap-x-4">
               <TabsSelector 
                 label="" 
-                options={[
-                  {value: "p", label: "P"},
-                  {value: "d", label: "D"}, 
-                  {value: "n", label: "N"}, 
-                  {value: "r", label: "R"}]} 
+                options=
                 defaultValue={gear}  
                 value={gear}
                 onValueChange={() => {}}

@@ -1,10 +1,9 @@
-import { DriveModeContext } from "@/stores/drive-mode-context";
 import { Label } from "@/components/ui/label";
-import { useContext } from "react";
+import { useStore } from "@/stores/useStore";
 
 const DriveModeIndicator = () => {
 
-    const { driveMode } = useContext(DriveModeContext);
+    const { driveMode } = useStore();
     
     const styleClasses: { [key: string]: string } = {
         eco: 'border-green-500 bg-green-500',
@@ -13,8 +12,8 @@ const DriveModeIndicator = () => {
         default: 'border-gray-500 bg-gray-500',
     };
 
+    {}
     let driveModeChar = driveMode.charAt(0).toUpperCase();
-
     return (
         <div className="flex flex-row items-center justify-between px-2 py-1">
             <Label className={`w-8 text-base font-black border-solid border-2 rounded-lg text-center ${styleClasses[driveMode] || styleClasses.default}`}>
