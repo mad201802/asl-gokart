@@ -19,12 +19,13 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
 import { useStore } from "@/stores/useStore";
+import { tabsSelectorStates } from "@/data/enums";
 
 const SettingsPage = () => {
 
   const [showBrightnessWarning, setShowBrightnessWarning] = useState(false);
 
-  const { screenBrightness, setScreenBrightness, driveMode, setDriveMode } = useStore()
+  const { screenBrightness, setScreenBrightness, driveMode, setDriveMode } = useStore();
 
   let handleSliderChange = (value: number) => {
     console.log(value);
@@ -56,10 +57,7 @@ const SettingsPage = () => {
         <div className="flex flex-col items-left justify-center gap-y-2 ms-16">
           <TabsSelector 
             label="Drive Mode" 
-            options={[
-              {value: "eco", label: "Eco"}, 
-              {value: "comfort", label: "Comfort"}, 
-              {value: "sport", label: "Sport"}]} 
+            options={tabsSelectorStates().driveModes}
             defaultValue={driveMode}
             onValueChange={setDriveMode}
               />

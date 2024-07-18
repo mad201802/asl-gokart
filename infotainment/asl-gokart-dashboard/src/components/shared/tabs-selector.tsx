@@ -1,7 +1,6 @@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
-import { TabsSelectorStates } from "@/data/enums";
 
 export interface TabsSelectorOption {
   value: string;
@@ -11,10 +10,10 @@ export interface TabsSelectorOption {
 
 export interface TabsSelectorProps {
   label: string;
-  value?: TabsSelectorStates;
+  value?: string;
   options: TabsSelectorOption[];
-  defaultValue: TabsSelectorStates;
-  onValueChange: (value: TabsSelectorStates) => void;
+  defaultValue: string;
+  onValueChange: (value: string) => void;
   readOnly?: boolean;
 }
 
@@ -23,7 +22,7 @@ const TabsSelector = (props: TabsSelectorProps) => {
 
     let handleTabChange = (value: string) => {
       // Set drive mode in context
-      props.onValueChange(value as TabsSelectorStates);    
+      props.onValueChange(value);    
     }
 
     return (

@@ -5,6 +5,8 @@ import { Progress } from "@/components/ui/progress";
 
 import { useStore } from "@/stores/useStore";
 
+import { tabsSelectorStates } from "@/data/enums";
+
 import {
   CircularProgressbarWithChildren,
   buildStyles,
@@ -144,7 +146,7 @@ const DriveNormalPage = () => {
             <div className="flex flex-row items-center gap-x-4">
               <TabsSelector 
                 label="" 
-                options=
+                options={tabsSelectorStates().gears}
                 defaultValue={gear}  
                 value={gear}
                 onValueChange={() => {}}

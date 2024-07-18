@@ -1,19 +1,35 @@
+import { TabsSelectorOption } from "@/components/shared/tabs-selector";
+
+
+//TODO Refactor into motorSlice or a extra motor model ?
+
 export enum Gears {
-    p = "P",
-    d = "D",
-    n = "N",
-    r = "R"
+    p = "p",
+    d = "d",
+    n = "n",
+    r = "r"
 }
 
 export enum DriveModes {
-    comfort = "Comfort",
-    eco = "Eco",
-    sport = "Sport"
+    comfort = "comfort",
+    eco = "eco",
+    sport = "sport"
 }
 
-
-const gears = {[
-    {value: "p", label: "P"},
-    {value: "d", label: "D"}, 
-    {value: "n", label: "N"}, 
-    {value: "r", label: "R"}]} 
+export const tabsSelectorStates = (): { gears: TabsSelectorOption[], driveModes: TabsSelectorOption[] } => {
+    const gears: TabsSelectorOption[] = [
+        {value: Gears.p, label: "P"},
+        {value: Gears.d, label: "D"}, 
+        {value: Gears.n, label: "N"},
+        {value: Gears.r, label: "R"}
+    ];
+    const driveModes: TabsSelectorOption[] = [
+        {value: DriveModes.eco, label: "Eco"},
+        {value: DriveModes.comfort, label: "Comfort"}, 
+        {value: DriveModes.sport, label: "Sport"},
+    ];
+    return {
+        gears: gears,
+        driveModes: driveModes
+    }
+}
