@@ -19,7 +19,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
 import { useStore } from "@/stores/useStore";
-import { tabsSelectorStates } from "@/data/enums";
+import { tabsSelectorStates } from "@/data/controlling_models/drivetrain";
 
 const SettingsPage = () => {
 

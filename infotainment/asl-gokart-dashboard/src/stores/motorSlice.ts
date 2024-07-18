@@ -1,4 +1,4 @@
-import { Gears, DriveModes } from '@/data/enums'
+import { Gears, DriveModes } from '@/data/controlling_models/drivetrain'
 import { StateCreator } from 'zustand'
 
 export interface MotorSlice {

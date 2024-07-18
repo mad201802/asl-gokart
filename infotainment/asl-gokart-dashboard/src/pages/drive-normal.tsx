@@ -5,7 +5,7 @@ import { Progress } from "@/components/ui/progress";
 
 import { useStore } from "@/stores/useStore";
 
-import { tabsSelectorStates } from "@/data/enums";
+import { tabsSelectorStates } from "@/data/controlling_models/drivetrain";
 
 import {
   CircularProgressbarWithChildren,
