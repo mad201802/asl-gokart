@@ -1,8 +1,6 @@
 import { TabsSelectorOption } from "@/components/shared/tabs-selector";
 
 
-//TODO Refactor into motorSlice or a extra motor model ?
-
 export enum Gears {
     p = "p",
     d = "d",
