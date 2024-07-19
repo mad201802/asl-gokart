@@ -19,7 +19,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
 import { useStore } from "@/stores/useStore";
-import { tabsSelectorStates } from "@/data/controlling_models/drivetrain";
+import { DriveModes, tabsSelectorStates } from "@/data/controlling_models/drivetrain";
 
 const SettingsPage = () => {
 
@@ -36,6 +36,13 @@ const SettingsPage = () => {
       setShowBrightnessWarning(false);
     }
   }
+
+  const handleDriveModeChange = (newMode: string) => {
+    if (Object.values(DriveModes).includes(newMode as DriveModes)) {
+      setDriveMode(newMode as DriveModes);
+    }
+    //TODO Logging?
+  };
 
   return (
     <div className="w-full flex flex-col">
@@ -59,7 +66,7 @@ const SettingsPage = () => {
             label="Drive Mode" 
             options={tabsSelectorStates().driveModes}
             defaultValue={driveMode}
-            onValueChange={setDriveMode}
+            onValueChange={handleDriveModeChange}
               />
           <div>
               <Label htmlFor="avanced-settings" className="text-base mr-5">Advanced Settings</Label>
