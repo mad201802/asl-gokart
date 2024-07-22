@@ -89,9 +89,7 @@ function interpolateColorBetween(
 
 const DriveNormalPage = () => {
 
-  const { gear, throttle } = useStore()
-
-  const kmh = 0;
+  const { gear, throttle, rpm, speed, rpmBoundaries } = useStore()
 
   const throttleBoundaries = [0, 100];
   const throttleSegments: Segment[] = [
@@ -103,8 +101,6 @@ const DriveNormalPage = () => {
 
   // TODO: Convert colors to tailwind-css colors
   // TODO: Transfer color scaling boundaries to individual states (or only max. value) and multiply times 0.75 or 0.5 for the scale.
-  const rpm = 6000;
-  const rpmBoundaries = [0, 10000];
   const rpmSegments: Segment[] = [
     { value: 0, color: "#339900" },
     { value: 5000, color: "#339900" },
@@ -153,7 +149,7 @@ const DriveNormalPage = () => {
                 readOnly={true}
                   />
             </div>
-            <p className="font-semibold text-9xl">{kmh}</p>
+            <p className="font-semibold text-9xl">{speed}</p>
             <p className="font">km/h</p>
           </div>
           <div className="flex flex-col items-center justify-center">
