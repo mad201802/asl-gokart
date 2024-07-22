@@ -17,16 +17,15 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator";
-import { useContext, useState } from "react";
-import { DriveModeContext } from "@/contexts/drive-mode-context";
-import { AdvancedSettingsContext } from "@/contexts/advanced-settings-context";
+import { useState } from "react";
+import { useStore } from "@/stores/useStore";
+import { DriveModes, tabsSelectorStates } from "@/data/controlling_models/drivetrain";
 
 const SettingsPage = () => {
 
   const [showBrightnessWarning, setShowBrightnessWarning] = useState(false);
 
-  const { driveMode, setDriveMode } = useContext(DriveModeContext);
-  const { screenBrightness, setScreenBrightness } = useContext(AdvancedSettingsContext);
+  const { screenBrightness, setScreenBrightness, driveMode, setDriveMode } = useStore();
 
   let handleSliderChange = (value: number) => {
     console.log(value);
@@ -58,12 +57,9 @@ const SettingsPage = () => {
         <div className="flex flex-col items-left justify-center gap-y-2 ms-16">
           <TabsSelector 
             label="Drive Mode" 
-            options={[
-              {value: "eco", label: "Eco"}, 
-              {value: "comfort", label: "Comfort"}, 
-              {value: "sport", label: "Sport"}]} 
-            defaultValue={driveMode} 
-            onValueChange={setDriveMode}
+            options={tabsSelectorStates().driveModes}
+            defaultValue={driveMode}
+            onValueChange={(v) => setDriveMode(v as DriveModes)}
               />
           <div>
               <Label htmlFor="avanced-settings" className="text-base mr-5">Advanced Settings</Label>
