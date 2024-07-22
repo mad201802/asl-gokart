@@ -37,13 +37,6 @@ const SettingsPage = () => {
     }
   }
 
-  const handleDriveModeChange = (newMode: string) => {
-    if (Object.values(DriveModes).includes(newMode as DriveModes)) {
-      setDriveMode(newMode as DriveModes);
-    }
-    //TODO Logging?
-  };
-
   return (
     <div className="w-full flex flex-col">
       <div className="flex flex-row items-center justify-between px-2 py-1">
@@ -66,7 +59,7 @@ const SettingsPage = () => {
             label="Drive Mode" 
             options={tabsSelectorStates().driveModes}
             defaultValue={driveMode}
-            onValueChange={handleDriveModeChange}
+            onValueChange={(v) => setDriveMode(v as DriveModes)}
               />
           <div>
               <Label htmlFor="avanced-settings" className="text-base mr-5">Advanced Settings</Label>
