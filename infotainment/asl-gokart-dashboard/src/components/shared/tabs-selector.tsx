@@ -14,12 +14,14 @@ export interface TabsSelectorProps {
   value?: string;
   options: TabsSelectorOption[];
   defaultValue: string;
-  onValueChange: (value: Gears | DriveModes) => void;
+  onValueChange?: (value: Gears | DriveModes) => void;
   readOnly?: boolean;
 }
 
-const handleTabChange = (value: string, onValueChange: (value: Gears | DriveModes) => void) => {
-  onValueChange(value as Gears | DriveModes);
+const handleTabChange = (value: string, onValueChange?: (value: Gears | DriveModes) => void) => {
+  if(onValueChange) {
+    onValueChange(value as Gears | DriveModes);
+  }
 }
 
 const TabsSelector = (props: TabsSelectorProps) => {

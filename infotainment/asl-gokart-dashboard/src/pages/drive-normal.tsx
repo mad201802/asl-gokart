@@ -145,7 +145,6 @@ const DriveNormalPage = () => {
                 options={tabsSelectorStates().gears}
                 defaultValue={gear}  
                 value={gear}
-                onValueChange={() => {}}
                 readOnly={true}
                   />
             </div>
