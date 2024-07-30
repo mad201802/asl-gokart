@@ -46,7 +46,10 @@
         "rust-analyzer.checkOnSave.allTargets": false,
         "[rust]": {
           "editor.defaultFormatter": "rust-lang.rust-analyzer"
-        }
+        },
+        "rust-analyzer.linkedProjects": [
+            "/home/dev/asl-gokart/zc/zc_throttle/Cargo.toml"
+        ]
       },
       "extensions": [
         "rust-lang.rust-analyzer",
