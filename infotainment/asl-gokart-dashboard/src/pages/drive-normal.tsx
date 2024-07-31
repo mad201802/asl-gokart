@@ -90,7 +90,7 @@ function interpolateColorBetween(
 
 const DriveNormalPage = () => {
 
-  const { gear, throttle, rpm, speed, rpmBoundaries } = useStore()
+  const { gear, throttle, rpm, speed, rpmBoundaries, batteryPercentage } = useStore()
 
   const throttleBoundaries = [0, 100];
   const throttleSegments: Segment[] = [
@@ -184,8 +184,8 @@ const DriveNormalPage = () => {
         </div>
         <div className="w-full flex flex-col items-center justify-center pt-4">
           <p>Battery</p>
-          <Progress className="w-[30%] h-[10px]" value={33} />
-          <p>33%</p>
+          <Progress className="w-[30%] h-[10px]" value={batteryPercentage*100} />
+          <p>{batteryPercentage*100}%</p>
         </div>
       </div>
     </div>
