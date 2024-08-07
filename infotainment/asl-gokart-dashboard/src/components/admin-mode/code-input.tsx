@@ -5,6 +5,7 @@ import {
   } from "@/components/ui/input-otp"
 import { useStore } from "@/stores/useStore";
 import { REGEXP_ONLY_DIGITS } from "input-otp";
+import { toast } from "sonner"
 
 
 export const CodeInput = () => {
@@ -13,11 +14,21 @@ export const CodeInput = () => {
 
     const PIN = "12345";
 
+    let handleLogin = (pin: string) => {
+        if(pin === PIN) {
+            setAdminMode(true);
+            toast("Admin mode enabled!");
+        } else {
+            console.error("Wrong PIN!");
+            toast("Wrong PIN!");
+        }
+    }
+
     return (
         <InputOTP 
         maxLength={5} 
         pattern={REGEXP_ONLY_DIGITS} 
-        onComplete={(value) => value === PIN ? setAdminMode(true) : console.error("Wrong PIN!")}
+        onComplete={(value) => handleLogin(value)}
         value={adminPin}>
         <InputOTPGroup>
           <InputOTPSlot index={0} />
