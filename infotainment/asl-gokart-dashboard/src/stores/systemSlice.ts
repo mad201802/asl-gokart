@@ -2,7 +2,11 @@ import { StateCreator } from "zustand"
 
 export interface SystemSlice {
     screenBrightness: number
-    setScreenBrightness: (screenBrightness: number) => void
+    adminPin: string,
+    adminMode: boolean,
+    setScreenBrightness: (screenBrightness: number) => void,
+    setAdminPin: (adminPin: string) => void,
+    setAdminMode: (adminMode: boolean) => void
   }
 
 export const createSystemSlice: StateCreator<
@@ -12,5 +16,9 @@ export const createSystemSlice: StateCreator<
     SystemSlice
     > = (set) => ({
     screenBrightness: 33,
-    setScreenBrightness: (screenBrightness: number) => set(() => ({ screenBrightness: screenBrightness }))
+    adminPin: "",
+    adminMode: false,
+    setScreenBrightness: (screenBrightness: number) => set(() => ({ screenBrightness: screenBrightness })),
+    setAdminPin: (adminPin: string) => set(() => ({ adminPin: adminPin })),
+    setAdminMode: (adminMode: boolean) => set(() => ({ adminMode: adminMode }))
 })
