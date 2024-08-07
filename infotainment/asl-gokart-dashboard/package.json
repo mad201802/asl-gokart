@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@fontsource/poppins": "^5.0.8",
+    "@mars3d/heatmap.js": "^2.0.7",
     "@radix-ui/react-dialog": "^1.1.1",
     "@radix-ui/react-label": "^2.1.0",
     "@radix-ui/react-progress": "^1.0.3",
@@ -36,6 +37,7 @@
   },
   "devDependencies": {
     "@tauri-apps/cli": "^1.5.10",
+    "@types/heatmap.js": "^2.0.41",
     "@types/node": "^20.11.19",
     "@types/react": "^18.2.56",
     "@types/react-dom": "^18.2.19",

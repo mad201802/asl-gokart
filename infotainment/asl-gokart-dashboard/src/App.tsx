@@ -7,6 +7,7 @@ import SettingsPage from "./pages/settings";
 import CarPage from "./pages/car";
 import { appWindow } from '@tauri-apps/api/window';
 import { useEffect } from "react";
+import BatteryPage from "./pages/battery";
 
 function refreshApp() {
   const exec = async () => {
@@ -58,6 +59,7 @@ function App() {
                 <Route path="/" element={<DriveNormalPage />} />
                 <Route path="/car" element={<CarPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/battery" element={<BatteryPage />} />
               </Routes>
             </>
       </div>
