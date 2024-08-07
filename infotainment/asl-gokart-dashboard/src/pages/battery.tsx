@@ -1,7 +1,5 @@
-import BatteryIndicator from "@/components/shared/battery-indicator";
 import BatteryHeatmap from "@/components/shared/battery-temp-map/battery-heatmap";
-import DigitalClock from "@/components/shared/clock";
-import DriveModeIndicator from "@/components/shared/drive-mode-indicator";
+import { HeaderBar } from "@/components/shared/header-bar";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/stores/useStore";
 
@@ -20,15 +18,7 @@ const BatteryPage = () => {
 
     return (
         <div>
-            <div className="flex flex-row items-center justify-between px-2 py-1">
-                <div className="min-w-28">
-                <DigitalClock />
-                </div>
-                <DriveModeIndicator />
-                <div className="flex min-w-28 justify-end">
-                <BatteryIndicator />
-                </div>
-            </div>
+            <HeaderBar />
 
             <div className="flex flex-col items-center mt-4">
                 <BatteryHeatmap 
