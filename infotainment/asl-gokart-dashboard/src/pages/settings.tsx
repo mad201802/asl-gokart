@@ -40,9 +40,13 @@ const SettingsPage = () => {
   return (
     <div className="w-full flex flex-col">
       <div className="flex flex-row items-center justify-between px-2 py-1">
-        <DigitalClock />
+        <div className="min-w-28">
+          <DigitalClock />
+        </div>
         <DriveModeIndicator />
-        <BatteryIndicator />
+        <div className="flex min-w-28 justify-end">
+          <BatteryIndicator />
+        </div>
       </div>
 
       {/* ### "Tabelle" mit Rows ### */}
