@@ -20,15 +20,16 @@ import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
 import { useStore } from "@/stores/useStore";
 import { DriveModes, tabsSelectorStates } from "@/data/controlling_models/drivetrain";
+import { CodeInput } from "@/components/admin-mode/code-input";
+import { CodeNumberpad } from "@/components/admin-mode/code-numberpad";
 
 const SettingsPage = () => {
 
   const [showBrightnessWarning, setShowBrightnessWarning] = useState(false);
 
-  const { screenBrightness, setScreenBrightness, driveMode, setDriveMode } = useStore();
+  const { screenBrightness, setScreenBrightness, driveMode, setDriveMode, adminMode, setAdminMode, setAdminPin } = useStore();
 
   let handleSliderChange = (value: number) => {
-    console.log(value);
     setScreenBrightness(value);
     if(value < 25) {
       setShowBrightnessWarning(true);
@@ -36,6 +37,13 @@ const SettingsPage = () => {
       setShowBrightnessWarning(false);
     }
   }
+
+  let logout = () => {
+    setAdminMode(false);
+    setAdminPin("");
+  }
+
+
 
   return (
     <div className="w-full flex flex-col">
@@ -61,7 +69,7 @@ const SettingsPage = () => {
             defaultValue={driveMode}
             onValueChange={(v) => setDriveMode(v as DriveModes)}
               />
-          <div>
+          <div className="flex flex-row justify-between items-center space-x-4">
               <Label htmlFor="avanced-settings" className="text-base mr-5">Advanced Settings</Label>
               <Dialog>
                 <DialogTrigger asChild>
@@ -85,6 +93,35 @@ const SettingsPage = () => {
                       <Button>Close</Button>
                     </DialogClose>
                   </DialogFooter>
+                </DialogContent>
+              </Dialog>
+          </div>
+          <div className="flex flex-row justify-between items-center space-x-4">
+              <Label htmlFor="admin-mode" className="text-base mr-5">Admin Mode</Label>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button>Authenticate</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Admin Mode</DialogTitle>
+                  </DialogHeader>
+                  <DialogDescription>
+                    {!adminMode && <p>Enter your Pin to unlock the administrator features</p>}
+                    {adminMode && <p className="text-green-700">Admin Mode activated!</p>}
+                    <Separator className="mt-3"/>
+                  </DialogDescription>
+                  
+                  { !adminMode && <div className="flex flex-row justify-center">
+                    <CodeInput />
+                  </div> }
+                  
+                  { !adminMode && <CodeNumberpad /> }
+                  
+                  { adminMode && <div className="flex flex-row justify-center">
+                    <Button onClick={() => logout()}>Logout</Button>
+                  </div> }
+ 
                 </DialogContent>
               </Dialog>
           </div>
