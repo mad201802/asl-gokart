@@ -96,6 +96,7 @@
         "decorations": true,
         "alwaysOnTop": true,
         "title": "ASL Go-Kart Dashboard",
+        "label": "main",
         "width": 800,
         "visible": true
       }
