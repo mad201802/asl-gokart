@@ -11,6 +11,8 @@ export interface MotorSlice {
     setGear: (gear: Gears) => void
     setDriveMode: (driveMode: DriveModes) => void
     setThrottle: (throttle: number) => void
+    setRpm: (rpm: number) => void
+    setSpeed: (speed: number) => void
   }
   
 export const createMotorSlice: StateCreator<
@@ -27,5 +29,7 @@ export const createMotorSlice: StateCreator<
     speed: 0,
     setGear: (gear: Gears) => set(() => ({ gear: gear })),
     setDriveMode: (driveMode: DriveModes) => set(() => ({ driveMode: driveMode })),
-    setThrottle: (throttle: number) => set(() => ({ throttle: throttle }))
+    setThrottle: (throttle: number) => set(() => ({ throttle: throttle })),
+    setRpm: (rpm: number) => set(() => ({ rpm: rpm })),
+    setSpeed: (speed: number) => set(() => ({ speed: speed })),
   })
