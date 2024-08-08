@@ -13,6 +13,9 @@ import {
 } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import DriveModeIndicator from "@/components/shared/drive-mode-indicator";
+import { Button } from "@/components/ui/button";
+
+import { emit } from "@tauri-apps/api/event";
 
 interface Segment {
   value: number;
@@ -186,6 +189,9 @@ const DriveNormalPage = () => {
           <p>Battery</p>
           <Progress className="w-[30%] h-[10px]" value={batteryPercentage*100} />
           <p>{batteryPercentage*100}%</p>
+
+          {/* Button to send "event" to backend */}
+          <Button onClick={() => {emit("get_motor_data", {})}}>Fetch States from Backend</Button>
         </div>
       </div>
     </div>

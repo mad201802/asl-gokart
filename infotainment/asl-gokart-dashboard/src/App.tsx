@@ -8,6 +8,7 @@ import CarPage from "./pages/car";
 import { appWindow } from '@tauri-apps/api/window';
 import { useEffect } from "react";
 import BatteryPage from "./pages/battery";
+import MotorDataListener from "./listeners/motor-listener";
 
 function refreshApp() {
   const exec = async () => {
@@ -53,6 +54,9 @@ function App() {
 
   return (
     <div className="flex flex-row w-full h-full">
+      { /* Mount listener to listen for "motor_data" events sent from the backend */ }
+      <MotorDataListener />
+      
       <div className="flex-1">
             <>
               <Routes>
