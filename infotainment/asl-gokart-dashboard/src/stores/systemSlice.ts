@@ -6,7 +6,6 @@ export interface SystemSlice {
     adminMode: boolean,
     setScreenBrightness: (screenBrightness: number) => void,
     setAdminPin: (adminPin: string) => void,
-    setAdminMode: (adminMode: boolean) => void
   }
 
 export const createSystemSlice: StateCreator<
@@ -20,5 +19,4 @@ export const createSystemSlice: StateCreator<
     adminMode: false,
     setScreenBrightness: (screenBrightness: number) => set(() => ({ screenBrightness: screenBrightness })),
     setAdminPin: (adminPin: string) => set(() => ({ adminPin: adminPin })),
-    setAdminMode: (adminMode: boolean) => set(() => ({ adminMode: adminMode }))
 })
