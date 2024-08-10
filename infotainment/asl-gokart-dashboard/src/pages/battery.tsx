@@ -5,7 +5,8 @@ import { useStore } from "@/stores/useStore";
 
 const BatteryPage = () => {
 
-    const { batteryTemps, avgBatteryTemp, setBatteryTemps } = useStore();
+    const { batteryTemps, avgBatteryTemp, minTemp, maxTemp, voltage } = useStore();
+    const { setBatteryTemps } = useStore();
 
     // Generate 6 random battery temperatures from 10 to 40
     const randomBatteryTemps = () => {
@@ -28,8 +29,21 @@ const BatteryPage = () => {
                     minTemp={12.5} 
                     maxTemp={40}
                 />
-                <div className="text-black text-xl mt-4">Battery Temperature</div>
-                <div className="text-black text-xl">{avgBatteryTemp.toFixed(1)}</div>
+                <div className="flex flex-col mt-2 w-72">
+                    <div className="flex flex-row justify-between">
+                        <div className="text-black text-sm">Avg. Temperature</div>
+                        <div className="text-black text-sm">{avgBatteryTemp.toFixed(1)} °C</div>
+                    </div>
+                    <div className="flex flex-row justify-between">
+                        <div className="text-black text-sm">Min/Max Temperature</div>
+                        <div className="text-black text-sm">{minTemp.toFixed(1)} / {maxTemp.toFixed(1)} °C</div>
+                    </div>
+                    <div className="flex flex-row justify-between">
+                        <div className="text-black text-sm">Voltage</div>
+                        <div className="text-black text-sm">{voltage.toFixed(1)} V</div>
+                    </div>
+                </div>
+
                 <Button onClick={() => setBatteryTemps(randomBatteryTemps())}>Randomize Temps</Button>
             </div>
 
