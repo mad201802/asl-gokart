@@ -8,6 +8,7 @@ import {
 } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import { HeaderBar } from "@/components/shared/header-bar";
+import ResetDailyDistanceDialog from "@/components/shared/reset-daily-distance-dialog";
 
 interface Segment {
   value: number;
@@ -86,6 +87,7 @@ function interpolateColorBetween(
 const DriveNormalPage = () => {
 
   const { gear, throttle, rpm, speed, rpmBoundaries, batteryPercentage } = useStore()
+
 
   const throttleBoundaries = [0, 100];
   const throttleSegments: Segment[] = [
@@ -170,6 +172,9 @@ const DriveNormalPage = () => {
               </CircularProgressbarWithChildren>
             </div>
           </div>
+        </div>
+        <div>
+          <ResetDailyDistanceDialog />
         </div>
         <div className="w-full flex flex-col items-center justify-center pt-4">
           <p>Battery</p>
