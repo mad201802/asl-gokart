@@ -1,18 +1,14 @@
-import BatteryIndicator from "@/components/shared/battery-indicator";
-import DigitalClock from "@/components/shared/clock";
 import TabsSelector from "@/components/shared/tabs-selector";
 import { Progress } from "@/components/ui/progress";
-
 import { useStore } from "@/stores/useStore";
-
 import { tabsSelectorStates } from "@/data/controlling_models/drivetrain";
-
 import {
   CircularProgressbarWithChildren,
   buildStyles,
 } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
-import DriveModeIndicator from "@/components/shared/drive-mode-indicator";
+import { HeaderBar } from "@/components/shared/header-bar";
+import ResetDailyDistanceDialog from "@/components/shared/reset-daily-distance-dialog";
 
 interface Segment {
   value: number;
@@ -92,6 +88,7 @@ const DriveNormalPage = () => {
 
   const { gear, throttle, rpm, speed, rpmBoundaries, batteryPercentage } = useStore()
 
+
   const throttleBoundaries = [0, 100];
   const throttleSegments: Segment[] = [
     { value: 0, color: "#339900" },
@@ -111,15 +108,9 @@ const DriveNormalPage = () => {
 
   return (
     <div className="w-full flex flex-col">
-      <div className="flex flex-row items-center justify-between px-2 py-1">
-        <div className="min-w-28">
-          <DigitalClock />
-        </div>
-        <DriveModeIndicator />
-        <div className="flex min-w-28 justify-end">
-          <BatteryIndicator />
-        </div>
-      </div>
+      
+      <HeaderBar />
+
       <div className="flex flex-col items-center justify-center gap-y-2 pt-10">
         <div className="grid grid-cols-3 w-full">
           <div className="flex flex-col items-center justify-center">
@@ -181,6 +172,9 @@ const DriveNormalPage = () => {
               </CircularProgressbarWithChildren>
             </div>
           </div>
+        </div>
+        <div>
+          <ResetDailyDistanceDialog />
         </div>
         <div className="w-full flex flex-col items-center justify-center pt-4">
           <p>Battery</p>

@@ -8,6 +8,8 @@ import CarPage from "./pages/car";
 import { appWindow } from '@tauri-apps/api/window';
 import { useEffect } from "react";
 import BatteryPage from "./pages/battery";
+import { Toaster } from "@/components/ui/sonner"
+
 
 function refreshApp() {
   const exec = async () => {
@@ -66,6 +68,7 @@ function App() {
       {<div className="w-[80px] border-l-2">
         <NavBar items={navBarItems} />
       </div>}
+      <Toaster />
     </div>
   );
 }

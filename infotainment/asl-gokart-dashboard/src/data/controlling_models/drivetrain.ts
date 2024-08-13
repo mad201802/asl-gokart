@@ -1,4 +1,7 @@
 import { TabsSelectorOption } from "@/components/shared/tabs-selector";
+// import { useStore } from "@/stores/useStore";
+
+// const { adminMode } = useStore();
 
 
 export enum Gears {
@@ -11,7 +14,8 @@ export enum Gears {
 export enum DriveModes {
     comfort = "comfort",
     eco = "eco",
-    sport = "sport"
+    sport = "sport",
+    ludicrous = "ludicrous"
 }
 
 export const tabsSelectorStates = (): { gears: TabsSelectorOption[], driveModes: TabsSelectorOption[] } => {
@@ -25,6 +29,9 @@ export const tabsSelectorStates = (): { gears: TabsSelectorOption[], driveModes:
         {value: DriveModes.eco, label: "Eco"},
         {value: DriveModes.comfort, label: "Comfort"}, 
         {value: DriveModes.sport, label: "Sport"},
+        {value: DriveModes.ludicrous, label: "Ludicrous", disabled: false}
+        // TODO: Toggle disabled based on adminMode (requires useStore() which is not available here)
+        // {value: DriveModes.ludicrous, label: "Ludicrous", disabled: !adminMode}
     ];
     return {
         gears: gears,

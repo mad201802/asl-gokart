@@ -9,7 +9,8 @@ const DriveModeIndicator = () => {
     const styleClasses: { [key in DriveModes]: string } = {
         [DriveModes.eco]: 'border-green-500 bg-green-500',
         [DriveModes.comfort]: 'border-blue-500 bg-blue-500',
-        [DriveModes.sport]: 'border-orange-500 bg-orange-500'
+        [DriveModes.sport]: 'border-orange-500 bg-orange-500',
+        [DriveModes.ludicrous]: 'border-purple-500 bg-purple-500'
     };
 
     {}
