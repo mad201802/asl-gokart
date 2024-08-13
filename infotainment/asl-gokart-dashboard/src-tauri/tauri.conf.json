@@ -91,12 +91,12 @@
     "windows": [
       {
         "fullscreen": false,
-        "height": 400,
+        "width": 1024,
+        "height": 600,
         "resizable": true,
         "decorations": true,
         "alwaysOnTop": true,
         "title": "ASL Go-Kart Dashboard",
-        "width": 800,
         "visible": true
       }
     ]
