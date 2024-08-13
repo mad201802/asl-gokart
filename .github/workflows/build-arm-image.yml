@@ -1,0 +1,51 @@
+name: Build ARM Image
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-arm:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Set up QEMU for ARM emulation
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      # Build the Docker image
+      - name: Build Docker image
+        run: |
+          docker build \
+            --platform linux/arm64 \
+            -t tauri-arm-image \
+            -f .devcontainer/Dockerfile \
+            .
+
+      # Run the Docker container to build the Tauri app
+      - name: Build Tauri app in Docker
+        run: |
+          docker run --rm \
+            --platform linux/arm64 \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            tauri-arm-image \
+            bash -c "source /home/dev/export-esp.sh && yarn install && yarn tauri build --target aarch64-unknown-linux-gnu"
+
+      # Optionally, save the output as an artifact
+      - name: Upload built artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: tauri-arm-build
+          path: src-tauri/target/aarch64-unknown-linux-gnu/release/
+
