@@ -13,7 +13,7 @@ ARG GITHUB_TOKEN
 
 # Install dependencies
 RUN apt-get update \
-    && apt-get install -y pkg-config curl gcc clang libudev-dev unzip xz-utils netcat \
+    && apt-get install -y pkg-config curl gcc clang libudev-dev unzip xz-utils netcat-openbsd \
     git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0 \
     libwebkit2gtk-4.0-dev build-essential curl wget file libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev \
     && apt-get clean -y && rm -rf /var/lib/apt/lists/* /tmp/library-scripts
