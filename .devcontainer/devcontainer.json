@@ -48,7 +48,8 @@
           "editor.defaultFormatter": "rust-lang.rust-analyzer"
         },
         "rust-analyzer.linkedProjects": [
-            "/home/dev/asl-gokart/zc/zc_throttle/Cargo.toml"
+          "/home/dev/asl-gokart/zc/zc_throttle/Cargo.toml",
+          "/home/dev/asl-gokart/zc/rust-poc/someip-rs/Cargo.toml"
         ]
       },
       "extensions": [
