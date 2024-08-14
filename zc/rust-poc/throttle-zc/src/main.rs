@@ -12,17 +12,18 @@ use esp_idf_svc::{
     netif::EspNetif,
 };
 
-use std::{thread, time};
+use std::{thread, time, net::{UdpSocket}};
 
 mod kelly_decoder;
-
 use kelly_decoder::{PacketsStruct, import_bytes_to_packets, PACKET_LENGTH};
+
+mod eth_setup;
+use eth_setup::start_eth;
 
 #[cfg(esp32)]
 use log::info;
 
 #[cfg(esp32)]
-use std::net::UdpSocket;
 use std::time::Instant;
 
 #[cfg(esp32)]
@@ -34,7 +35,7 @@ fn main() -> anyhow::Result<()> {
     
     use std::{env, net::Ipv4Addr, sync::Arc};
 
-    use esp_idf_svc::{hal::{delay::BLOCK, uart::{Uart, UartDriver, UART1}, units::Hertz}, io::Read, ipv4::ClientSettings, netif::{NetifConfiguration, NetifStack}};
+    use esp_idf_svc::{hal::{delay::BLOCK, uart::{Uart, UartDriver, UART1}, units::Hertz}, io::Read};
     use kelly_decoder::read_controller;
 
     esp_idf_svc::sys::link_patches();
@@ -42,81 +43,26 @@ fn main() -> anyhow::Result<()> {
 
     let peripherals = Peripherals::take()?;
     let pins = peripherals.pins;
+    let second = time::Duration::from_millis(1000);
+
     let sys_loop = EspSystemEventLoop::take()?;
-
-    //ETH power
-    let mut lan_power: PinDriver<_, gpio::Output> = PinDriver::output(pins.gpio12)?;
-    lan_power.set_high()?;
-
-    let eth_driver = EthDriver::new_rmii(
-        peripherals.mac,
-        pins.gpio25,
-        pins.gpio26,
-        pins.gpio27,
-        pins.gpio23,
-        pins.gpio22,
-        pins.gpio21,
-        pins.gpio19,
-        pins.gpio18,
-        esp_idf_svc::eth::RmiiClockConfig::<gpio::Gpio0, gpio::Gpio16, gpio::Gpio17>::OutputInvertedGpio17(
-            pins.gpio17,
-        ),
-        Some(pins.gpio5),
-        esp_idf_svc::eth::RmiiEthChipset::LAN87XX,
-        Some(0),
-        sys_loop.clone(),
-    )?;
-
-    //Custom config to set a static IP instead of using DHCP
-    let client_settings = ClientSettings {
-        ip: Ipv4Addr::new(192, 168, 1, 69),
-        subnet: ipv4::Subnet { gateway: (Ipv4Addr::new(192, 168, 1, 1)), mask: ( ipv4::Mask(24) ) },
-        dns: Option::None,
-        secondary_dns: Option::None,
-    };
-
-    let client_conf = ipv4::ClientConfiguration::Fixed((client_settings));
-
-    let static_conf = NetifConfiguration {
-        key: "ETH_CL_DE".try_into().unwrap(),
-        description: "eth".try_into().unwrap(),
-        route_priority: 60,
-        ip_configuration: ipv4::Configuration::Client(client_conf), //ipv4::Configuration::Client(Default::default()),
-        stack: NetifStack::Eth,
-        custom_mac: None,
-    };
-
-    let netif_static =  EspNetif::new_with_conf(&static_conf).expect("Failed to create EspNetif");
-
-    let eth = EspEth::wrap_all(eth_driver, netif_static)?;
-    info!("Eth created");
-
-    let mut eth = BlockingEth::wrap(eth, sys_loop.clone())?;
-
-    info!("Starting eth...");
     
+    let target_addr = "192.168.1.100:12345";
 
-    eth.start()?;
+    let (lan_power, eth)  = start_eth(peripherals.mac, pins.gpio12, pins.gpio25, pins.gpio26, pins.gpio27, pins.gpio23, pins.gpio22, pins.gpio21, pins.gpio19, pins.gpio18, pins.gpio17, pins.gpio5, &sys_loop);
 
-    let ip_info = eth.eth().netif().get_ip_info()?;
-
-    info!("Eth uplink info: {:?}", ip_info);
-
-    // Create a UDP socket and send a packet
-    let socket = UdpSocket::bind("0.0.0.0:0")?;
-    let target_addr = "192.168.1.100:12345"; // Replace with the target IP and port
+    let socket = UdpSocket::bind("0.0.0.0:0").unwrap();
 
     let data = b"Hello, world!";
     socket.send_to(data, target_addr)?;
 
     info!("UDP packet sent to {}", target_addr);
-    
-    let second = time::Duration::from_millis(1000);
+
 
     let tx_left = pins.gpio4;
     let rx_left = pins.gpio36;
 
-    //By default 17
+    //By default 16 and 17
     let tx_right = pins.gpio32;
     let rx_right = pins.gpio33;
 
