@@ -11,17 +11,31 @@ use esp_idf_svc::{
     log::EspLogger,
     netif::EspNetif,
 };
+
+use std::{thread, time};
+
+mod kelly_decoder;
+
+use kelly_decoder::{PacketsStruct, import_bytes_to_packets, PACKET_LENGTH};
+
 #[cfg(esp32)]
 use log::info;
 
 #[cfg(esp32)]
 use std::net::UdpSocket;
+use std::time::Instant;
 
 #[cfg(esp32)]
 fn main() -> anyhow::Result<()> {
-    use std::net::Ipv4Addr;
 
-    use esp_idf_svc::{ipv4::{ClientSettings}, netif::{NetifConfiguration, NetifStack}};
+    if env::var("RUST_LOG").is_err() {
+        env::set_var("RUST_LOG", "debug");
+    }
+    
+    use std::{env, net::Ipv4Addr, sync::Arc};
+
+    use esp_idf_svc::{hal::{delay::BLOCK, uart::{Uart, UartDriver, UART1}, units::Hertz}, io::Read, ipv4::ClientSettings, netif::{NetifConfiguration, NetifStack}};
+    use kelly_decoder::read_controller;
 
     esp_idf_svc::sys::link_patches();
     EspLogger::initialize_default();
@@ -31,10 +45,9 @@ fn main() -> anyhow::Result<()> {
     let sys_loop = EspSystemEventLoop::take()?;
 
     //ETH power
-    let mut led = PinDriver::output(pins.gpio12)?;
-    led.set_high()?;
+    let mut lan_power: PinDriver<_, gpio::Output> = PinDriver::output(pins.gpio12)?;
+    lan_power.set_high()?;
 
-    // Make sure to configure ethernet in sdkconfig and adjust the parameters below for your hardware
     let eth_driver = EthDriver::new_rmii(
         peripherals.mac,
         pins.gpio25,
@@ -49,15 +62,15 @@ fn main() -> anyhow::Result<()> {
             pins.gpio17,
         ),
         Some(pins.gpio5),
-        // Replace with IP101 if you have that variant, or with some of the others in the `RmiiEthChipset`` enum
         esp_idf_svc::eth::RmiiEthChipset::LAN87XX,
         Some(0),
         sys_loop.clone(),
     )?;
 
+    //Custom config to set a static IP instead of using DHCP
     let client_settings = ClientSettings {
-        ip: Ipv4Addr::new(192, 0, 0, 69),
-        subnet: ipv4::Subnet { gateway: (Ipv4Addr::new(192, 0, 0, 1)), mask: ( ipv4::Mask((24)) ) },
+        ip: Ipv4Addr::new(192, 168, 1, 69),
+        subnet: ipv4::Subnet { gateway: (Ipv4Addr::new(192, 168, 1, 1)), mask: ( ipv4::Mask(24) ) },
         dns: Option::None,
         secondary_dns: Option::None,
     };
@@ -68,7 +81,7 @@ fn main() -> anyhow::Result<()> {
         key: "ETH_CL_DE".try_into().unwrap(),
         description: "eth".try_into().unwrap(),
         route_priority: 60,
-        ip_configuration: ipv4::Configuration::Client((client_conf)), //ipv4::Configuration::Client(Default::default()),
+        ip_configuration: ipv4::Configuration::Client(client_conf), //ipv4::Configuration::Client(Default::default()),
         stack: NetifStack::Eth,
         custom_mac: None,
     };
@@ -84,9 +97,6 @@ fn main() -> anyhow::Result<()> {
     
 
     eth.start()?;
-    //info!("Waiting for DHCP lease...");
-
-    //eth.wait_netif_up()?;
 
     let ip_info = eth.eth().netif().get_ip_info()?;
 
@@ -100,6 +110,64 @@ fn main() -> anyhow::Result<()> {
     socket.send_to(data, target_addr)?;
 
     info!("UDP packet sent to {}", target_addr);
+    
+    let second = time::Duration::from_millis(1000);
+
+    let tx_left = pins.gpio4;
+    let rx_left = pins.gpio36;
+
+    //By default 17
+    let tx_right = pins.gpio32;
+    let rx_right = pins.gpio33;
+
+    let config = esp_idf_svc::hal::uart::config::Config::new().baudrate(Hertz(19_200));
+    let uart_left = UartDriver::new(
+        peripherals.uart1,
+        tx_left,
+        rx_left,
+        Option::<gpio::Gpio0>::None,
+        Option::<gpio::Gpio1>::None,
+        &config,
+    )
+    .unwrap();
+
+    let uart_right = UartDriver::new(
+        peripherals.uart2,
+        tx_right,
+        rx_right,
+        Option::<gpio::Gpio0>::None,
+        Option::<gpio::Gpio1>::None,
+        &config,
+    )
+    .unwrap();
+
+    loop {
+        //info!("AH AH AH AH STAYIN ALIVE");
+
+        let start = Instant::now();
+
+        //Needs about 34ms for each esc
+        let esc_left = read_controller(true, true, &uart_left).unwrap();
+        let esc_right = read_controller(true, true, &uart_right).unwrap();
+
+        //Formatting + sending needs about 2ms
+        let controller_data = format!(
+            "RPM {:?} {:?} Throttle {:?} {:?}\n", 
+            esc_left.b.rpm, 
+            esc_right.b.rpm, 
+            esc_left.a.throttle, 
+            esc_right.a.throttle
+        ).into_bytes();
+
+        socket.send_to(&controller_data, target_addr)?;
+
+        info!("RPM {:?} {:?} Throttle {:?} {:?}", esc_left.b.rpm, esc_left.b.rpm, esc_left.a.throttle, esc_left.a.throttle);
+
+        let duration = start.elapsed();
+info!("Time taken for execution: {:?}", duration);
+        //thread::sleep(second);
+    }
+    
 
     Ok(())
 }
