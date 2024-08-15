@@ -1,7 +1,7 @@
-use std::{io, time::Duration};
+use std::{io};
 
-use esp_idf_svc::hal::delay::{TickType, BLOCK};
-use log::{error, info, debug};
+use esp_idf_svc::hal::delay::{BLOCK};
+use log::{error, debug};
 
 pub const PACKET_LENGTH: usize = 19;
 pub const CRC_INDEX: usize = 18;
@@ -143,13 +143,13 @@ pub fn import_bytes_to_packets(pkts: &mut PacketsStruct, bytes: &[u8]) {
     }
 }
 
-pub fn read_controller(packet_a: bool, packet_b: bool, uartDriver: &esp_idf_svc::hal::uart::UartDriver) -> io::Result<PacketsStruct> {
+pub fn read_controller(packet_a: bool, packet_b: bool, uart_driver: &esp_idf_svc::hal::uart::UartDriver) -> io::Result<PacketsStruct> {
     let mut packets = PacketsStruct::default();
     
     if packet_a {
         let packet_a_command: [u8; 3] = [0x3a, 0x00, 0x3a];
         
-        if let Err(e) = uartDriver.write(&packet_a_command) {
+        if let Err(e) = uart_driver.write(&packet_a_command) {
             error!("Failed to write packet_a_command: {}", e);
         }
         debug!("Wrote packet_a_command");
@@ -157,7 +157,7 @@ pub fn read_controller(packet_a: bool, packet_b: bool, uartDriver: &esp_idf_svc:
         let mut packet_response = [0u8; PACKET_LENGTH];
 
         //TODO Consider setting a hard timeout instead of waiting unlimited
-        if let Err(e) = uartDriver.read(&mut packet_response, BLOCK) {
+        if let Err(e) = uart_driver.read(&mut packet_response, BLOCK) {
             error!("Failed to read packet_response: {}", e);
         }
         debug!("Received packet_response: {:?}", packet_response);
@@ -168,11 +168,11 @@ pub fn read_controller(packet_a: bool, packet_b: bool, uartDriver: &esp_idf_svc:
 
     if packet_b {
         let packet_b_command: [u8; 3] = [0x3b, 0x00, 0x3b];
-        uartDriver.write(&packet_b_command).unwrap();
+        uart_driver.write(&packet_b_command).unwrap();
         debug!("wrote b");
 
         let mut packet_response = [0u8; PACKET_LENGTH];
-        uartDriver.read(&mut packet_response, BLOCK).unwrap();
+        uart_driver.read(&mut packet_response, BLOCK).unwrap();
 
         debug!("Received packet_response: {:?}", packet_response);
 

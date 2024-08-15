@@ -4,18 +4,15 @@
 
 #[cfg(esp32)]
 use esp_idf_svc::{
-    ipv4,
-    eth::{BlockingEth, EspEth, EthDriver},
     eventloop::EspSystemEventLoop,
-    hal::{gpio, prelude::Peripherals, gpio::PinDriver},
+    hal::{gpio, prelude::Peripherals},
     log::EspLogger,
-    netif::EspNetif,
 };
 
-use std::{thread, time, net::{UdpSocket}};
+use std::{time, net::{UdpSocket}};
 
 mod kelly_decoder;
-use kelly_decoder::{PacketsStruct, import_bytes_to_packets, PACKET_LENGTH};
+use kelly_decoder::read_controller;
 
 mod eth_setup;
 use eth_setup::start_eth;
@@ -33,10 +30,9 @@ fn main() -> anyhow::Result<()> {
         env::set_var("RUST_LOG", "debug");
     }
     
-    use std::{env, net::Ipv4Addr, sync::Arc};
+    use std::{env};
 
-    use esp_idf_svc::{hal::{delay::BLOCK, uart::{Uart, UartDriver, UART1}, units::Hertz}, io::Read};
-    use kelly_decoder::read_controller;
+    use esp_idf_svc::{hal::{uart::{UartDriver}, units::Hertz}};
 
     esp_idf_svc::sys::link_patches();
     EspLogger::initialize_default();
@@ -49,7 +45,7 @@ fn main() -> anyhow::Result<()> {
     
     let target_addr = "192.168.1.100:12345";
 
-    let (lan_power, eth)  = start_eth(peripherals.mac, pins.gpio12, pins.gpio25, pins.gpio26, pins.gpio27, pins.gpio23, pins.gpio22, pins.gpio21, pins.gpio19, pins.gpio18, pins.gpio17, pins.gpio5, &sys_loop);
+    let (_lan_power, _eth)  = start_eth(peripherals.mac, pins.gpio12, pins.gpio25, pins.gpio26, pins.gpio27, pins.gpio23, pins.gpio22, pins.gpio21, pins.gpio19, pins.gpio18, pins.gpio17, pins.gpio5, &sys_loop);
 
     let socket = UdpSocket::bind("0.0.0.0:0").unwrap();
 

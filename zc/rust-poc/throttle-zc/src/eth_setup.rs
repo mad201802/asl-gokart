@@ -1,12 +1,12 @@
 use esp_idf_svc::{
     eth::{BlockingEth, EspEth, EthDriver, RmiiEth},
     eventloop::EspSystemEventLoop,
-    hal::{gpio::{self, Gpio12, Gpio17, Gpio18, Gpio19, Gpio21, Gpio22, Gpio23, Gpio25, Gpio26, Gpio27, Gpio5, PinDriver, Pins}, mac::MAC, prelude::Peripherals},
+    hal::{gpio::{self, Gpio12, Gpio17, Gpio18, Gpio19, Gpio21, Gpio22, Gpio23, Gpio25, Gpio26, Gpio27, Gpio5, PinDriver}, mac::MAC},
     ipv4,
     netif::{EspNetif, NetifConfiguration, NetifStack}
 };
 
-use std::{env, net::{Ipv4Addr, UdpSocket}, sync::Arc};
+use std::{net::{Ipv4Addr}};
 
 use log::info;
 
@@ -69,6 +69,8 @@ pub fn start_eth(mac: MAC, gpio12: Gpio12, gpio25: Gpio25, gpio26:Gpio26, gpio27
 
     info!("Eth uplink info: {:?}", ip_info);
 
+    //lan_power needs to be returned because otherwise the power for the ethernet module will be shut off
+    //eth needs to be returned because otherwise the interface is deleted by rust after this function finishes
     (lan_power, eth)
 
 }
