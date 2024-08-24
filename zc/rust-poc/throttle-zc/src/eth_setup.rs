@@ -6,7 +6,7 @@ use esp_idf_svc::{
     netif::{EspNetif, NetifConfiguration, NetifStack}
 };
 
-use std::{net::{Ipv4Addr}};
+use std::net::Ipv4Addr;
 
 use log::info;
 

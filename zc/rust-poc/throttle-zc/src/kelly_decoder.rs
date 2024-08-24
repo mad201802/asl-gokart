@@ -1,11 +1,11 @@
-use std::{io};
+use std::io;
 
-use esp_idf_svc::hal::delay::{BLOCK};
+use esp_idf_svc::hal::delay::BLOCK;
 use log::{error, debug};
 
 pub const PACKET_LENGTH: usize = 19;
 pub const CRC_INDEX: usize = 18;
-pub const ERROR: i32 = -1;
+//pub const ERROR: i32 = -1;
 
 pub fn bswap_16(x: u16) -> u16 {
     ((x >> 8) & 0xff) | ((x << 8) & 0xff00)
