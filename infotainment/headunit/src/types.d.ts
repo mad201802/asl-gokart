@@ -21,4 +21,8 @@ interface ElectronWindow {
 declare interface Window {
     themeMode: ThemeModeContext;
     electronWindow: ElectronWindow;
+    websocket: {
+        send: (message: string) => void;
+        onMessage: (callback: (message: string) => void) => void;
+    };
 }
