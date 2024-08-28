@@ -1,5 +1,6 @@
 import { HeaderBar } from "@/components/shared/header-bar";
 import TemperatureBox from "@/components/shared/temperature-scale/temperature-box";
+import React from "react";
 
 const CarPage = () => {
     return (

@@ -9,6 +9,7 @@ import {
 import "react-circular-progressbar/dist/styles.css";
 import { HeaderBar } from "@/components/shared/header-bar";
 import ResetDailyDistanceDialog from "@/components/shared/reset-daily-distance-dialog";
+import React from "react";
 
 interface Segment {
   value: number;

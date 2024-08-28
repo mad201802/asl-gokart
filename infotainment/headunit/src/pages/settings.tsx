@@ -20,6 +20,7 @@ import { HeaderBar } from "@/components/shared/header-bar";
 import { toast } from "sonner";
 import AvancedSettingsDialog from "@/components/shared/advanced-settings/advanced-settings-dialog";
 import AdminSettingsDialog from "@/components/admin-mode/admin-settings-dialog";
+import React from "react";
 
 const SettingsPage = () => {
 
