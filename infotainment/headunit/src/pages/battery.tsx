@@ -2,11 +2,13 @@ import BatteryHeatmap from "@/components/shared/battery-temp-map/battery-heatmap
 import { HeaderBar } from "@/components/shared/header-bar";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/stores/useStore";
+import { useEffect } from "react";
+import React from "react";
 
 const BatteryPage = () => {
 
     const { batteryTemps, avgBatteryTemp, minTemp, maxTemp, voltage } = useStore();
-    const { setBatteryTemps } = useStore();
+    const { setBatteryTemps, setThrottle } = useStore();
 
     // Generate 6 random battery temperatures from 10 to 40
     const randomBatteryTemps = () => {
@@ -16,6 +18,13 @@ const BatteryPage = () => {
         }
         return temps;
     }
+
+    // useEffect(() => {
+    //     window.websocket.onMessage((message) => {
+    //         const data = JSON.parse(message);
+    //         console.log(`Received websocket data from backend: ${data}`);
+    // })
+    // }, []);
 
     return (
         <div>
