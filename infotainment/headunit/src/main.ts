@@ -18,7 +18,7 @@ function createWindow() {
             contextIsolation: true,
             nodeIntegration: true,
             nodeIntegrationInSubFrames: false,
-
+            webSecurity: false,
             preload: preload,
         },
         titleBarStyle: "default",
