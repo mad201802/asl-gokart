@@ -9,6 +9,13 @@ use esp_idf_svc::{
     log::EspLogger,
 };
 
+use esp_idf_svc::ws::client::{
+    EspWebSocketClient, EspWebSocketClientConfig, FrameType, WebSocketEvent, WebSocketEventType,
+};
+use esp_idf_svc::io::EspIOError;
+
+use std::sync::mpsc;
+
 use std::net::UdpSocket;
 
 mod kelly_decoder;
@@ -33,10 +40,14 @@ use std::cmp::min;
 #[cfg(esp32)]
 #[cfg(not(any(feature = "adc-oneshot-legacy", esp_idf_version_major = "4")))]
 fn main() -> anyhow::Result<()> {
+    use std::thread;
+    use std::time::Duration;
+
     use esp_idf_svc::hal::{i2c::I2cDriver, units::Hertz};
     use esp_idf_svc::hal::adc::attenuation::DB_11;
     use esp_idf_svc::hal::adc::oneshot::config::AdcChannelConfig;
     use esp_idf_svc::hal::adc::oneshot::*;
+    use log::info;
 
 
     if env::var("RUST_LOG").is_err() {
@@ -69,9 +80,20 @@ fn main() -> anyhow::Result<()> {
     //I2C
     //TODO find appropiate pins
     //Baud rate of 1.4 MHz: https://forum.arduino.cc/t/undocumented-i2c-clock-speeds-for-mcp4728/574527
-    let i2c_config = esp_idf_svc::hal::i2c::config::Config::new().baudrate(Hertz(1400000));
-    let i2c = I2cDriver::new(p.i2c0, pins.gpio13, pins.gpio16, &i2c_config).unwrap();
-    //0x60 is the default address for the adafruit MCP4728
+    info!("Setup i2c");
+    let i2c_config = esp_idf_svc::hal::i2c::config::Config::new().baudrate(Hertz(10_000)); // Set to 400 kHz
+    let i2c = match I2cDriver::new(p.i2c0, pins.gpio13, pins.gpio16, &i2c_config) {
+        Ok(driver) => {
+            info!("I2C initialized");
+            driver
+            },
+        Err(e) => {
+            println!("Failed to initialize I2C driver: {:?}", e);
+            return Err(Box::new(e).into()); // or handle the error appropriately
+        }
+    };
+        //0x60 is the default address for the adafruit MCP4728
+    info!("Setup DAC");
     let mut dac = MCP4728::new(i2c, 0x60);
 
     //Set VCC as maximum volume
@@ -79,6 +101,10 @@ fn main() -> anyhow::Result<()> {
     let voltage_reference = VoltageReferenceMode::External;
     let _ = dac.write_gain_mode(gain, gain, gain, gain);
     let _ = dac.write_voltage_reference_mode(voltage_reference, voltage_reference, voltage_reference, voltage_reference);
+
+    let _ = dac.fast_write(1000, 2000, 3000, 4000);
+
+    //thread::sleep(Duration::from_secs(1000));
 
     //Gas input
     let throttle = AdcDriver::new(p.adc1)?;
@@ -104,37 +130,67 @@ fn main() -> anyhow::Result<()> {
     let throttle_limiter = 50;
     //in rpm
     let rpm_limit = 3000;
+
+
+    const ECHO_SERVER_URI: &str = "ws://192.168.1.100:6969";
+
+    let wsconfig = EspWebSocketClientConfig {
+        ..Default::default()
+    };
+    let timeout = Duration::from_secs(10);
+    let (tx, rx) = mpsc::channel::<ExampleEvent>();
+    let mut client =
+        EspWebSocketClient::new(ECHO_SERVER_URI, &wsconfig, timeout, move |event| {
+            handle_event(&tx, event)
+        })?;
+    // assert_eq!(rx.recv(), Ok(ExampleEvent::Connected));
+    // assert!(client.is_connected());
+
+    // Send message and receive it back
+    let message = "Hello, World!";
+    info!("Websocket send, text: {}", message);
+    client.send(FrameType::Text(false), message.as_bytes())?;
+    // assert_eq!(rx.recv(), Ok(ExampleEvent::MessageReceived));
+
+
     loop {
         //info!("AH AH AH AH STAYIN ALIVE");
 
         let start = Instant::now();
 
-        //Needs about 34ms for each esc
-        let esc_left = read_controller(true, true, &uart_left).unwrap();
-        let esc_right = read_controller(true, true, &uart_right).unwrap();
+        // //Needs about 34ms for each esc
+        // let esc_left = read_controller(true, true, &uart_left).unwrap();
+        // let esc_right = read_controller(true, true, &uart_right).unwrap();
 
-        //Formatting + sending needs about 2ms
-        let controller_data = format!(
-            "RPM {:?} {:?} Throttle {:?} {:?}\n", 
-            esc_left.b.rpm, 
-            esc_right.b.rpm, 
-            esc_left.a.throttle, 
-            esc_right.a.throttle
-        ).into_bytes();
+        // info!("RPM {:?} {:?} Throttle {:?} {:?}", esc_left.b.rpm, esc_left.b.rpm, esc_left.a.throttle, esc_left.a.throttle);
 
-        let throttle = throttle.read(&mut throttle_pin).unwrap();
+        // //Formatting + sending needs about 2ms
+        // let controller_data = format!(
+        //     "RPM {:?} {:?} Throttle {:?} {:?}\n", 
+        //     esc_left.b.rpm, 
+        //     esc_right.b.rpm, 
+        //     esc_left.a.throttle, 
+        //     esc_right.a.throttle
+        // ).into_bytes();
 
-        let mut calculated_throttle = (throttle * throttle_limiter) / 100;
+        info!("read throttle");
+        let current_throttle :u32 = throttle.read(&mut throttle_pin).unwrap().into();
+        // info!("dalc throttle");
+        let mut calculated_throttle :u32 = current_throttle;//(throttle * throttle_limiter) / 100;
         //set throttle to 0 if current rpm is over the limit
-        calculated_throttle *= (rpm_limit >= esc_left.b.rpm || rpm_limit >= esc_right.b.rpm) as u16;
+        // calculated_throttle *= (rpm_limit >= esc_left.b.rpm || rpm_limit >= esc_right.b.rpm) as u32;
         //maximum allowed value of throttle is 4095, because it's 12 bit
-        calculated_throttle = min(4095, calculated_throttle);
-
+        let calculated_throttle :u16 = min(4095, calculated_throttle) as u16;
+        let duration = start.elapsed();  
         let _ = dac.fast_write(calculated_throttle, calculated_throttle, calculated_throttle, calculated_throttle);
+        let message = format!("Calculated throttle: {}", calculated_throttle);
+        client.send(FrameType::Text(false), message.as_bytes())?;
+        //let _ = dac.
+        info!("Time taken for fast write: {:?}", duration);
+        // info!("send");
+        // socket.send_to(&controller_data, target_addr)?;
 
-        socket.send_to(&controller_data, target_addr)?;
-
-        info!("RPM {:?} {:?} Throttle {:?} {:?}", esc_left.b.rpm, esc_left.b.rpm, esc_left.a.throttle, esc_left.a.throttle);
+        // info!("RPM {:?} {:?} Throttle {:?} {:?}", esc_left.b.rpm, esc_left.b.rpm, esc_left.a.throttle, esc_left.a.throttle);
 
         let duration = start.elapsed();
 info!("Time taken for execution: {:?}", duration);
@@ -143,6 +199,50 @@ info!("Time taken for execution: {:?}", duration);
     
 
     //Ok(())
+}
+
+enum ExampleEvent {
+    Connected,
+    MessageReceived,
+    Closed,
+}
+fn handle_event(tx: &mpsc::Sender<ExampleEvent>, event: &Result<WebSocketEvent, EspIOError>) {
+    if let Ok(event) = event {
+        match event.event_type {
+            WebSocketEventType::BeforeConnect => {
+                info!("Websocket before connect");
+            }
+            WebSocketEventType::Connected => {
+                info!("Websocket connected");
+                tx.send(ExampleEvent::Connected).ok();
+            }
+            WebSocketEventType::Disconnected => {
+                info!("Websocket disconnected");
+            }
+            WebSocketEventType::Close(reason) => {
+                info!("Websocket close, reason: {reason:?}");
+            }
+            WebSocketEventType::Closed => {
+                info!("Websocket closed");
+                tx.send(ExampleEvent::Closed).ok();
+            }
+            WebSocketEventType::Text(text) => {
+                info!("Websocket recv, text: {text}");
+                if text == "Hello, World!" {
+                    tx.send(ExampleEvent::MessageReceived).ok();
+                }
+            }
+            WebSocketEventType::Binary(binary) => {
+                info!("Websocket recv, binary: {binary:?}");
+            }
+            WebSocketEventType::Ping => {
+                info!("Websocket ping");
+            }
+            WebSocketEventType::Pong => {
+                info!("Websocket pong");
+            }
+        }
+    }
 }
 
 #[cfg(not(esp32))]

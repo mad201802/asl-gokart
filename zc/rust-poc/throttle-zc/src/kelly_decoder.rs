@@ -1,11 +1,12 @@
-use std::io;
+use std::{io, time::Duration};
 
-use esp_idf_svc::hal::delay::BLOCK;
+use esp_idf_svc::hal::delay::{FreeRtos, BLOCK};
 use log::{error, debug};
 
 pub const PACKET_LENGTH: usize = 19;
 pub const CRC_INDEX: usize = 18;
 //pub const ERROR: i32 = -1;
+
 
 pub fn bswap_16(x: u16) -> u16 {
     ((x >> 8) & 0xff) | ((x << 8) & 0xff00)
@@ -157,7 +158,7 @@ pub fn read_controller(packet_a: bool, packet_b: bool, uart_driver: &esp_idf_svc
         let mut packet_response = [0u8; PACKET_LENGTH];
 
         //TODO Consider setting a hard timeout instead of waiting unlimited
-        if let Err(e) = uart_driver.read(&mut packet_response, BLOCK) {
+        if let Err(e) = uart_driver.read(&mut packet_response, 100) {
             error!("Failed to read packet_response: {}", e);
         }
         debug!("Received packet_response: {:?}", packet_response);
@@ -172,7 +173,7 @@ pub fn read_controller(packet_a: bool, packet_b: bool, uart_driver: &esp_idf_svc
         debug!("wrote b");
 
         let mut packet_response = [0u8; PACKET_LENGTH];
-        uart_driver.read(&mut packet_response, BLOCK).unwrap();
+        uart_driver.read(&mut packet_response, 100).unwrap();
 
         debug!("Received packet_response: {:?}", packet_response);
 
