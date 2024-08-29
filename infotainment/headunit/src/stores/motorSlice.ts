@@ -15,6 +15,7 @@ export interface MotorSlice {
     setGear: (gear: Gears) => void
     setDriveMode: (driveMode: DriveModes) => void
     setThrottle: (throttle: number) => void
+    setRpm: (rpm: number) => void
     setDailyDistance: (dailyDistance: number) => void
     setSpeedLimit: (speedLimit: number) => void
     setMaxSettableSpeed: (maxSettableSpeed: number) => void
@@ -40,6 +41,7 @@ export const createMotorSlice: StateCreator<
     setGear: (gear: Gears) => set(() => ({ gear: gear })),
     setDriveMode: (driveMode: DriveModes) => set(() => ({ driveMode: driveMode })),
     setThrottle: (throttle: number) => set(() => ({ throttle: throttle })),
+    setRpm: (rpm: number) => set(() => ({ rpm: rpm })),
     setDailyDistance: (dailyDistance: number) => set(() => ({ dailyDistance: dailyDistance })),
     setSpeedLimit: (speedLimit: number) => set(() => ({ speedLimit: speedLimit })),
     setMaxSettableSpeed: (maxSettableSpeed: number) => set(() => ({ maxSettableSpeed: maxSettableSpeed })),

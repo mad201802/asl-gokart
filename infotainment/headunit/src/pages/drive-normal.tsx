@@ -9,7 +9,7 @@ import {
 import "react-circular-progressbar/dist/styles.css";
 import { HeaderBar } from "@/components/shared/header-bar";
 import ResetDailyDistanceDialog from "@/components/shared/reset-daily-distance-dialog";
-import React from "react";
+import React, { useEffect } from "react";
 
 interface Segment {
   value: number;
@@ -88,7 +88,16 @@ function interpolateColorBetween(
 const DriveNormalPage = () => {
 
   const { gear, throttle, rpm, speed, rpmBoundaries, batteryPercentage } = useStore()
+  const { setRpm } = useStore();
 
+
+  useEffect(() => {
+    window.websocket.onMessage((message) => {
+        const data = JSON.parse(message);
+        console.log(`Received websocket data from backend: ${JSON.stringify(data)}`);
+        setRpm(data.calculated_throttle);
+})
+}, []);
 
   const throttleBoundaries = [0, 100];
   const throttleSegments: Segment[] = [
