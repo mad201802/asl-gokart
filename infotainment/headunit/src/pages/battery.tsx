@@ -8,7 +8,7 @@ import React from "react";
 const BatteryPage = () => {
 
     const { batteryTemps, avgBatteryTemp, minTemp, maxTemp, voltage } = useStore();
-    const { setBatteryTemps, setThrottle } = useStore();
+    const { setBatteryTemps } = useStore();
 
     // Generate 6 random battery temperatures from 10 to 40
     const randomBatteryTemps = () => {
@@ -19,12 +19,6 @@ const BatteryPage = () => {
         return temps;
     }
 
-    // useEffect(() => {
-    //     window.websocket.onMessage((message) => {
-    //         const data = JSON.parse(message);
-    //         console.log(`Received websocket data from backend: ${data}`);
-    // })
-    // }, []);
 
     return (
         <div>
