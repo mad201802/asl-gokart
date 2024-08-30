@@ -10,6 +10,7 @@ import "react-circular-progressbar/dist/styles.css";
 import { HeaderBar } from "@/components/shared/header-bar";
 import ResetDailyDistanceDialog from "@/components/shared/reset-daily-distance-dialog";
 import React, { useEffect } from "react";
+import { IncomingZoneControllerMessage } from "@/data/models";
 
 interface Segment {
   value: number;
@@ -27,7 +28,6 @@ function interpolateColor(
 
   // Sort segments by value in ascending order
   segments.sort((a, b) => a.value - b.value);
-  console.log(segments);
 
   // Find the segment that contains the given value
   for (let i = 0; i < segments.length - 1; i++) {
@@ -92,11 +92,16 @@ const DriveNormalPage = () => {
 
 
   useEffect(() => {
-    window.websocket.onMessage((message) => {
-        const data = JSON.parse(message);
+    window.websocket.onMessage((message: IncomingZoneControllerMessage) => {
+        const data = JSON.parse(message.toString());
         console.log(`Received websocket data from backend: ${JSON.stringify(data)}`);
         setRpm(data.calculated_throttle);
-})
+    })
+
+    // Cleanup listener on component unmount
+    return () => {
+      window.websocket.onMessage(() => {});
+    };
 }, []);
 
   const throttleBoundaries = [0, 100];
