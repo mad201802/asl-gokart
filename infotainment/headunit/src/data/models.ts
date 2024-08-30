@@ -1,5 +1,5 @@
 import { LucideIcon } from "lucide-react";
-import { Zones } from "./controlling_models/main";
+import { Zones } from "./controlling_models/zc";
 
 export interface NavBarItemData {
   Icon: LucideIcon;
@@ -22,7 +22,6 @@ export interface IncomingZoneControllerMessage {
 }
 
 export interface OutgoingZoneControllerMessage {
-  zone: Zones;
   command: string;
   value: number;
 }
