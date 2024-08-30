@@ -1,8 +1,9 @@
 import BatteryHeatmap from "@/components/shared/battery-temp-map/battery-heatmap";
 import { HeaderBar } from "@/components/shared/header-bar";
 import { Button } from "@/components/ui/button";
+import { Zones } from "@/data/controlling_models/zc";
+import { OutgoingZoneControllerMessage } from "@/data/models";
 import { useStore } from "@/stores/useStore";
-import { useEffect } from "react";
 import React from "react";
 
 const BatteryPage = () => {
@@ -34,20 +35,41 @@ const BatteryPage = () => {
                 />
                 <div className="flex flex-col mt-2 w-72">
                     <div className="flex flex-row justify-between">
-                        <div className="text-black text-sm">Avg. Temperature</div>
-                        <div className="text-black text-sm">{avgBatteryTemp.toFixed(1)} °C</div>
+                        <div className="text-sm">Avg. Temperature</div>
+                        <div className="text-sm">{avgBatteryTemp.toFixed(1)} °C</div>
                     </div>
                     <div className="flex flex-row justify-between">
-                        <div className="text-black text-sm">Min/Max Temperature</div>
-                        <div className="text-black text-sm">{minTemp.toFixed(1)} / {maxTemp.toFixed(1)} °C</div>
+                        <div className="text-sm">Min/Max Temperature</div>
+                        <div className="text-sm">{minTemp.toFixed(1)} / {maxTemp.toFixed(1)} °C</div>
                     </div>
                     <div className="flex flex-row justify-between">
-                        <div className="text-black text-sm">Voltage</div>
-                        <div className="text-black text-sm">{voltage.toFixed(1)} V</div>
+                        <div className="text-sm">Voltage</div>
+                        <div className="text-sm">{voltage.toFixed(1)} V</div>
                     </div>
                 </div>
 
                 <Button onClick={() => setBatteryTemps(randomBatteryTemps())}>Randomize Temps</Button>
+                <Button 
+                    onClick={function() {
+                        const msgToSend: OutgoingZoneControllerMessage = {
+                            command: "it's me, the headunit :)",
+                            value: 0.5,
+                        };
+                        window.websocket.send(msgToSend, Zones.THROTTLE);
+                        }
+                    } 
+                >Send msg to [throttle] ZC</Button>
+                <Button 
+                    onClick={function() {
+                        const msgToSend: OutgoingZoneControllerMessage = {
+                            command: "it's me, the headunit :)",
+                            value: 0.5,
+                        };
+                        window.websocket.send(msgToSend, Zones.BATTERY);
+                        }
+                    } 
+                >Send msg to [battery] ZC</Button>
+
             </div>
 
         </div>
