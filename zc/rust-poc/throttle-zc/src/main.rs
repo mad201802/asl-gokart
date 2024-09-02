@@ -25,6 +25,7 @@ use std::sync::atomic::{AtomicU16, Ordering};
 use std::sync::{mpsc, Arc};
 
 use std::net::UdpSocket;
+use std::time::Duration;
 
 mod kelly_decoder;
 use kelly_decoder::read_controller;
@@ -44,8 +45,8 @@ use log::info;
 
 #[cfg(esp32)]
 use std::time::Instant;
-use std::env;
-use std::cmp::min;
+use std::{env, thread};
+use std::cmp::{max, min};
 
 #[cfg(esp32)]
 #[cfg(not(any(feature = "adc-oneshot-legacy", esp_idf_version_major = "4")))]
@@ -55,6 +56,7 @@ fn main() -> anyhow::Result<()> {
     use std::thread;
     use std::time::Duration;
 
+    use communication::protocoll::ZoneControllerFactory;
     use esp_idf_svc::hal::cpu::Core;
     use esp_idf_svc::hal::task::thread::ThreadSpawnConfiguration;
     use esp_idf_svc::hal::{i2c::I2cDriver, units::Hertz};
@@ -121,10 +123,10 @@ fn main() -> anyhow::Result<()> {
     //in rpm &AdcDriver<'_, ADC1>
     let rpm_limit = 3000;
 
-    const ECHO_SERVER_URI: &str = "ws://192.168.1.100:6969";
+    // const ECHO_SERVER_URI: &str = "ws://192.168.1.100:6969";
 
     //let mut client = ws_client::create(ECHO_SERVER_URI);
-    
+
     // assert_eq!(rx.recv(), Ok(ExampleEvent::Connected));
     // assert!(client.is_connected());
 
@@ -147,14 +149,14 @@ fn main() -> anyhow::Result<()> {
     // Clone the Arc to share with the UART reading thread
     let rpm_left_writer = Arc::clone(&rpm_left);
 
-    let esc_left_thread = thread::spawn(move || kelly_decoder::read_and_process(rpm_left_writer, uart_left));
+    //let esc_left_thread = thread::spawn(move || kelly_decoder::read_and_process(rpm_left_writer, uart_left));
 
     let rpm_right = Arc::new(AtomicU16::new(0));
 
     // Clone the Arc to share with the UART reading thread
     let rpm_right_writer = Arc::clone(&rpm_right);
 
-    let esc_right_thread = thread::spawn(move || kelly_decoder::read_and_process(rpm_right_writer, uart_right));
+    //let esc_right_thread = thread::spawn(move || kelly_decoder::read_and_process(rpm_right_writer, uart_right));
 
     ThreadSpawnConfiguration {
         name: Some(b"gas_pedal\0"),
@@ -166,6 +168,7 @@ fn main() -> anyhow::Result<()> {
 
     let gas_thread = thread::spawn(move || gas_pedal_chain(rpm_left, p.adc1, pins.gpio35, dac));
 
+    let controller = ZoneControllerFactory::create_motor_and_throttle_controller();
     loop {
         //info!("AH AH AH AH STAYIN ALIVE");
 
@@ -228,21 +231,33 @@ fn gas_pedal_chain(shared_rpm: Arc<AtomicU16>, adc: ADC1, pin: Gpio35, mut dac: 
     let mut throttle_pin = AdcChannelDriver::new(&throttle, pin, &config).unwrap();
     let rpm_limit = 100;
 
+    const GAS_LOW: u32 = 900;
+    const GAS_HIGH: u32 = 3155;
+    const STRETCH_FACTOR: u32 = 4095 / (GAS_HIGH-GAS_LOW);
     loop {
         let start = Instant::now();
         let rpm_left = shared_rpm.load(Ordering::SeqCst);
         let rpm_right = rpm_left;
-        println!("rpm_left {}", rpm_left);
+        //println!("rpm_left {}", rpm_left);
         let current_throttle :u32 = throttle.read(&mut throttle_pin).unwrap().into();
-        // info!("dalc throttle");
-        let mut calculated_throttle :u32 = current_throttle;//(throttle * throttle_limiter) / 100;
+        info!("dalc throttle {}", current_throttle);
+        let mut to_substract = GAS_LOW;
+        if current_throttle < GAS_LOW {
+            to_substract = current_throttle;
+        } 
+        let mut calculated_throttle :u32 = current_throttle - to_substract;//(throttle * throttle_limiter) / 100;
+        info!("After subtract {}", calculated_throttle);
+        calculated_throttle = (calculated_throttle * 4095) / (GAS_HIGH - GAS_LOW);
+        info!("After stretch {}", calculated_throttle);
         //set throttle to 0 if current rpm is over the limit
-        calculated_throttle *= (rpm_limit >= rpm_left || rpm_limit >= rpm_right) as u32;
+        //calculated_throttle *= (rpm_limit >= rpm_left || rpm_limit >= rpm_right) as u32;
         //maximum allowed value of throttle is 4095, because it's 12 bit
         let calculated_throttle :u16 = min(4095, calculated_throttle) as u16;
-        let duration = start.elapsed();  
         let _ = dac.fast_write(calculated_throttle, calculated_throttle, calculated_throttle, calculated_throttle);
         let message = format!(r#"{{"calculated_throttle": {}}}"#, calculated_throttle);
+        info!("{}", message);
+        let duration = start.elapsed();  
+        //thread::sleep(Duration::from_millis(500));
         println!("Time taken for execution in throttle thread: {:?}", duration);
         //client.send(FrameType::Text(false), message.as_bytes())?;
     }
