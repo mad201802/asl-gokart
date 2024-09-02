@@ -163,7 +163,6 @@ fn gas_pedal_chain(rpm_left: Arc<AtomicU16>, rpm_right: Arc<AtomicU16>, rpm_limi
 
     const GAS_LOW: u32 = 900;
     const GAS_HIGH: u32 = 3155;
-    const STRETCH_FACTOR: u32 = 4095 / (GAS_HIGH-GAS_LOW);
     loop {
         let start = Instant::now();
         let rpm_left = rpm_left.load(Ordering::SeqCst);
@@ -182,7 +181,7 @@ fn gas_pedal_chain(rpm_left: Arc<AtomicU16>, rpm_right: Arc<AtomicU16>, rpm_limi
         calculated_throttle = (calculated_throttle * 4095) / (GAS_HIGH - GAS_LOW);
         info!("After stretch {}", calculated_throttle);
         //set throttle to 0 if current rpm is over the limit
-        calculated_throttle *= (rpm_limit >= rpm_left.into() || rpm_limit >= rpm_right.into()) as u32;
+        calculated_throttle *= (rpm_limit >= rpm_left.into() && rpm_limit >= rpm_right.into()) as u32;
         //maximum allowed value of throttle is 4095, because it's 12 bit
         let calculated_throttle :u16 = min(4095, calculated_throttle) as u16;
         let _ = dac.fast_write(calculated_throttle, calculated_throttle, calculated_throttle, calculated_throttle);
