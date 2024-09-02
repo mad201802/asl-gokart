@@ -1,17 +1,16 @@
 use std::{sync::mpsc::{self}, time::Duration};
 
 use crossbeam_channel::{unbounded, Sender, Receiver};
-use log::info;
+use log::{error, info};
 
 use esp_idf_svc::{io::EspIOError, ws::client::{
     EspWebSocketClient, EspWebSocketClientConfig, WebSocketEvent, WebSocketEventType,
 }};
 
-pub enum ExampleEvent {
-    Connected,
-    MessageReceived,
-    Closed,
-}
+use crate::communication::protocoll::{Packet, SocketEvent};
+
+use super::protocoll::ReceivedPacket;
+
 
 // pub fn create(server_uri: &str) -> (EspWebSocketClient<'_>, crossbeam_channel::Receiver<ExampleEvent>) {
 //     let timeout = Duration::from_secs(10);
@@ -26,7 +25,7 @@ pub enum ExampleEvent {
 //     return (client, rx);
 // }
 
-pub fn create(server_uri: &str, tx: Sender<ExampleEvent>) -> EspWebSocketClient<'_> {
+pub fn create(server_uri: &str, tx: Sender<ReceivedPacket>) -> EspWebSocketClient<'_> {
     let timeout = Duration::from_secs(10);
     let wsconfig = EspWebSocketClientConfig {
         ..Default::default()
@@ -38,7 +37,8 @@ pub fn create(server_uri: &str, tx: Sender<ExampleEvent>) -> EspWebSocketClient<
     return client;
 }
 
-fn handle_event(tx: crossbeam_channel::Sender<ExampleEvent>, event: &Result<WebSocketEvent, EspIOError>) {
+
+fn handle_event(tx: Sender<ReceivedPacket>, event: &Result<WebSocketEvent, EspIOError>) {
     
     if let Ok(event) = event {
         match event.event_type {
@@ -47,7 +47,12 @@ fn handle_event(tx: crossbeam_channel::Sender<ExampleEvent>, event: &Result<WebS
             }
             WebSocketEventType::Connected => {
                 info!("Websocket connected");
-                tx.send(ExampleEvent::Connected).ok();
+                let packet = ReceivedPacket {
+                    event: SocketEvent::Connected,
+                    payload: None
+                };
+
+                tx.send(packet).ok();
             }
             WebSocketEventType::Disconnected => {
                 info!("Websocket disconnected");
@@ -57,13 +62,28 @@ fn handle_event(tx: crossbeam_channel::Sender<ExampleEvent>, event: &Result<WebS
             }
             WebSocketEventType::Closed => {
                 info!("Websocket closed");
-                tx.send(ExampleEvent::Closed).ok();
-            }
+                let packet = ReceivedPacket {
+                    event: SocketEvent::Closed,
+                    payload: None
+                };
+
+                tx.send(packet).ok(); 
+           }
             WebSocketEventType::Text(text) => {
                 info!("Websocket recv, text: {text}");
-                if text == "Hello, World!" {
-                    tx.send(ExampleEvent::MessageReceived).ok();
-                }
+                match serde_json::from_str::<Packet>(text) {
+                    Ok(p)  =>  {               
+                        let packet = ReceivedPacket {
+                            event: SocketEvent::MessageReceived,
+                            payload: Some(p)
+                        };
+                        tx.send(packet).ok();
+                    },
+                    Err(e) => {
+                        error!("Error deserializing {}", text);
+                        error!("{}", e);
+                    },
+                };
             }
             WebSocketEventType::Binary(binary) => {
                 info!("Websocket recv, binary: {binary:?}");
