@@ -1,31 +1,44 @@
-use std::{sync::mpsc, time::Duration};
+use std::{sync::mpsc::{self}, time::Duration};
 
+use crossbeam_channel::{unbounded, Sender, Receiver};
 use log::info;
 
 use esp_idf_svc::{io::EspIOError, ws::client::{
-    EspWebSocketClient, EspWebSocketClientConfig, FrameType, WebSocketEvent, WebSocketEventType,
+    EspWebSocketClient, EspWebSocketClientConfig, WebSocketEvent, WebSocketEventType,
 }};
 
-enum ExampleEvent {
+pub enum ExampleEvent {
     Connected,
     MessageReceived,
     Closed,
 }
 
-pub fn create(server_uri: &str) -> EspWebSocketClient<'_>{
+// pub fn create(server_uri: &str) -> (EspWebSocketClient<'_>, crossbeam_channel::Receiver<ExampleEvent>) {
+//     let timeout = Duration::from_secs(10);
+//     let (tx, rx) = unbounded();
+//     let wsconfig = EspWebSocketClientConfig {
+//         ..Default::default()
+//     };
+//     let client =
+//     EspWebSocketClient::new(server_uri, &wsconfig, timeout, move |event| {
+//         handle_event(tx.clone(), event)
+//     }).unwrap();
+//     return (client, rx);
+// }
+
+pub fn create(server_uri: &str, tx: Sender<ExampleEvent>) -> EspWebSocketClient<'_> {
     let timeout = Duration::from_secs(10);
-    let (tx, rx) = mpsc::channel::<ExampleEvent>();
     let wsconfig = EspWebSocketClientConfig {
         ..Default::default()
     };
-    let mut client =
+    let client =
     EspWebSocketClient::new(server_uri, &wsconfig, timeout, move |event| {
-        handle_event(&tx, event)
+        handle_event(tx.clone(), event)
     }).unwrap();
     return client;
 }
 
-fn handle_event(tx: &mpsc::Sender<ExampleEvent>, event: &Result<WebSocketEvent, EspIOError>) {
+fn handle_event(tx: crossbeam_channel::Sender<ExampleEvent>, event: &Result<WebSocketEvent, EspIOError>) {
     
     if let Ok(event) = event {
         match event.event_type {

@@ -187,10 +187,10 @@ pub fn read_controller(packet_a: bool, packet_b: bool, uart_driver: &esp_idf_svc
 pub fn read_and_process(shared_data_writer: Arc<AtomicU16>, uart_driver: esp_idf_svc::hal::uart::UartDriver) {
     loop{
         println!("UART thread: reading data");
-        //let data = read_controller(true, true, &uart_driver).unwrap();
-        let mut data = PacketsStruct::default();
+        let data = read_controller(true, true, &uart_driver).unwrap();
+        //let mut data = PacketsStruct::default();
 
-        data.b.rpm = 1000;
+        //data.b.rpm = 1000;
         // Update the shared atomic variable
         shared_data_writer.store(data.b.rpm, Ordering::SeqCst);
         thread::sleep(Duration::from_millis(300));
