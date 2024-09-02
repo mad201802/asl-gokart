@@ -55,3 +55,12 @@ export class ThrottleController extends ZoneController {
         this.webSocket.send(JSON.stringify(msg))
     }
 }
+
+export class BatteryContoller extends ZoneController {
+    public getVoltage() {
+        const msg: OutgoingPacket = {
+            command: BatteryCommands.GET_VOLTAGE
+        }
+        this.webSocket.send(JSON.stringify(msg));
+    }
+}
