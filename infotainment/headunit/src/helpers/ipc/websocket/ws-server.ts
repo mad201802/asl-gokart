@@ -1,10 +1,11 @@
 import { WebSocket, WebSocketServer } from 'ws';
 import { BrowserWindow } from 'electron';
-import { Zones } from 'src/data/controlling_models/zc';
+import { BatteryContoller, ThrottleController, ZoneController, Zones } from '@/data/zonecontrollers/zonecontrollers';
+import { WEBSOCKET_BATTERY_MESSAGE_CHANNEL, WEBSOCKET_THROTTLE_MESSAGE_CHANNEL } from './ws-channels';
 
 const WSS_PORT = 6969;
 export let wss: WebSocketServer;
-export let connected_zonecontrollers = new Map<string, WebSocket>();
+export let connected_zonecontrollers = new Map<Zones, ZoneController>();
 
 export function startWebSocketServer(mainWindow: BrowserWindow) {
   wss = new WebSocketServer({ port: WSS_PORT, host: '0.0.0.0' });
@@ -12,37 +13,60 @@ export function startWebSocketServer(mainWindow: BrowserWindow) {
     console.log('WebSocket client connected');
 
     ws.on('message', (message) => {
-      console.log(`Received message: ${message}`);
-      const zone = JSON.parse(message.toString()).zone;
-
-      // Check if the zone controller is already connected
-      if(!connected_zonecontrollers.has(zone)) {
-        
-        /* ######### THIS DOES NOT WORK ######### */
-        // Check if the zone controller is a valid zone
-//        if(Object.values(Zones).includes(zone)) {
-
-          // Add it to the map of connected zone controllers
-          connected_zonecontrollers.set(zone, ws);
-          console.log(`New zone controller connected: ${zone}`);
-          console.log(`Total zone controllers connected: ${connected_zonecontrollers.size}`);
-          console.log(Array.from(connected_zonecontrollers.keys()));
+      const receivedMsg = JSON.parse(message.toString());
+      if(Object.keys(receivedMsg).includes("zone")) {
+        console.log(`Received register packet for zone [${receivedMsg.zone}]`);
+        if(Object.values(Zones).includes(receivedMsg.zone)) {
+          if(!connected_zonecontrollers.has(receivedMsg.zone)) {
+            // Add it to the map of connected zone controllers
+            switch(receivedMsg.zone) {
+              case Zones.THROTTLE:
+                connected_zonecontrollers.set(receivedMsg.zone, new ThrottleController(ws));
+                break;
+              case Zones.BATTERY:
+                connected_zonecontrollers.set(receivedMsg.zone, new BatteryContoller(ws));
+                break;
+              default:
+                console.error("Couldn't register new zone controller: Invalid zone!");
+            }
+            console.log(`New zone controller connected: ${receivedMsg.zone}`);
+            console.log(`Total zone controllers connected: ${connected_zonecontrollers.size}`);
+            console.log(Array.from(connected_zonecontrollers.keys()));
+          } else {
+            console.error(`This zone has already been registered!`)
+          }
         } else {
-          console.log(`Invalid zone controller [${zone}].`);
-          console.log('Closing connection...');
-          ws.close();
+          console.error(`This zone does not exist!`);
         }
-//      } else {
-        // Send the message to the renderer process
-        mainWindow.webContents.send('websocket-message', message.toString());
-//      }
+      } else {
+        console.log("Received data message from zone controller");
+        // Find the zone controller that received the message
+        connected_zonecontrollers.forEach((zc: ZoneController, zone: Zones) => {
+          console.log(`Checking zone controller ${zone}`);
+          if(zc.webSocket === ws) {
+            console.log(`Found zone controller ${zone}`);
+            switch(zone) {
+              case Zones.THROTTLE:
+                console.log("Forwarding message to ipcRenderer's ThrottleListener");
+                mainWindow.webContents.send(WEBSOCKET_THROTTLE_MESSAGE_CHANNEL, message.toString());
+                break;
+              case Zones.BATTERY:
+                console.log("Forwarding message to ipcRenderer's BatteryListener");
+                mainWindow.webContents.send(WEBSOCKET_BATTERY_MESSAGE_CHANNEL, message.toString());
+                break;
+              default:
+                console.error("Couldn't send message to ipcRenderer: No zc registered for this message yet!");
+            }
+          }
+        });
+      }
     });
 
     ws.on('close', () => {
       console.log('WebSocket client disconnected');
       // Remove the zone controller from the map of connected zone controllers
-      connected_zonecontrollers.forEach((value, key) => {
-        if(value === ws) {
+      connected_zonecontrollers.forEach((zc, key) => {
+        if(zc.webSocket === ws) {
           connected_zonecontrollers.delete(key);
           console.log(`Zone controller ${key} disconnected`);
           console.log(`Total zone controllers connected: ${connected_zonecontrollers.size}`);

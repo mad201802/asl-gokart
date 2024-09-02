@@ -2,8 +2,7 @@
 // plugin that tells the Electron app where to look for the Vite-bundled app code (depending on
 
 import { WebSocket } from "ws";
-import { IncomingZoneControllerMessage, OutgoingZoneControllerMessage } from "./data/models";
-import { Zones } from "./data/controlling_models/zc";
+import { IncomingPacket, OutgoingPacket, Zones } from "./data/zonecontrollers/packets";
 
 // whether you're running in development or production).
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
@@ -24,8 +23,9 @@ interface ElectronWindow {
 }
 
 interface WebSocketContext {
-    send: (message: OutgoingZoneControllerMessage, zone: Zones) => void;
-    onMessage: (callback: (message: IncomingZoneControllerMessage, ws: WebSocket) => void) => void;
+    send: (message: OutgoingPacket, zone: Zones) => void;
+    onThrottleMessage: (callback: (throttleMessage: string) => void) => void;
+    onBatteryMessage: (callback: (batteryMessage: string) => void) => void;
 }
 
 
