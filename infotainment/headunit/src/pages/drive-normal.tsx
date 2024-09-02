@@ -10,7 +10,7 @@ import "react-circular-progressbar/dist/styles.css";
 import { HeaderBar } from "@/components/shared/header-bar";
 import ResetDailyDistanceDialog from "@/components/shared/reset-daily-distance-dialog";
 import React, { useEffect } from "react";
-import { IncomingZoneControllerMessage } from "@/data/models";
+import { IncomingPacket } from "@/data/zonecontrollers/packets";
 
 interface Segment {
   value: number;
@@ -92,7 +92,7 @@ const DriveNormalPage = () => {
 
 
   useEffect(() => {
-    window.websocket.onMessage((message: IncomingZoneControllerMessage) => {
+    window.websocket.onMessage((message: IncomingPacket) => {
         const data = JSON.parse(message.toString());
         console.log(`Received websocket data from backend: ${JSON.stringify(data)}`);
         setRpm(data.calculated_throttle);
