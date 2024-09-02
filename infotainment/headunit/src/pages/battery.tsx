@@ -1,15 +1,27 @@
 import BatteryHeatmap from "@/components/shared/battery-temp-map/battery-heatmap";
 import { HeaderBar } from "@/components/shared/header-bar";
 import { Button } from "@/components/ui/button";
-import { Zones } from "@/data/controlling_models/zc";
-import { OutgoingZoneControllerMessage } from "@/data/models";
+import { BatteryCommands, ThrottleCommands, Zones } from "@/data/zonecontrollers/zonecontrollers";
+import { IncomingPacket, OutgoingPacket } from "@/data/zonecontrollers/packets";
 import { useStore } from "@/stores/useStore";
-import React from "react";
+import React, { useEffect } from "react";
 
 const BatteryPage = () => {
 
     const { batteryTemps, avgBatteryTemp, minTemp, maxTemp, voltage } = useStore();
-    const { setBatteryTemps } = useStore();
+    const { setBatteryTemps, setBatteryVoltage } = useStore();
+
+    useEffect(() => {
+        window.websocket.onBatteryMessage((incomingPacket: string) => {
+          console.log("Received incoming battery message in battery.tsx");
+          const parsed: IncomingPacket = JSON.parse(incomingPacket);
+          setBatteryVoltage(parsed.value);
+        });
+    // Cleanup listener on component unmount
+    return () => {
+        window.websocket.onBatteryMessage(() => {});
+      };
+  }, []);
 
     // Generate 6 random battery temperatures from 10 to 40
     const randomBatteryTemps = () => {
@@ -51,21 +63,18 @@ const BatteryPage = () => {
                 <Button onClick={() => setBatteryTemps(randomBatteryTemps())}>Randomize Temps</Button>
                 <Button 
                     onClick={function() {
-                        const msgToSend: OutgoingZoneControllerMessage = {
-                            command: "it's me, the headunit :)",
-                            value: 0.5,
+                        const newPacket: OutgoingPacket = {
+                            command: ThrottleCommands.GET_THROTTLE,
                         };
-                        window.websocket.send(msgToSend, Zones.THROTTLE);
+                        window.websocket.send(newPacket, Zones.THROTTLE);
                         }
                     } 
                 >Send msg to [throttle] ZC</Button>
                 <Button 
                     onClick={function() {
-                        const msgToSend: OutgoingZoneControllerMessage = {
-                            command: "it's me, the headunit :)",
-                            value: 0.5,
-                        };
-                        window.websocket.send(msgToSend, Zones.BATTERY);
+                        const newPacket: OutgoingPacket = {
+                            command: BatteryCommands.GET_HEALTH,                        };
+                        window.websocket.send(newPacket, Zones.BATTERY);
                         }
                     } 
                 >Send msg to [battery] ZC</Button>

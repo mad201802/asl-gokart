@@ -10,7 +10,7 @@ import "react-circular-progressbar/dist/styles.css";
 import { HeaderBar } from "@/components/shared/header-bar";
 import ResetDailyDistanceDialog from "@/components/shared/reset-daily-distance-dialog";
 import React, { useEffect } from "react";
-import { IncomingPacket } from "@/data/zonecontrollers/packets";
+import { IncomingPacket, RegisterPacket } from "@/data/zonecontrollers/packets";
 
 interface Segment {
   value: number;
@@ -88,19 +88,19 @@ function interpolateColorBetween(
 const DriveNormalPage = () => {
 
   const { gear, throttle, rpm, speed, rpmBoundaries, batteryPercentage } = useStore()
-  const { setRpm } = useStore();
+  const { setRpm, setThrottle } = useStore();
 
 
   useEffect(() => {
-    window.websocket.onMessage((message: IncomingPacket) => {
-        const data = JSON.parse(message.toString());
-        console.log(`Received websocket data from backend: ${JSON.stringify(data)}`);
-        setRpm(data.calculated_throttle);
-    })
+    window.websocket.onThrottleMessage((incomingPacket: string) => {
+      console.log("Received incoming throttle message in drive-normal.tsx");
+      const parsed: IncomingPacket = JSON.parse(incomingPacket);
+      setThrottle(parsed.value);
+    });
 
     // Cleanup listener on component unmount
     return () => {
-      window.websocket.onMessage(() => {});
+      window.websocket.onThrottleMessage(() => {});
     };
 }, []);
 
@@ -194,7 +194,7 @@ const DriveNormalPage = () => {
         <div className="w-full flex flex-col items-center justify-center pt-4">
           <p>Battery</p>
           <Progress className="w-[30%] h-[10px]" value={batteryPercentage*100} />
-          <p>{batteryPercentage*100}%</p>
+            <p>{(batteryPercentage*100).toFixed(1)}%</p>
         </div>
       </div>
     </div>
