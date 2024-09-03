@@ -22,8 +22,10 @@ export enum BatteryCommands {
 
 export enum ThrottleCommands {
     GET_THROTTLE = "getThrottle",
+    GET_RPM = "getRpm",
     GET_DRIVEMODE = "getDriveMode",
-    SET_DRIVEMODE = "setDriveMode"
+    SET_DRIVEMODE = "setDriveMode",
+    SET_LIMIT = "setLimit"
 }
 
 export class ZoneController{
@@ -42,6 +44,7 @@ export class ThrottleController extends ZoneController {
 
     public getDriveMode() {
         const msg: OutgoingPacket = {
+            zone: Zones.THROTTLE,
             command: ThrottleCommands.GET_DRIVEMODE
         }  
         this.webSocket.send(JSON.stringify(msg));
@@ -49,6 +52,7 @@ export class ThrottleController extends ZoneController {
 
     public setDriveMode(driveMode: DriveModes) {
         const msg: OutgoingPacket = {
+            zone: Zones.THROTTLE,
             command: ThrottleCommands.SET_DRIVEMODE,
             value: driveMode
         }
@@ -59,6 +63,7 @@ export class ThrottleController extends ZoneController {
 export class BatteryContoller extends ZoneController {
     public getVoltage() {
         const msg: OutgoingPacket = {
+            zone: Zones.BATTERY,
             command: BatteryCommands.GET_VOLTAGE
         }
         this.webSocket.send(JSON.stringify(msg));
