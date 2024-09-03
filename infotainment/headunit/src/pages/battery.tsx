@@ -73,20 +73,25 @@ const BatteryPage = () => {
                 <Button 
                     onClick={function() {
                         const newPacket: OutgoingPacket = {
-                            command: ThrottleCommands.GET_THROTTLE,
+                            zone: Zones.THROTTLE,
+                            command: ThrottleCommands.SET_LIMIT,
+                            value: 1000
                         };
                         window.websocket.send(newPacket, Zones.THROTTLE);
                         }
                     } 
-                >Send msg to [throttle] ZC</Button>
-                <Button 
+                >[throttle ZC] set limit 1000</Button>
+            <Button 
                     onClick={function() {
                         const newPacket: OutgoingPacket = {
-                            command: BatteryCommands.GET_HEALTH,                        };
-                        window.websocket.send(newPacket, Zones.BATTERY);
+                            zone: Zones.THROTTLE,
+                            command: ThrottleCommands.SET_LIMIT,
+                            value: 20000
+                        };
+                        window.websocket.send(newPacket, Zones.THROTTLE);
                         }
                     } 
-                >Send msg to [battery] ZC</Button>
+                >[throttle ZC] set limit 20000</Button>
 
             </div>
 
