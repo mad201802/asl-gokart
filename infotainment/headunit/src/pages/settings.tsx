@@ -95,7 +95,8 @@ const SettingsPage = () => {
             <Label htmlFor="max-speed" className="text-base mr-5">Max. Speed</Label>
             <Label htmlFor="max-speed-value" className="text-base text-center font-light mr-5 w-36">{speedLimit} km/h</Label>
             <Slider 
-              onValueChange={(v) => setSpeedLimit(Number(v))}  
+              // onValueChange={(v) => setSpeedLimit(Number(v))}  
+              onValueCommit={(v) => setSpeedLimit(Number(v))}
               defaultValue={[speedLimit]} 
               min={minSettableSpeed} 
               max={maxSettableSpeed} 
