@@ -118,6 +118,6 @@ void sendRegisterPacket() {
 
     serializeJson(doc, output, 256);
     webSocket.sendTXT(output);
-    delay(250);
+    delay(1000);
     Serial.println("Register packet sent");
 }
