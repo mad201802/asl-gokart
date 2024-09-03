@@ -13,6 +13,9 @@ float EXAMPLE_TEMP_ARRAY[] = { 20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0, 55.0};
 
 WebSocketsClient webSocket;
 
+void sendRegisterPacket();
+void onWebSocketEvent(WStype_t type, uint8_t *payload, size_t length);
+
 void onWebSocketEvent(WStype_t type, uint8_t *payload, size_t length) {
     switch (type) {
         case WStype_DISCONNECTED:
@@ -60,6 +63,7 @@ void setup() {
     // Initialize WebSocket client
     webSocket.begin(WEB_SOCKET_SERVER_IP, WEB_SOCKET_SERVER_PORT);
     webSocket.onEvent(onWebSocketEvent);
+    sendRegisterPacket();
     Serial.println("WebSocket client initialized");
 
     // Initialize sensors
@@ -94,4 +98,26 @@ void loop() {
     webSocket.sendTXT(output);
     delay(500);
 
+}
+
+
+void sendRegisterPacket() {
+    // Send register packet to WebSocket server
+    /*
+    Format of the JSON message:
+    {
+        "zone": "battery"
+    }
+    */
+    char* output;
+    JsonDocument doc;
+
+    doc["zone"] = "battery";
+
+    doc.shrinkToFit();  // optional
+
+    serializeJson(doc, output, 256);
+    webSocket.sendTXT(output);
+    delay(250);
+    Serial.println("Register packet sent");
 }
