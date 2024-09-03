@@ -11,6 +11,7 @@ import { HeaderBar } from "@/components/shared/header-bar";
 import ResetDailyDistanceDialog from "@/components/shared/reset-daily-distance-dialog";
 import React, { useEffect } from "react";
 import { IncomingPacket, RegisterPacket } from "@/data/zonecontrollers/packets";
+import { ThrottleCommands } from "@/data/zonecontrollers/zonecontrollers";
 
 interface Segment {
   value: number;
@@ -95,7 +96,16 @@ const DriveNormalPage = () => {
     window.websocket.onThrottleMessage((incomingPacket: string) => {
       console.log("Received incoming throttle message in drive-normal.tsx");
       const parsed: IncomingPacket = JSON.parse(incomingPacket);
-      setThrottle(parsed.value);
+      switch(parsed.valueType) {
+        case ThrottleCommands.GET_THROTTLE:
+            setThrottle(parsed.value);
+            break;
+        case ThrottleCommands.GET_RPM:
+            setRpm(parsed.value);
+            break;
+        default:
+            console.error("Invalid valueType received in throttle message!");
+      }
     });
 
     // Cleanup listener on component unmount
