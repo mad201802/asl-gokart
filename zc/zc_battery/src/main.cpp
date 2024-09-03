@@ -83,6 +83,7 @@ void loop() {
         "value": [20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0, 55.0]
     }
     */
+   
     char* output;
     JsonDocument doc;
 
@@ -94,7 +95,7 @@ void loop() {
 
     doc.shrinkToFit();  // optional
 
-    serializeJson(doc, output, 256);
+    serializeJson(doc, output, sizeof(output));
     webSocket.sendTXT(output);
     delay(500);
 
@@ -109,14 +110,15 @@ void sendRegisterPacket() {
         "zone": "battery"
     }
     */
-    char* output;
+
+    char output[256];
     JsonDocument doc;
 
     doc["zone"] = "battery";
 
     doc.shrinkToFit();  // optional
 
-    serializeJson(doc, output, 256);
+    serializeJson(doc, output, sizeof(output));
     webSocket.sendTXT(output);
     delay(1000);
     Serial.println("Register packet sent");
