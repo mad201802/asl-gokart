@@ -84,8 +84,8 @@ void loop() {
     }
     */
    
-    char* output;
-    JsonDocument doc;
+    char output[256];
+    StaticJsonDocument<256> doc;
 
     doc["valueType"] = "getTemp";
     JsonArray value = doc["value"].to<JsonArray>();
@@ -112,7 +112,7 @@ void sendRegisterPacket() {
     */
 
     char output[256];
-    JsonDocument doc;
+    StaticJsonDocument<256> doc;
 
     doc["zone"] = "battery";
 
