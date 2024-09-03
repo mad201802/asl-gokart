@@ -97,6 +97,7 @@ void loop() {
 
     serializeJson(doc, output, sizeof(output));
     webSocket.sendTXT(output);
+    Serial.println("Temperature data sent");
     delay(500);
 
 }
