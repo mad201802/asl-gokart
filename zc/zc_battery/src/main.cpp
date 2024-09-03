@@ -93,11 +93,13 @@ void loop() {
         value.add(temp);
     }
 
-    doc.shrinkToFit();  // optional
+    // doc.shrinkToFit();  // optional
 
     serializeJson(doc, output, sizeof(output));
     webSocket.sendTXT(output);
     Serial.println("Temperature data sent");
+    // Print the JSON message
+    Serial.println(output);
     delay(500);
 
 }
@@ -117,10 +119,12 @@ void sendRegisterPacket() {
 
     doc["zone"] = "battery";
 
-    doc.shrinkToFit();  // optional
+    // doc.shrinkToFit();  // optional
 
     serializeJson(doc, output, sizeof(output));
     webSocket.sendTXT(output);
     delay(1000);
     Serial.println("Register packet sent");
+    // Print the JSON message
+    Serial.println(output);
 }
