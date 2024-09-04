@@ -87,7 +87,7 @@ impl ZoneControllerFactory {
         let tx2 = tx.clone();
         let rpm_limit = Arc::new(AtomicU32::new(0));
         let rpm_limit_writer = Arc::clone(&rpm_limit);
-        rpm_limit_writer.store(20000, Ordering::SeqCst);
+        rpm_limit_writer.store(500, Ordering::SeqCst);
 
         let join_handle = std::thread::spawn(move || {
             let concurrent = ZoneControllerConcurrency::Throttle { rpm_limit: (rpm_limit_writer) };
@@ -126,7 +126,7 @@ pub struct BatteryController;
 
 pub struct ThrottleController {
     zone: Zones,
-    tx: Sender<ReceivedPacket>,
+    pub tx: Sender<ReceivedPacket>,
     pub rpm_limit: Arc<AtomicU32>,
     join_handle: JoinHandle<()>,
 }

@@ -1,12 +1,6 @@
 // Espressif IDF Service layer imports
 use esp_idf_svc::hal::{
-    adc::{ADC1, attenuation::DB_11},
-    adc::oneshot::{config::AdcChannelConfig, AdcDriver, AdcChannelDriver},
-    gpio::Gpio35,
-    i2c::I2cDriver,
-    cpu::Core,
-    task::thread::ThreadSpawnConfiguration,
-    units::Hertz
+    adc::{attenuation::{DB_11, DB_6}, oneshot::{config::AdcChannelConfig, AdcChannelDriver, AdcDriver}, ADC1, ADC2}, cpu::Core, gpio::Gpio35, i2c::I2cDriver, task::thread::ThreadSpawnConfiguration, units::Hertz
 };
 #[cfg(esp32)]
 use esp_idf_svc::{
@@ -43,6 +37,8 @@ use std::time::Instant;
 #[cfg(esp32)]
 #[cfg(not(any(feature = "adc-oneshot-legacy", esp_idf_version_major = "4")))]
 fn main() -> anyhow::Result<()> {
+    use mcp4728::{Channel, ChannelState, OutputEnableMode};
+
 
     if env::var("RUST_LOG").is_err() {
         env::set_var("RUST_LOG", "debug");
@@ -95,7 +91,37 @@ fn main() -> anyhow::Result<()> {
     let _ = dac.write_gain_mode(gain, gain, gain, gain);
     let _ = dac.write_voltage_reference_mode(voltage_reference, voltage_reference, voltage_reference, voltage_reference);
 
-    //thread::sleep(Duration::from_secs(1000));
+    // Kanalstatus-Konfiguration
+    let channel_state = ChannelState {
+        voltage_reference_mode: VoltageReferenceMode::External,
+        power_down_mode: mcp4728::PowerDownMode::PowerDownFiveHundredK,
+        gain_mode: GainMode::TimesOne,
+        value: 4095, // Setze Standard-Ausgabewert auf 0
+    };
+
+    // Erstellen des Channel-Update-Arrays
+    let channel_updates: [(Channel, OutputEnableMode, ChannelState); 4] = [
+        (Channel::A, OutputEnableMode::Update, channel_state.clone()),
+        (Channel::B, OutputEnableMode::Update, channel_state.clone()),
+        (Channel::C, OutputEnableMode::Update, channel_state.clone()),
+        (Channel::D, OutputEnableMode::Update, channel_state.clone()),
+    ];
+
+    // Multi-Write Befehl senden
+    //dac.multi_write(&channel_updates).expect("Failed to set power-down mode");
+
+    dac.single_write(Channel::A, OutputEnableMode::Update, &channel_state).expect("failed to write");
+    thread::sleep(Duration::from_secs(1));
+    dac.single_write(Channel::B, OutputEnableMode::Update, &channel_state).expect("failed to write");
+    // info!("wakeup");
+    // dac.general_call_reset().expect("lele");
+    // thread::sleep(Duration::from_secs(2));
+    // info!("wakeup2");
+    // dac.general_call_wake_up().expect("lele");
+    let read = dac.read().expect("Cant read");
+    info!("read");
+    info!("value a {}", read.channel_a_eeprom.channel_state.value);
+    info!("value b {}", read.channel_b_eeprom.channel_state.value);
 
     //in %
     let throttle_limiter = 50;
@@ -105,6 +131,7 @@ fn main() -> anyhow::Result<()> {
     ThreadSpawnConfiguration {
         name: Some(b"esc_read\0"),
         pin_to_core: Some(Core::Core0),
+        stack_size: 20000,
         ..Default::default()
     }
     .set()
@@ -122,11 +149,12 @@ fn main() -> anyhow::Result<()> {
     // Clone the Arc to share with the UART reading thread
     let rpm_right_writer = Arc::clone(&rpm_right);
 
-    //let esc_right_thread = thread::spawn(move || kelly_decoder::read_and_process(rpm_right_writer, uart_right));
+    let esc_right_thread = thread::spawn(move || kelly_decoder::read_and_process(rpm_right_writer, uart_right));
 
     ThreadSpawnConfiguration {
         name: Some(b"gas_pedal\0"),
         pin_to_core: Some(Core::Core1),
+        stack_size: 20000,
         ..Default::default()
     }
     .set()
@@ -140,7 +168,7 @@ fn main() -> anyhow::Result<()> {
 
         let start = Instant::now();
         let duration = start.elapsed();
-info!("Time taken for execution: {:?}", duration);
+        //info!("Time taken for execution: {:?}", duration);
         thread::sleep(second);
     }
     
@@ -169,27 +197,28 @@ fn gas_pedal_chain(rpm_left: Arc<AtomicU16>, rpm_right: Arc<AtomicU16>, rpm_limi
         let rpm_right = rpm_right.load(Ordering::SeqCst);
         let rpm_limit = rpm_limit.load(Ordering::SeqCst);
         info!("rpm_limit {}", rpm_limit);
-        //println!("rpm_left {}", rpm_left);
+        info!("rpm_left {} rpm_right {}", rpm_left, rpm_right);
         let current_throttle :u32 = throttle.read(&mut throttle_pin).unwrap().into();
-        info!("dalc throttle {}", current_throttle);
+        //info!("dalc throttle {}", current_throttle);
         let mut to_substract = GAS_LOW;
         if current_throttle < GAS_LOW {
             to_substract = current_throttle;
         } 
         let mut calculated_throttle :u32 = current_throttle - to_substract;//(throttle * throttle_limiter) / 100;
-        info!("After subtract {}", calculated_throttle);
+        //info!("After subtract {}", calculated_throttle);
         calculated_throttle = (calculated_throttle * 4095) / (GAS_HIGH - GAS_LOW);
-        info!("After stretch {}", calculated_throttle);
+        //info!("After stretch {}", calculated_throttle);
         //set throttle to 0 if current rpm is over the limit
         calculated_throttle *= (rpm_limit >= rpm_left.into() && rpm_limit >= rpm_right.into()) as u32;
+        //calculated_throttle *= (rpm_limit >= rpm_right.into()) as u32;
         //maximum allowed value of throttle is 4095, because it's 12 bit
         let calculated_throttle :u16 = min(4095, calculated_throttle) as u16;
         let _ = dac.fast_write(calculated_throttle, calculated_throttle, calculated_throttle, calculated_throttle);
         let message = format!(r#"{{"calculated_throttle": {}}}"#, calculated_throttle);
-        info!("{}", message);
+        //info!("{}", message);
         let duration = start.elapsed();  
-        thread::sleep(Duration::from_millis(5000));
-        println!("Time taken for execution in throttle thread: {:?}", duration);
+        //thread::sleep(Duration::from_millis(50));
+        //println!("Time taken for execution in throttle thread: {:?}", duration);
         //client.send(FrameType::Text(false), message.as_bytes())?;
     }
 }
