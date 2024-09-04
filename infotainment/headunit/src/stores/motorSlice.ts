@@ -33,9 +33,9 @@ const sendThrottleLimitPacket = (limit: number, wheelCircumference: number) => {
     const rpm = (limit / 3.6) / wheelCircumference * 60;
 
     const newPacket: OutgoingPacket = {
-        zone: Zones.THROTTLE,
-        command: ThrottleCommands.SET_LIMIT,
-        value: rpm.toFixed(0)
+      zone: Zones.THROTTLE,
+      command: ThrottleCommands.SET_LIMIT,
+      value: Math.round(rpm)
     };
     console.log(JSON.stringify(newPacket));
     window.websocket.send(newPacket, Zones.THROTTLE);
