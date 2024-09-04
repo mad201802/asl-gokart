@@ -15,7 +15,7 @@ const BatteryPage = () => {
         window.websocket.onBatteryMessage((incomingPacket: string) => {
           console.log("Received incoming battery message in battery.tsx");
           const parsed: IncomingPacket = JSON.parse(incomingPacket);
-          switch(parsed.valueType) {
+          switch(parsed.command) {
             case BatteryCommands.GET_TEMP:
                 setBatteryTemps(parsed.value);
                 break;
@@ -23,7 +23,7 @@ const BatteryPage = () => {
                 setBatteryVoltage(parsed.value);
                 break;
             default:
-                console.error("Invalid valueType received in battery message!");
+                console.error("Invalid command (data type) received in battery message!");
           }
         });
     // Cleanup listener on component unmount

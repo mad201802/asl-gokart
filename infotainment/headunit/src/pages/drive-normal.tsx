@@ -96,7 +96,7 @@ const DriveNormalPage = () => {
     window.websocket.onThrottleMessage((incomingPacket: string) => {
       console.log("Received incoming throttle message in drive-normal.tsx");
       const parsed: IncomingPacket = JSON.parse(incomingPacket);
-      switch(parsed.valueType) {
+      switch(parsed.command) {
         case ThrottleCommands.GET_THROTTLE:
             setThrottle(parsed.value);
             break;
@@ -104,7 +104,7 @@ const DriveNormalPage = () => {
             setRpm(parsed.value);
             break;
         default:
-            console.error("Invalid valueType received in throttle message!");
+            console.error("Invalid command (data type) received in throttle message!");
       }
     });
 

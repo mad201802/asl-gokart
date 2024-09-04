@@ -7,7 +7,8 @@ export interface OutgoingPacket {
 }
 
 export interface IncomingPacket {
-    valueType: BatteryCommands | ThrottleCommands,
+    // zone: Zones,
+    command: BatteryCommands | ThrottleCommands,
     value: any 
 }
 

@@ -39,13 +39,13 @@ After a WS client has registered itself in the backend, it can send "normal" `In
 
 ### Send data from a `ZoneController` to an `ipcRenderer` listener
 
-**Example**: Sending `throttlePos` to `window.websocket.onThrottleMessage`:
+**Example**: Sending `getThrottle` to `window.websocket.onThrottleMessage`:
 
 1. Register successfully (See above)
 2. Send a JSON body containing the `IncomingPacket`
 ```json
 {
-    "valueType": "throttlePos",
+    "command": "getThrootle",
     "value": 0.25
 }
 ```
@@ -59,6 +59,7 @@ After a WS client has registered itself in the backend, it can send "normal" `In
 ```ts
 function() {
     const newPacket: OutgoingPacket = {
+        zone: Zones.BATTERY,
         command: BatteryCommands.GET_HEALTH,
     };
     window.websocket.send(newPacket, Zones.BATTERY);
