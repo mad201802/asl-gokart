@@ -45,6 +45,7 @@ After a WS client has registered itself in the backend, it can send "normal" `In
 2. Send a JSON body containing the `IncomingPacket`
 ```json
 {
+    "zone": "throttle
     "command": "getThrootle",
     "value": 0.25
 }
