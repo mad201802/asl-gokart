@@ -1,8 +1,8 @@
 {
     "name": "headunit",
     "productName": "headunit",
-    "version": "0.3.7",
-    "description": "ASL GoKart headunit package made with Electron Forge + shadcn-ui (Vite + Typescript)",
+    "version": "0.3.8",
+    "description": "ASL GoKart headunit package made with react, electron, electron-forge, shadcn-ui, vite and typescript",
     "main": ".vite/build/main.js",
     "scripts": {
         "start": "electron-forge start",
