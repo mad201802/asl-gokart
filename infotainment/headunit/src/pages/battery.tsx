@@ -5,10 +5,14 @@ import { BatteryCommands, ThrottleCommands, Zones } from "@/data/zonecontrollers
 import { IncomingPacket, OutgoingPacket } from "@/data/zonecontrollers/packets";
 import { useStore } from "@/stores/useStore";
 import React, { useEffect } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import ValueCard from "@/components/shared/value-card";
+import { Label } from "@/components/ui/label";
+
 
 const BatteryPage = () => {
 
-    const { batteryTemps, avgBatteryTemp, minTemp, maxTemp, voltage } = useStore();
+    const { batteryTemps, avgBatteryTemp, minTemp, maxTemp, voltage, batteryCurrent } = useStore();
     const { setBatteryTemps, setBatteryVoltage } = useStore();
 
     useEffect(() => {
@@ -46,54 +50,87 @@ const BatteryPage = () => {
         <div>
             <HeaderBar />
 
-            <div className="flex flex-col items-center mt-4">
-                <BatteryHeatmap 
-                    tempValues={batteryTemps} 
-                    width={300} 
-                    height={300} 
-                    minTemp={12.5} 
-                    maxTemp={40}
-                />
-                <div className="flex flex-col mt-2 w-72">
-                    <div className="flex flex-row justify-between">
-                        <div className="text-sm">Avg. Temperature</div>
-                        <div className="text-sm">{avgBatteryTemp.toFixed(1)} °C</div>
-                    </div>
-                    <div className="flex flex-row justify-between">
-                        <div className="text-sm">Min/Max Temperature</div>
-                        <div className="text-sm">{minTemp.toFixed(1)} / {maxTemp.toFixed(1)} °C</div>
-                    </div>
-                    <div className="flex flex-row justify-between">
-                        <div className="text-sm">Voltage</div>
-                        <div className="text-sm">{voltage.toFixed(1)} V</div>
-                    </div>
+            <Tabs defaultValue="general">
+                <div className="flex flex-col items-center mt-4">
+
+                    <TabsList>
+                        <TabsTrigger value="general">General</TabsTrigger>
+                        <TabsTrigger value="temperature">Temperature</TabsTrigger>
+                        <TabsTrigger value="flow">Flow</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="general" className="w-full">
+                        <div className="flex flex-col mt-2">
+                            <div className="flex flex-row justify-evenly">
+                                <ValueCard label="Voltage" value={voltage.toFixed(1)} unit="V"/>
+                                <ValueCard label="Current" value={95} unit="A"/>
+                                <ValueCard label="Power" value={95 * voltage} unit="W"/>
+                            </div>
+                        </div>
+                    </TabsContent>
+                    <TabsContent value="temperature">
+                        <BatteryHeatmap 
+                            tempValues={batteryTemps} 
+                            width={300} 
+                            height={300} 
+                            minTemp={12.5} 
+                            maxTemp={40}
+                        />
+                        <div className="flex flex-col mt-2 w-72">
+                            <div className="flex flex-row justify-between">
+                                <div className="text-sm">Avg. Temperature</div>
+                                <div className="text-sm">{avgBatteryTemp.toFixed(1)} °C</div>
+                            </div>
+                            <div className="flex flex-row justify-between">
+                                <div className="text-sm">Min/Max Temperature</div>
+                                <div className="text-sm">{minTemp.toFixed(1)} / {maxTemp.toFixed(1)} °C</div>
+                            </div>
+                            <div className="flex flex-row justify-between">
+                                <div className="text-sm">Voltage</div>
+                                <div className="text-sm">{voltage.toFixed(1)} V</div>
+                            </div>
+                        </div>
+                        <div className="flex flex-row justify-center mt-4">
+                            <Button onClick={() => setBatteryTemps(randomBatteryTemps())}>Randomize Temps</Button>
+                        </div>
+                    </TabsContent>
+                    <TabsContent value="flow">
+                        <div className="flex flex-col items-center gap-2 mt-2 w-72">
+                            <div className="text-3xl mb-10">
+                                <>
+                                {/* 
+                                    If battery current is greater than 3, display "discharging".
+                                    If battery current is less than -3, display "charging".
+                                    Otherwise, display "idle".
+                                */}
+                                {batteryCurrent > 3 ? "Discharging" : batteryCurrent < -3 ? "Charging" : "Idle"}
+                                </>
+                            </div>
+                            <Button 
+                                onClick={function() {
+                                    const newPacket: OutgoingPacket = {
+                                        zone: Zones.THROTTLE,
+                                        command: ThrottleCommands.SET_LIMIT,
+                                        value: 1000
+                                    };
+                                    window.websocket.send(newPacket, Zones.THROTTLE);
+                                    }
+                                } 
+                            >[throttle ZC] set limit 1000</Button>
+                            <Button 
+                                    onClick={function() {
+                                        const newPacket: OutgoingPacket = {
+                                            zone: Zones.THROTTLE,
+                                            command: ThrottleCommands.SET_LIMIT,
+                                            value: 20000
+                                        };
+                                        window.websocket.send(newPacket, Zones.THROTTLE);
+                                        }
+                                    } 
+                            >[throttle ZC] set limit 20000</Button>
+                        </div>
+                    </TabsContent>
                 </div>
-
-                <Button onClick={() => setBatteryTemps(randomBatteryTemps())}>Randomize Temps</Button>
-                <Button 
-                    onClick={function() {
-                        const newPacket: OutgoingPacket = {
-                            zone: Zones.THROTTLE,
-                            command: ThrottleCommands.SET_LIMIT,
-                            value: 1000
-                        };
-                        window.websocket.send(newPacket, Zones.THROTTLE);
-                        }
-                    } 
-                >[throttle ZC] set limit 1000</Button>
-            <Button 
-                    onClick={function() {
-                        const newPacket: OutgoingPacket = {
-                            zone: Zones.THROTTLE,
-                            command: ThrottleCommands.SET_LIMIT,
-                            value: 20000
-                        };
-                        window.websocket.send(newPacket, Zones.THROTTLE);
-                        }
-                    } 
-                >[throttle ZC] set limit 20000</Button>
-
-            </div>
+            </Tabs>
 
         </div>
     );
