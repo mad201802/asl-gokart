@@ -170,7 +170,7 @@ const DriveNormalPage = () => {
                 readOnly={true}
                   />
             </div>
-            <p className="font-semibold text-9xl">{speed}</p>
+            <p className="font-semibold text-9xl">{speed.toFixed(0)}</p>
             <p className="font">km/h</p>
           </div>
           <div className="flex flex-col items-center justify-center">
