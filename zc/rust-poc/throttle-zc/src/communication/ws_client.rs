@@ -7,10 +7,7 @@ use esp_idf_svc::{io::EspIOError, ws::client::{
     EspWebSocketClient, EspWebSocketClientConfig, WebSocketEvent, WebSocketEventType,
 }};
 
-use crate::communication::protocoll::{Packet, SocketEvent};
-
-use super::protocoll::ReceivedPacket;
-
+use protocoll_lib::protocoll::{deserialize, Packet, ReceivedPacket, SocketEvent};
 
 // pub fn create(server_uri: &str) -> (EspWebSocketClient<'_>, crossbeam_channel::Receiver<ExampleEvent>) {
 //     let timeout = Duration::from_secs(10);
@@ -71,7 +68,7 @@ fn handle_event(tx: Sender<ReceivedPacket>, event: &Result<WebSocketEvent, EspIO
            }
             WebSocketEventType::Text(text) => {
                 info!("Websocket recv, text: {text}");
-                match serde_json::from_str::<Packet>(text) {
+                match deserialize(text){
                     Ok(p)  =>  {               
                         let packet = ReceivedPacket {
                             event: SocketEvent::MessageReceived,

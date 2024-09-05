@@ -34,8 +34,7 @@ esp-idf-sys = { version ="0.35.0" }
 mcp4728 = "0.1.0"
 anyhow = "1.0.86"
 crossbeam-channel = "0.5.13"
-serde = "1.0.209"
-serde_json = "1.0.127"
+protocoll_lib = { path = "../protocoll_lib" }
 
 [build-dependencies]
 embuild = "0.32.0"

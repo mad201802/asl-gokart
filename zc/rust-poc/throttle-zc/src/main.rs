@@ -20,9 +20,8 @@ use uart::configure_uart;
 
 mod communication;
 use communication::{
-    eth_setup::start_eth,
-    protocoll::{Command, Packet, ThrottleCommands, ZoneControllerFactory}
-};
+    eth_setup::start_eth,};
+use protocoll_lib::protocoll::{Command, Packet, ThrottleCommands, ZoneControllerFactory};
 
 // MCP4728 related imports
 use mcp4728::{MCP4728, GainMode, VoltageReferenceMode};
@@ -37,6 +36,8 @@ use std::time::Instant;
 #[cfg(esp32)]
 #[cfg(not(any(feature = "adc-oneshot-legacy", esp_idf_version_major = "4")))]
 fn main() -> anyhow::Result<()> {
+    use communication::ws_client;
+    use esp_idf_svc::ws::FrameType;
     use mcp4728::{Channel, ChannelState, OutputEnableMode};
 
 
@@ -161,7 +162,21 @@ fn main() -> anyhow::Result<()> {
     .unwrap();
 
     let controller = ZoneControllerFactory::create_throttle_controller();
-    let gas_thread = thread::spawn(move || gas_pedal_chain(rpm_left, rpm_right, controller.rpm_limit, p.adc1, pins.gpio35, dac));
+    let rx_send = controller.rx_send.clone();
+    let tx = controller.tx.clone();
+    let ws_client_thread = thread::spawn(move ||{
+        const SERVER_URI: &str = "ws://192.168.1.100:6969";
+        let mut client = ws_client::create(SERVER_URI, tx);
+        for outgoing_message in rx_send.iter() {
+            if let Err(e) = client.send(FrameType::Text(false), outgoing_message.as_bytes()) {
+                info!("Failed to send message: {:?}", e);
+            }
+        }
+
+    });
+    let controller = controller.start_message_handler_thread();
+    let rpm_limit = controller.rpm_limit.clone();
+    let gas_thread = thread::spawn(move || gas_pedal_chain(rpm_left, rpm_right, rpm_limit, p.adc1, pins.gpio35, dac));
     
     loop {
         //info!("AH AH AH AH STAYIN ALIVE");
