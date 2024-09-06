@@ -11,3 +11,9 @@ export interface LabeledSwitchProps {
   label: string;
   defaultValue: boolean;
 }
+
+export interface ValueCardProps {
+  label: string;
+  value: string | number;
+  unit?: string;
+}

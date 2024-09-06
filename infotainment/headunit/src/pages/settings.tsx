@@ -20,11 +20,14 @@ import { HeaderBar } from "@/components/shared/header-bar";
 import { toast } from "sonner";
 import AvancedSettingsDialog from "@/components/shared/advanced-settings/advanced-settings-dialog";
 import AdminSettingsDialog from "@/components/admin-mode/admin-settings-dialog";
+import React from "react";
 
 const SettingsPage = () => {
 
   const { driveMode, adminMode, speedLimit, minSettableSpeed, maxSettableSpeed } = useStore();
   const { setDriveMode, setAdminMode, setAdminPin, setSpeedLimit } = useStore();
+
+//  const [speedLimitUiLabel, setSpeedLimitUiLabel] = React.useState(speedLimit);
 
   let handleLogout = () => {
     setAdminMode(false);
@@ -92,9 +95,13 @@ const SettingsPage = () => {
           </div>
           <div className="flex flex-row justify-between items-center space-x-4">
             <Label htmlFor="max-speed" className="text-base mr-5">Max. Speed</Label>
-            <Label htmlFor="max-speed-value" className="text-base text-center font-light mr-5 w-36">{speedLimit} km/h</Label>
+            <Label htmlFor="max-speed-value" className="text-base text-center font-light mr-5 w-36">
+              { speedLimit } km/h
+            </Label>
             <Slider 
-              onValueChange={(v) => setSpeedLimit(Number(v))}  
+              // onValueChange={(v) => setSpeedLimit(Number(v))}  
+              // onValueChange={(v) => setSpeedLimitUiLabel(Number(v))}
+              onValueCommit={(v) => setSpeedLimit(Number(v))}
               defaultValue={[speedLimit]} 
               min={minSettableSpeed} 
               max={maxSettableSpeed} 

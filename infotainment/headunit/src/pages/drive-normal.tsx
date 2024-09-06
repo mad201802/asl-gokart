@@ -9,6 +9,9 @@ import {
 import "react-circular-progressbar/dist/styles.css";
 import { HeaderBar } from "@/components/shared/header-bar";
 import ResetDailyDistanceDialog from "@/components/shared/reset-daily-distance-dialog";
+import React, { useEffect } from "react";
+import { IncomingPacket, RegisterPacket } from "@/data/zonecontrollers/packets";
+import { ThrottleCommands } from "@/data/zonecontrollers/zonecontrollers";
 
 interface Segment {
   value: number;
@@ -26,7 +29,6 @@ function interpolateColor(
 
   // Sort segments by value in ascending order
   segments.sort((a, b) => a.value - b.value);
-  console.log(segments);
 
   // Find the segment that contains the given value
   for (let i = 0; i < segments.length - 1; i++) {
@@ -87,7 +89,30 @@ function interpolateColorBetween(
 const DriveNormalPage = () => {
 
   const { gear, throttle, rpm, speed, rpmBoundaries, batteryPercentage } = useStore()
+  const { setRpm, setThrottle } = useStore();
 
+
+  useEffect(() => {
+    window.websocket.onThrottleMessage((incomingPacket: string) => {
+      console.log("Received incoming throttle message in drive-normal.tsx");
+      const parsed: IncomingPacket = JSON.parse(incomingPacket);
+      switch(parsed.command) {
+        case ThrottleCommands.GET_THROTTLE:
+            setThrottle(parsed.value);
+            break;
+        case ThrottleCommands.GET_RPM:
+            setRpm(parsed.value);
+            break;
+        default:
+            console.error("Invalid command (data type) received in throttle message!");
+      }
+    });
+
+    // Cleanup listener on component unmount
+    return () => {
+      window.websocket.onThrottleMessage(() => {});
+    };
+}, []);
 
   const throttleBoundaries = [0, 100];
   const throttleSegments: Segment[] = [
@@ -145,7 +170,7 @@ const DriveNormalPage = () => {
                 readOnly={true}
                   />
             </div>
-            <p className="font-semibold text-9xl">{speed}</p>
+            <p className="font-semibold text-9xl">{speed.toFixed(0)}</p>
             <p className="font">km/h</p>
           </div>
           <div className="flex flex-col items-center justify-center">
@@ -179,7 +204,7 @@ const DriveNormalPage = () => {
         <div className="w-full flex flex-col items-center justify-center pt-4">
           <p>Battery</p>
           <Progress className="w-[30%] h-[10px]" value={batteryPercentage*100} />
-          <p>{batteryPercentage*100}%</p>
+            <p>{(batteryPercentage*100).toFixed(1)}%</p>
         </div>
       </div>
     </div>
