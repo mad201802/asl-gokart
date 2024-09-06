@@ -1,11 +1,12 @@
-use std::io;
+use std::{io, sync::{atomic::{AtomicU16, AtomicUsize, Ordering}, Arc}, thread, time::Duration};
 
-use esp_idf_svc::hal::delay::BLOCK;
-use log::{error, debug};
+use esp_idf_svc::hal::delay::{FreeRtos, BLOCK};
+use log::{debug, error, info};
 
 pub const PACKET_LENGTH: usize = 19;
 pub const CRC_INDEX: usize = 18;
 //pub const ERROR: i32 = -1;
+
 
 pub fn bswap_16(x: u16) -> u16 {
     ((x >> 8) & 0xff) | ((x << 8) & 0xff00)
@@ -181,4 +182,18 @@ pub fn read_controller(packet_a: bool, packet_b: bool, uart_driver: &esp_idf_svc
     }
 
     Ok(packets)
+}
+
+pub fn read_and_process(shared_data_writer: Arc<AtomicU16>, uart_driver: esp_idf_svc::hal::uart::UartDriver) {
+    loop{
+        // println!("UART thread: reading data");
+        let data = read_controller(true, true, &uart_driver).unwrap();
+        //let mut data = PacketsStruct::default();
+
+        //data.b.rpm = 1000;
+        // Update the shared atomic variable
+        info!("rpm {}", data.b.rpm);
+        shared_data_writer.store(data.b.rpm, Ordering::SeqCst);
+        //thread::sleep(Duration::from_millis(300));
+    }   
 }

@@ -1,0 +1,10 @@
+[package]
+name = "protocoll_lib"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = { version = "1.0.209", features = ["derive"] }
+serde_json = "1.0.127"
+crossbeam-channel = "0.5.13"
+log = { version = "0.4", default-features = false }
