@@ -3,9 +3,9 @@
 #include "SensorManager.h"
 
 OneWire oneWires[AMOUNT_OF_ONEWIRE_INSTANCES] = {
-    OneWire(PP2),
-    OneWire(PP3),
-    OneWire(PP4),
+//    OneWire(PP2),
+//    OneWire(PP3),
+//    OneWire(PP4),
     OneWire(PP5)
 };
 
