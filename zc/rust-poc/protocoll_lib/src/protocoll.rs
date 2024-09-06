@@ -17,23 +17,24 @@ impl std::fmt::Display for Zones {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "command", rename_all = "camelCase")]
 pub enum ThrottleCommands {
     SetLimit,
     GetThrottle,
+    GetRpm,
     CalibrateLow,
     CalibrateHigh,
     EscData,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "command", rename_all = "camelCase")]
 enum GeneralCommands {
     Register,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "zone", rename_all = "camelCase")]
 pub enum Command {
     Throttle(ThrottleCommands),
@@ -57,14 +58,15 @@ pub struct ReceivedPacket {
     pub payload: Option<Packet>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(untagged)] // Use serde's `untagged` attribute to serialize without type tags
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[serde(untagged)]
+//Int must be before float, because otherwise serde will always deserialize to a float
 enum NumericValue {
-    Float(f32),
     UnsignedInt(u32),
+    Float(f32),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct Packet {
     #[serde(flatten)]
     pub command: Command,
@@ -73,7 +75,7 @@ pub struct Packet {
 
 pub trait ZoneController {
     fn handle_incoming(packet: Packet, concurrency: &ZoneControllerConcurrency);
-    fn build_outgoing(&self, command: Command, value: NumericValue) -> String {
+    fn build_outgoing(command: Command, value: NumericValue) -> String {
         let rpm_packet = Packet {
             command: command,
             value: value
@@ -153,6 +155,7 @@ impl ZoneController for ThrottleController {
                         debug!("Handling Throttle: EscData command");
                     }
                     ThrottleCommands::GetThrottle => todo!(),
+                    ThrottleCommands::GetRpm => todo!(),
                 }
             }
             Command::General(general_cmd) => {
@@ -163,11 +166,12 @@ impl ZoneController for ThrottleController {
 }
 impl ThrottleController {
     fn send_rpm(&self, rpm: u16) {
-        let serialized = self.build_outgoing(Command::Throttle(ThrottleCommands::GetThrottle), NumericValue::UnsignedInt(rpm.into()));
-        print!("{}", serialized);
+        let serialized = ThrottleController::build_outgoing(Command::Throttle(ThrottleCommands::GetRpm), NumericValue::UnsignedInt(rpm.into()));
+        self.tx_send.send(serialized).expect("Failed to send rpm into crossbeam channel");
     }
     fn send_throttle(&self, throttle: f32) {
-
+        let serialized = ThrottleController::build_outgoing(Command::Throttle(ThrottleCommands::GetThrottle), NumericValue::Float(throttle));
+        self.tx_send.send(serialized).expect("Failed to send throttle into crossbeam channel");
     }
     pub fn start_message_handler_thread(mut self) -> ThrottleController{
         let rpm_limit_writer = self.rpm_limit_writer.clone();
@@ -224,43 +228,43 @@ pub fn deserialize<'a, T> (text: &'a str) -> serde_json::Result<T>
 mod tests {
     use super::*;
 
-    //#[test]
-    // fn test_build_outgoing_with_float() {
-    //     // Arrange: Create expected command and numeric value (float)
-    //     let command = Command::Throttle(ThrottleCommands::GetThrottle);
-    //     let value = NumericValue::Float(0.25);
-    //     let (tx, rx) = unbounded::<ReceivedPacket>();
-    //     let rpm    // fn test_build_outgoing_with_float() {
-    //     // Arrange: Create expected command and numeric value (float)
-    //     let command = Command::Throttle(ThrottleCommands::GetThrottle);
-    //     let value = NumericValue::Float(0.25);
-    //     let (tx, rx) = unbounded::<ReceivedPacket>();
-    //     let rpm_limit = Arc::new(AtomicU32::new(0));
-    //     let join_handle = std::thread::spawn(move || {});
+    #[test]
+    fn test_serialize_throttle_packet() {
+        let command = Command::Throttle(ThrottleCommands::GetThrottle);
+        let value = NumericValue::Float(0.25);
 
-    //     let t = ThrottleController { zone: Zones::Throttle, tx: tx, rpm_limit: rpm_limit, join_handle: join_handle };
+        let json_output = ThrottleController::build_outgoing(command, value);
 
-    //     // Act: Build outgoing JSON string
-    //     let json_output = t.build_outgoing(command, value);
+        assert_eq!(
+            json_output,
+            r#"{"zone":"throttle","command":"getThrottle","value":0.25}"#
+        );
+    }
+    #[test]
+    fn test_serialize_rpm_packet() {
+        let command = Command::Throttle(ThrottleCommands::GetRpm);
+        let value = NumericValue::UnsignedInt(4000);
 
-    //     // Assert: Check if the generated JSON matches the expected format
-    //     assert_eq!(
-    //         json_output,
-    //         r#"{"command":"getThrottle","value":0.25}"#
-    //     );
-    // }_limit = Arc::new(AtomicU32::new(0));
-    //     let join_handle = std::thread::spawn(move || {});
+        let json_output = ThrottleController::build_outgoing(command, value);
 
-    //     let t = ThrottleController { zone: Zones::Throttle, tx: tx, rpm_limit: rpm_limit, join_handle: join_handle };
+        assert_eq!(
+            json_output,
+            r#"{"zone":"throttle","command":"getRpm","value":4000}"#
+        );
+    }
+    #[test]
+    fn test_deserialize_limit_packet() {
+        let packet = r#"{"zone":"throttle","command":"setLimit","value":3000}"#;
 
-    //     // Act: Build outgoing JSON string
-    //     let json_output = t.build_outgoing(command, value);
+        let output: Packet = deserialize(&packet).ok().expect("Failed to deserialize");
 
-    //     // Assert: Check if the generated JSON matches the expected format
-    //     assert_eq!(
-    //         json_output,
-    //         r#"{"command":"getThrottle","value":0.25}"#
-    //     );
-    // }
+        assert_eq!(
+            output,
+            Packet {
+                command: Command::Throttle(ThrottleCommands::SetLimit),
+                value: NumericValue::UnsignedInt(3000)
+            }
+        );
+    }
 }
 
