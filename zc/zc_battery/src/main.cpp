@@ -73,36 +73,51 @@ void setup() {
 void loop() {
     // Maintain WebSocket connection
     webSocket.loop();
+
+    // Get temperature data from sensors
     std::vector<float> temperatures = sensorLoop();
+    Serial.println("Sensors array before sending: ");
+    for (float temp : temperatures) {
+        Serial.print(temp);
+        Serial.print(" ");
+    }
+    Serial.println();
 
     // Send temperature data to WebSocket server
     /*
     Format of the JSON message:
     {
-        "valueType": "getTemp",
+        "zone": "battery",
+        "command": "getTemp",
         "value": [20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0, 55.0]
     }
     */
    
     char output[256];
     StaticJsonDocument<256> doc;
-
-    doc["valueType"] = "getTemp";
+    doc["zone"] = "battery";
+    doc["command"] = "getTemp";
     JsonArray value = doc["value"].to<JsonArray>();
     for (float temp : temperatures) {
         value.add(temp);
     }
 
-    // doc.shrinkToFit();  // optional
+    // Optional: Reduce memory footprint
+    // doc.shrinkToFit();
 
-    serializeJson(doc, output, sizeof(output));
-    webSocket.sendTXT(output);
-    Serial.println("Temperature data sent");
-    // Print the JSON message
-    Serial.println(output);
+    // Serialize JSON to buffer
+    size_t n = serializeJson(doc, output, sizeof(output));
+    if (n == sizeof(output)) {
+        Serial.println(F("Error: JSON message truncated"));
+    } else {
+        webSocket.sendTXT(output);
+        Serial.println(F("Temperature data sent"));
+        Serial.println(output);
+    }
+
     delay(500);
-
 }
+
 
 
 void sendRegisterPacket() {
@@ -122,9 +137,12 @@ void sendRegisterPacket() {
     // doc.shrinkToFit();  // optional
 
     serializeJson(doc, output, sizeof(output));
-    webSocket.sendTXT(output);
+    if(webSocket.sendTXT(output)) {
+        Serial.println("Register packet sent");
+        // Print the JSON message
+        Serial.println(output);
+    } else {
+        Serial.println("Failed to send register packet");
+    }
     delay(1000);
-    Serial.println("Register packet sent");
-    // Print the JSON message
-    Serial.println(output);
 }
