@@ -6,8 +6,9 @@ logger = logging.getLogger('websockets')
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
 
+
 async def send_json():
-    uri = "ws://localhost:6969"  # Replace with your WebSocket server URL
+    uri = "ws://192.168.1.17:6969"  # Replace with your WebSocket server URL
 
     async with websockets.connect(uri) as websocket:
         print("Connected to server")
@@ -25,12 +26,7 @@ async def send_json():
         print(f"Sent JSON: {json_data}")
         await asyncio.sleep(5)
         await websocket.ping()
-        print("Ping sent")
-        # Wait for pong response from the server
-        await websocket.pong()
-
-
-
+        print("Sent ping")
         # Wait for a response from the server
         response = await websocket.recv()
         print(f"Received response: {response}")
