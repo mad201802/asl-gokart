@@ -1,3 +1,4 @@
+use crossbeam_channel::Sender;
 // Espressif IDF Service layer imports
 use esp_idf_svc::hal::{
     adc::{attenuation::{DB_11, DB_6}, oneshot::{config::AdcChannelConfig, AdcChannelDriver, AdcDriver}, ADC1, ADC2}, cpu::Core, gpio::Gpio35, i2c::I2cDriver, task::thread::ThreadSpawnConfiguration, units::Hertz
@@ -21,7 +22,7 @@ use uart::configure_uart;
 mod communication;
 use communication::{
     eth_setup::start_eth,};
-use protocoll_lib::protocoll::{Command, Packet, ThrottleCommands, ZoneControllerFactory};
+use protocoll_lib::protocoll::{Command, Packet, ThrottleCommands, ThrottleController, ZoneControllerFactory};
 
 // MCP4728 related imports
 use mcp4728::{MCP4728, GainMode, VoltageReferenceMode};
@@ -114,52 +115,11 @@ fn main() -> anyhow::Result<()> {
     dac.single_write(Channel::A, OutputEnableMode::Update, &channel_state).expect("failed to write");
     thread::sleep(Duration::from_secs(1));
     dac.single_write(Channel::B, OutputEnableMode::Update, &channel_state).expect("failed to write");
-    // info!("wakeup");
-    // dac.general_call_reset().expect("lele");
-    // thread::sleep(Duration::from_secs(2));
-    // info!("wakeup2");
-    // dac.general_call_wake_up().expect("lele");
-    let read = dac.read().expect("Cant read");
-    info!("read");
-    info!("value a {}", read.channel_a_eeprom.channel_state.value);
-    info!("value b {}", read.channel_b_eeprom.channel_state.value);
 
     //in %
     let throttle_limiter = 50;
     //in rpm &AdcDriver<'_, ADC1>
     let rpm_limit = 3000;
-
-    ThreadSpawnConfiguration {
-        name: Some(b"esc_read\0"),
-        pin_to_core: Some(Core::Core0),
-        stack_size: 20000,
-        ..Default::default()
-    }
-    .set()
-    .unwrap();
-
-    let rpm_left = Arc::new(AtomicU16::new(0));
-
-    // Clone the Arc to share with the UART reading thread
-    let rpm_left_writer = Arc::clone(&rpm_left);
-
-    let esc_left_thread = thread::spawn(move || kelly_decoder::read_and_process(rpm_left_writer, uart_left));
-
-    let rpm_right = Arc::new(AtomicU16::new(0));
-
-    // Clone the Arc to share with the UART reading thread
-    let rpm_right_writer = Arc::clone(&rpm_right);
-
-    let esc_right_thread = thread::spawn(move || kelly_decoder::read_and_process(rpm_right_writer, uart_right));
-
-    ThreadSpawnConfiguration {
-        name: Some(b"gas_pedal\0"),
-        pin_to_core: Some(Core::Core1),
-        stack_size: 20000,
-        ..Default::default()
-    }
-    .set()
-    .unwrap();
 
     let controller = ZoneControllerFactory::create_throttle_controller();
     let rx_send = controller.rx_send.clone();
@@ -175,8 +135,44 @@ fn main() -> anyhow::Result<()> {
 
     });
     let controller = controller.start_message_handler_thread();
+
+    ThreadSpawnConfiguration {
+        name: Some(b"esc_read\0"),
+        pin_to_core: Some(Core::Core0),
+        stack_size: 20000,
+        ..Default::default()
+    }
+    .set()
+    .unwrap();
+
+    let rpm_left = Arc::new(AtomicU16::new(0));
+
+    // Clone the Arc to share with the UART reading thread
+    let rpm_left_writer = Arc::clone(&rpm_left);
+    let rpm_left_sender = controller.tx_send.clone();
+
+    let esc_left_thread = thread::spawn(move || kelly_decoder::read_and_process(rpm_left_sender, rpm_left_writer, uart_left));
+
+    let rpm_right = Arc::new(AtomicU16::new(0));
+
+    // Clone the Arc to share with the UART reading thread
+    let rpm_right_writer = Arc::clone(&rpm_right);
+    let rpm_right_sender = controller.tx_send.clone();
+
+    let esc_right_thread = thread::spawn(move || kelly_decoder::read_and_process(rpm_right_sender,rpm_right_writer, uart_right));
+
+    ThreadSpawnConfiguration {
+        name: Some(b"gas_pedal\0"),
+        pin_to_core: Some(Core::Core1),
+        stack_size: 20000,
+        ..Default::default()
+    }
+    .set()
+    .unwrap();
+
     let rpm_limit = controller.rpm_limit.clone();
-    let gas_thread = thread::spawn(move || gas_pedal_chain(rpm_left, rpm_right, rpm_limit, p.adc1, pins.gpio35, dac));
+    let gas_sender = controller.tx_send.clone();
+    let gas_thread = thread::spawn(move || gas_pedal_chain(gas_sender, rpm_left, rpm_right, rpm_limit, p.adc1, pins.gpio35, dac));
     
     loop {
         //info!("AH AH AH AH STAYIN ALIVE");
@@ -191,7 +187,7 @@ fn main() -> anyhow::Result<()> {
     //Ok(())
 }
 
-fn gas_pedal_chain(rpm_left: Arc<AtomicU16>, rpm_right: Arc<AtomicU16>, rpm_limit: Arc<AtomicU32>, adc: ADC1, pin: Gpio35, mut dac: MCP4728<I2cDriver<'_>>) {
+fn gas_pedal_chain(tx_send: Sender<String>, rpm_left: Arc<AtomicU16>, rpm_right: Arc<AtomicU16>, rpm_limit: Arc<AtomicU32>, adc: ADC1, pin: Gpio35, mut dac: MCP4728<I2cDriver<'_>>) {
     //Gas input
     let throttle = AdcDriver::new(adc).unwrap();
     // configuring pin to analog read, you can regulate the adc input voltage range depending on your need
@@ -206,13 +202,12 @@ fn gas_pedal_chain(rpm_left: Arc<AtomicU16>, rpm_right: Arc<AtomicU16>, rpm_limi
 
     const GAS_LOW: u32 = 900;
     const GAS_HIGH: u32 = 3155;
+    let mut i : u8 = 0;
     loop {
-        let start = Instant::now();
+        // let start = Instant::now();
         let rpm_left = rpm_left.load(Ordering::SeqCst);
         let rpm_right = rpm_right.load(Ordering::SeqCst);
         let rpm_limit = rpm_limit.load(Ordering::SeqCst);
-        info!("rpm_limit {}", rpm_limit);
-        info!("rpm_left {} rpm_right {}", rpm_left, rpm_right);
         let current_throttle :u32 = throttle.read(&mut throttle_pin).unwrap().into();
         //info!("dalc throttle {}", current_throttle);
         let mut to_substract = GAS_LOW;
@@ -229,12 +224,23 @@ fn gas_pedal_chain(rpm_left: Arc<AtomicU16>, rpm_right: Arc<AtomicU16>, rpm_limi
         //maximum allowed value of throttle is 4095, because it's 12 bit
         let calculated_throttle :u16 = min(4095, calculated_throttle) as u16;
         let _ = dac.fast_write(calculated_throttle, calculated_throttle, calculated_throttle, calculated_throttle);
-        let message = format!(r#"{{"calculated_throttle": {}}}"#, calculated_throttle);
+        
+        //equals about 150ms
+        if i == 50 {
+            i = 0;
+            ThrottleController::send_throttle(&tx_send, calculated_throttle as f32 / 4095 as f32);
+            info!("rpm_limit {}", rpm_limit);
+            info!("rpm_left {} rpm_right {}", rpm_left, rpm_right);
+            let message = format!(r#"{{"calculated_throttle": {}}}"#, calculated_throttle);
+            info!("{}", message);
+        }
+
         //info!("{}", message);
-        let duration = start.elapsed();  
+        //let duration = start.elapsed();  
         //thread::sleep(Duration::from_millis(50));
         //println!("Time taken for execution in throttle thread: {:?}", duration);
         //client.send(FrameType::Text(false), message.as_bytes())?;
+        i += 1;
     }
 }
 

@@ -165,13 +165,13 @@ impl ZoneController for ThrottleController {
     }
 }
 impl ThrottleController {
-    pub fn send_rpm(&self, rpm: u16) {
+    pub fn send_rpm(tx_send: &Sender<String>, rpm: u16) {
         let serialized = ThrottleController::build_outgoing(Command::Throttle(ThrottleCommands::GetRpm), NumericValue::UnsignedInt(rpm.into()));
-        self.tx_send.send(serialized).expect("Failed to send rpm into crossbeam channel");
+        tx_send.send(serialized).expect("Failed to send rpm into crossbeam channel");
     }
-    pub fn send_throttle(&self, throttle: f32) {
+    pub fn send_throttle(tx_send: &Sender<String>, throttle: f32) {
         let serialized = ThrottleController::build_outgoing(Command::Throttle(ThrottleCommands::GetThrottle), NumericValue::Float(throttle));
-        self.tx_send.send(serialized).expect("Failed to send throttle into crossbeam channel");
+        tx_send.send(serialized).expect("Failed to send throttle into crossbeam channel");
     }
     pub fn start_message_handler_thread(mut self) -> ThrottleController{
         let rpm_limit_writer = self.rpm_limit_writer.clone();
