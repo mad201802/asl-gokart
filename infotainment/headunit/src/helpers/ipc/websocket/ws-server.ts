@@ -75,6 +75,27 @@ export function startWebSocketServer(mainWindow: BrowserWindow) {
       });
 
     });
+
+    ws.on('error', (err) => {
+      console.error(`WebSocket client error: ${err}`);
+    });
+
+    ws.on('ping', () => {
+      console.log('Received ping');
+    });
+
+    ws.on('pong', () => {
+      console.log('Received pong');
+    });
+
+    ws.on('unexpected-response', (req, res) => {
+      console.error(`Unexpected response: ${res.statusCode}`);
+    });
   });
+
+  wss.on('error', (err) => {
+    console.error(`WebSocket server error: ${err}`);
+  });
+
   console.log('WebSocket server is running on ws://localhost: ' + WSS_PORT);
 }
