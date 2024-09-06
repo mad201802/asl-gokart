@@ -9,6 +9,7 @@
         "package": "electron-forge package",
         "make": "electron-forge make",
         "make:pi4": "electron-forge make --arch=arm64",
+        "make:odroid": "electron-forge make --arch=armv7l",
         "publish": "electron-forge publish",
         "prett": "prettier . --write",
         "test": "jest",
@@ -18,7 +19,7 @@
         "test:all": "jest && playwright test",
         "clean": "rimraf .vite dist out"
     },
-    "author": "AEROSPACE LAB Herrenber e.V. Team GoKart",
+    "author": "AEROSPACE LAB Herrenberg e.V. Team GoKart",
     "license": "MIT",
     "devDependencies": {
         "@electron-forge/cli": "^7.4.0",

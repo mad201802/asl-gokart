@@ -13,13 +13,20 @@ npm install
 npm run start
 ```
 
-## Make Pi4 image
+## Make `Pi4`/`ODROID` image
 
 ```
 npm run make:pi4
 ```
 
-Output: `./out/headunit_X.X.X_arm64`
+```
+npm run make:odroid
+```
+
+### Output 
+
+- Pi 4 image: `./out/make/deb/arm64/headunit_X.X.X_arm64.deb`
+- ODROID image: `./out/make/deb/armv7l/headunit_X.X.X_armhf.deb`
 
 ## WebSocket logic
 
