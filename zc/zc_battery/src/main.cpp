@@ -13,7 +13,7 @@ float EXAMPLE_TEMP_ARRAY[] = { 20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0, 55.0};
 
 WebSocketsClient webSocket;
 
-void sendRegisterPacket();
+bool sendRegisterPacket();
 void onWebSocketEvent(WStype_t type, uint8_t *payload, size_t length);
 
 void onWebSocketEvent(WStype_t type, uint8_t *payload, size_t length) {
@@ -62,9 +62,16 @@ void setup() {
 
     // Initialize WebSocket client
     webSocket.begin(WEB_SOCKET_SERVER_IP, WEB_SOCKET_SERVER_PORT);
+    Serial.println("Connected to WebSocket server");
     webSocket.onEvent(onWebSocketEvent);
-    sendRegisterPacket();
+    Serial.println("Attached event handler");
+    Serial.println("Trying to register this zone controller...");
+    while(!sendRegisterPacket()) {
+        Serial.println("Failed to send register packet. Retrying...");
+        delay(1000);
+    }
     Serial.println("WebSocket client initialized");
+    delay(1000);
 
     // Initialize sensors
     initializeSensors();
@@ -73,6 +80,14 @@ void setup() {
 void loop() {
     // Maintain WebSocket connection
     webSocket.loop();
+    if(!webSocket.isConnected()) {
+        Serial.println("WebSocket disconnected. Trying to reconnect...");
+        webSocket.begin(WEB_SOCKET_SERVER_IP, WEB_SOCKET_SERVER_PORT);
+        while(!sendRegisterPacket()) {
+            Serial.println("Failed to send register packet. Retrying...");
+            delay(1000);
+        }
+    }
 
     // Get temperature data from sensors
     std::vector<float> temperatures = sensorLoop();
@@ -110,17 +125,19 @@ void loop() {
     if (n == sizeof(output)) {
         Serial.println(F("Error: JSON message truncated"));
     } else {
-        webSocket.sendTXT(output);
-        Serial.println(F("Temperature data sent"));
-        Serial.println(output);
-    }
-
+        if(webSocket.sendTXT(output)) {
+            Serial.println(F("Temperature data sent"));
+            Serial.println(output);
+        } else {
+            Serial.println(F("Failed to send temperature data"));
+        }
     delay(500);
+    }
 }
 
 
 
-void sendRegisterPacket() {
+bool sendRegisterPacket() {
     // Send register packet to WebSocket server
     /*
     Format of the JSON message:
@@ -141,8 +158,9 @@ void sendRegisterPacket() {
         Serial.println("Register packet sent");
         // Print the JSON message
         Serial.println(output);
+        return true;
     } else {
         Serial.println("Failed to send register packet");
+        return false;
     }
-    delay(1000);
 }
