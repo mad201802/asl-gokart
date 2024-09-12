@@ -59,10 +59,20 @@ void setup() {
         Serial.print(".");
     }
     Serial.println("Connected to Ethernet");
+    Serial.print("IP address: ");
+    Serial.println(ETH.localIP());
+    Serial.print("Gateway: ");
+    Serial.println(ETH.gatewayIP());
+    Serial.print("Subnet: ");
+    Serial.println(ETH.subnetMask());
 
     // Initialize WebSocket client
     webSocket.begin(WEB_SOCKET_SERVER_IP, WEB_SOCKET_SERVER_PORT);
     Serial.println("Connected to WebSocket server");
+    Serial.println("WebSocket server IP: " WEB_SOCKET_SERVER_IP);
+    Serial.print("WebSocket server port: ");
+    Serial.println(WEB_SOCKET_SERVER_PORT);
+    
     webSocket.onEvent(onWebSocketEvent);
     Serial.println("Attached event handler");
     Serial.println("Trying to register this zone controller...");
