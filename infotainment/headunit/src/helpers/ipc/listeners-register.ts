@@ -17,8 +17,15 @@ export default function registerListeners(mainWindow: BrowserWindow) {
         if (wss) {
             connected_zonecontrollers.forEach((zc: ZoneController, z: Zones) => {
                 if (z === zoneToSendTo) {
-                    zc.webSocket.send(JSON.stringify(message));
-                    console.log(`[WEBSOCKET_SEND_CHANNEL] Sent message to [${z}] zone controller : ${JSON.stringify(message)}`);
+                    if(zc.webSocket.readyState === WebSocket.OPEN) {
+                        zc.webSocket.send(JSON.stringify(message));
+                        console.log(`[WEBSOCKET_SEND_CHANNEL] Sent message to [${z}] zone controller : ${JSON.stringify(message)}`);
+                    } else {
+                        console.error(`[WEBSOCKET_SEND_CHANNEL] Couldn't send message to [${z}] zone controller: WebSocket is not open!`);
+                        // Remove the zone controller from the map
+                        connected_zonecontrollers.delete(z);
+                        console.log(`[WEBSOCKET_SEND_CHANNEL] Removed zone controller from connected_zonecontrollers: ${z}`);
+                    }
                 }
             });
         }
