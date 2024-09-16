@@ -2,6 +2,8 @@
 Follow https://docs.esp-rs.org/book/installation/index.html
 Note, that we our ESPs have Xtensa chips and we use rusts std library
 
+Then, run `cargo install ldproxy`.
+
 ### Commands:
 - Compile and flash: CARGO_TARGET_DIR="./build" cargo run  
 - Compile: CARGO_TARGET_DIR="./build" cargo build
