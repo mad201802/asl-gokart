@@ -25,11 +25,11 @@ int daempf;
 long milltempo;
 byte tempDFF = 100;
 byte tempAbz = 10;
-byte Pause = 15;
+byte Pause = 1;
 byte Fehlmess = 2;
 
 int datarate = 115200;
-byte resolution = 12;
+byte resolution = 9;
 char add = 'a';
 
 void initializeSensors() {
@@ -196,9 +196,9 @@ std::vector<float> sensorLoop() {
     }
 
     // Implement pause logic
-    if (Pause > 30) {
-        delay((Pause - 30) * 1000);
-    }
+    // if (Pause > 30) {
+    //     delay((Pause - 30) * 1000);
+    // }
 
     long milltempo = millis();
     if (milltempo >= 0) {
