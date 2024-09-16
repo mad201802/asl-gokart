@@ -155,7 +155,7 @@ const DriveNormalPage = () => {
                   trailColor: "#eee",
                 })}
               >
-                <p className="font-semibold text-4xl">{throttle*100}%</p>
+                <p className="font-semibold text-4xl">{(throttle*100).toFixed(0)}%</p>
                 <p>Throttle</p>
               </CircularProgressbarWithChildren>
             </div>
