@@ -14,7 +14,7 @@ export function startWebSocketServer(mainWindow: BrowserWindow) {
 
     ws.on('message', (message) => {
       const receivedMsg = JSON.parse(message.toString());
-      if(Object.keys(receivedMsg).includes("zone")) {
+      if(Object.keys(receivedMsg).includes("zone") && !(Object.keys(receivedMsg).includes("command"))) {
         console.log(`Received register packet for zone [${receivedMsg.zone}]`);
         if(Object.values(Zones).includes(receivedMsg.zone)) {
           if(!connected_zonecontrollers.has(receivedMsg.zone)) {
