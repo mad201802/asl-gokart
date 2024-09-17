@@ -14,7 +14,7 @@ const int serverPort = 6969;              // WebSocket server port
 long lastTimeSent = 0;                 // Last time a message was sent
 long lastTimeSensorsSent = 0;
 int MESSAGE_INTERVAL = 5000;       // Interval between messages
-int MESSAGE_INTERVAL_SENSORS = 5000;
+int MESSAGE_INTERVAL_SENSORS = 100;
 
 float EXAMPLE_TEMP_ARRAY[] = { 20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0, 55.0};
 
@@ -109,6 +109,7 @@ void setup() {
 
     // Connect to WebSocket server
     webSocket.begin(serverUrl, serverPort, "/");
+    // webSocket.beginSocketIO(serverUrl, 4321, "/");
     delay(1000);
     webSocket.loop();
     Serial.println("Setup complete");
@@ -146,6 +147,13 @@ void sendSensorMsg() {
     if (millis() - lastTimeSensorsSent < MESSAGE_INTERVAL_SENSORS) {
         return;
     }
+
+
+    /* ############### WARNING - THIS CAUSES THE HEADUNIT TO SEND A FAULTY PONG FRAME AND THUS RESULTS IN A DISCONNECT OF THE OLIMEX WS CLIENT */
+    webSocket.sendPing();
+    /* ############### WARNING - THIS CAUSES THE HEADUNIT TO SEND A FAULTY PONG FRAME AND THUS RESULTS IN A DISCONNECT OF THE OLIMEX WS CLIENT */
+
+
     // Get temperature data from sensors
     std::vector<float> temperatures = sensorLoop();
     Serial.println("Sensors array before sending: ");
