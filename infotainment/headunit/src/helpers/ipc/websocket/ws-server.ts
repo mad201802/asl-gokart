@@ -7,7 +7,10 @@ import { Server } from 'socket.io';
 // const WSS_PORT = 6969;
 //export let wss: WebSocketServer;
 const IO_PORT = 6969;
-export let sioServer = new Server(IO_PORT);
+export let sioServer = new Server(IO_PORT, {
+  allowEIO3: true,
+  httpCompression: false,
+});
 export let connected_zonecontrollers = new Map<Zones, ZoneController>();
 
 // export function startWebSocketServer(mainWindow: BrowserWindow) {
@@ -176,6 +179,22 @@ export function startSocketIoServer(mainWindow: BrowserWindow) {
   sioServer.on('disconnect', () => {
     console.log('Socket.io client disconnected (server)');
     console.log(`Connected clients: ${sioServer.engine.clientsCount}`);
+  });
+
+  sioServer.engine.on('error', (err) => {
+    console.error(`Socket.io server error: ${err}`);
+  });
+  sioServer.engine.on('ping', () => {
+    console.log('Received ping');
+  });
+  sioServer.engine.on('pong', () => {
+    console.log('Received pong');
+  });
+  sioServer.engine.on('connection-error', (err) => {
+    console.log(err.req);      // the request object
+    console.log(err.code);     // the error code, for example 1
+    console.log(err.message);  // the error message, for example "Session ID unknown"
+    console.log(err.context);  // some additional error context
   });
 
   console.log('Socket.io server is running on ws://localhost: ' + IO_PORT);
