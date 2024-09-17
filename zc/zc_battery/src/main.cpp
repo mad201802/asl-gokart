@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include "esp_log.h"
 #include <ETH.h>
 #include <WebSocketsClient.h>
 #include <ArduinoJson.h>
@@ -8,7 +9,7 @@
 // WICHITG: IP-Adresse und Port des WebSocket-Servers hier anpassen:
 WebSocketsClient webSocket;             // WebSocket client instance
 
-const char* serverUrl = "192.168.1.100";  // WebSocket server address
+const char* serverUrl = "192.168.1.70";  // WebSocket server address
 const int serverPort = 6969;              // WebSocket server port
 
 long lastTimeSent = 0;                 // Last time a message was sent
@@ -57,7 +58,7 @@ void onWebSocketEvent(WStype_t type, uint8_t *payload, size_t length) {
             break;
         case WStype_CONNECTED:
             Serial.printf("Connected to URL: %s\n", payload);
-            sendRegister();
+            // sendRegister();
             break;
         case WStype_TEXT:
             Serial.printf("Received text: %s\n", payload);
@@ -78,6 +79,7 @@ void onWebSocketEvent(WStype_t type, uint8_t *payload, size_t length) {
 }
 
 void setup() {
+    esp_log_level_set("*", ESP_LOG_VERBOSE);
     Serial.begin(115200);
     delay(1000);
     Serial.println("####################################");
@@ -88,9 +90,10 @@ void setup() {
     // Initialize Ethernet
     WiFi.onEvent(WiFiEvent);
     webSocket.onEvent(onWebSocketEvent);
+    webSocket.disableHeartbeat();
     ETH.begin();
     /* -------------------- HIER DIE IP-Adressen vom ESP und Gateway konfigurieren -------------------- */
-    ETH.config(IPAddress(192, 168, 1, 4), IPAddress(192, 168, 1, 1), IPAddress(255, 255, 255, 0));
+    ETH.config(IPAddress(192, 168, 1, 88), IPAddress(192, 168, 1, 1), IPAddress(255, 255, 255, 0));
     /* -------------------------------------------------------------------------------------------------*/
     // Wait for Ethernet to connect
     Serial.print("Connecting to Ethernet");
@@ -108,9 +111,9 @@ void setup() {
     Serial.println(ETH.subnetMask());
 
     // Connect to WebSocket server
-    webSocket.begin(serverUrl, serverPort, "/");
-    // webSocket.beginSocketIO(serverUrl, 4321, "/");
-    delay(1000);
+    // webSocket.begin(serverUrl, serverPort, "/");
+    webSocket.beginSocketIO(serverUrl, serverPort, "/socket.io/?EIO=3");
+    // delay(1000);
     webSocket.loop();
     Serial.println("Setup complete");
 
@@ -123,7 +126,7 @@ void loop() {
     webSocket.loop();
     // Send messages to WebSocket server
     // sendMsg();
-    sendSensorMsg();
+    // sendSensorMsg();
     delay(1);
 }
 
@@ -150,7 +153,7 @@ void sendSensorMsg() {
 
 
     /* ############### WARNING - THIS CAUSES THE HEADUNIT TO SEND A FAULTY PONG FRAME AND THUS RESULTS IN A DISCONNECT OF THE OLIMEX WS CLIENT */
-    webSocket.sendPing();
+    // webSocket.sendPing();
     /* ############### WARNING - THIS CAUSES THE HEADUNIT TO SEND A FAULTY PONG FRAME AND THUS RESULTS IN A DISCONNECT OF THE OLIMEX WS CLIENT */
 
 
