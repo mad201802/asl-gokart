@@ -88,7 +88,7 @@ export function startWebSocketServer(mainWindow: BrowserWindow) {
       });
 
       ws.on('error', (err) => {
-        console.error(`WebSocket client error: ${err}`);
+        console.error(`WebSocket client error: ${err.name} | ${err.message} | ${err.stack}`);
       });
     }
   });
@@ -98,6 +98,9 @@ export function startWebSocketServer(mainWindow: BrowserWindow) {
   });
 
   server.on('error', (err) => {
-    console.error(`WebSocket server error: ${err}`);
+    console.error(`WebSocket server error name: ${err.name}`);
+    console.error(`WebSocket server error: ${err.message}`);
+    console.error(`WebSocket server error stack: ${err.stack}`);
+    console.error(`WebSocket server error cause: ${err.cause}`);
   });
 }
