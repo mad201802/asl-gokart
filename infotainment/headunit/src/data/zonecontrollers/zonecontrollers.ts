@@ -1,6 +1,7 @@
 import { IncomingPacket, OutgoingPacket } from "./packets";
 import { DriveModes } from "../controlling_models/drivetrain";
 import { WebSocket } from "ws";
+import { Socket } from "socket.io";
 
 export enum Zones {
     BATTERY = "battery",
@@ -29,9 +30,9 @@ export enum ThrottleCommands {
 }
 
 export class ZoneController{
-    webSocket: WebSocket;
+    webSocket: Socket;
 
-    constructor(ws: WebSocket) {
+    constructor(ws: Socket) {
         this.webSocket = ws;
     }
 }
