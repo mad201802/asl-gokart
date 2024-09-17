@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include "esp_log.h"
 #include <ETH.h>
 #include <WebSocketsClient.h>
 #include <ArduinoJson.h>
@@ -78,6 +79,7 @@ void onWebSocketEvent(WStype_t type, uint8_t *payload, size_t length) {
 }
 
 void setup() {
+    esp_log_level_set("*", ESP_LOG_VERBOSE);
     Serial.begin(115200);
     delay(1000);
     Serial.println("####################################");
@@ -109,7 +111,6 @@ void setup() {
 
     // Connect to WebSocket server
     webSocket.begin(serverUrl, serverPort, "/");
-    // webSocket.beginSocketIO(serverUrl, 4321, "/");
     delay(1000);
     webSocket.loop();
     Serial.println("Setup complete");
@@ -150,7 +151,7 @@ void sendSensorMsg() {
 
 
     /* ############### WARNING - THIS CAUSES THE HEADUNIT TO SEND A FAULTY PONG FRAME AND THUS RESULTS IN A DISCONNECT OF THE OLIMEX WS CLIENT */
-    webSocket.sendPing();
+    // webSocket.sendPing();
     /* ############### WARNING - THIS CAUSES THE HEADUNIT TO SEND A FAULTY PONG FRAME AND THUS RESULTS IN A DISCONNECT OF THE OLIMEX WS CLIENT */
 
 
