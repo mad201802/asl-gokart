@@ -3,7 +3,7 @@ import json
 import socketio
 
 # SocketIO server address
-SERVER_ADDRESS = 'http://localhost:6969'
+SERVER_ADDRESS = 'http://192.168.1.70:6969'
 
 sio = socketio.AsyncClient()
 
