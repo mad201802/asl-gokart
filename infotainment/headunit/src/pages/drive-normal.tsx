@@ -1,7 +1,7 @@
 import TabsSelector from "@/components/shared/tabs-selector";
 import { Progress } from "@/components/ui/progress";
 import { useStore } from "@/stores/useStore";
-import { tabsSelectorStates } from "@/data/controlling_models/drivetrain";
+import { Gears, tabsSelectorStates } from "@/data/controlling_models/drivetrain";
 import {
   CircularProgressbarWithChildren,
   buildStyles,
@@ -89,7 +89,7 @@ function interpolateColorBetween(
 const DriveNormalPage = () => {
 
   const { gear, rawThrottle, throttle, showRawThrottle, rpm, speed, rpmBoundaries, batteryPercentage } = useStore()
-  const { setRpm, setRawThrottle, setThrottle } = useStore();
+  const { setRpm, setRawThrottle, setThrottle, setGear } = useStore();
 
   useEffect(() => {
     window.websocket.onThrottleMessage((incomingPacket: string) => {
@@ -102,6 +102,9 @@ const DriveNormalPage = () => {
             break;
         case ThrottleCommands.GET_RPM:
             setRpm(parsed.value);
+            break;
+        case ThrottleCommands.GET_REVERSE:
+            setGear(parsed.value ? Gears.r : Gears.d);
             break;
         default:
             console.error("Invalid command (data type) received in throttle message!");
