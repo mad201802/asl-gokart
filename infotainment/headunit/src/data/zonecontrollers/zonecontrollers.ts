@@ -25,7 +25,8 @@ export enum ThrottleCommands {
     GET_RPM = "getRpm",
     GET_DRIVEMODE = "getDriveMode",
     SET_DRIVEMODE = "setDriveMode",
-    SET_LIMIT = "setLimit"
+    SET_LIMIT = "setLimit",
+    GET_REVERSE = "getReverse",
 }
 
 export class ZoneController{
