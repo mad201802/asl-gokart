@@ -4,12 +4,26 @@
 #include <WebSocketsClient.h>
 #include <ArduinoJson.h>
 #include "SensorManager.h"
+#include "daly-bms-uart.h"
+
+#define BMS_SERIAL Serial1 // Set the serial port for communication with the Daly BMS
+// Construct the BMS driver and passing in the Serial interface (which pins to use)
+Daly_BMS_UART bms(BMS_SERIAL);
+
+unsigned long startTime;
+unsigned long duration;
+
+float biggestVoltage = 0;
+float biggestCurrent = 0;
+float biggestSOC = 0;
+long biggestDelay = 0;
 
 // Olimex IP-Adresse unten im Code anpassen!
 // WICHITG: IP-Adresse und Port des WebSocket-Servers hier anpassen:
 WebSocketsClient webSocket;             // WebSocket client instance
 
-const char* serverUrl = "192.168.1.100";  // WebSocket server address
+
+const char* serverUrl = "192.168.1.99";  // WebSocket server address
 const int serverPort = 6969;              // WebSocket server port
 
 long lastTimeSent = 0;                 // Last time a message was sent
@@ -23,6 +37,7 @@ float EXAMPLE_TEMP_ARRAY[] = { 20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0, 55.0};
 void sendRegister();
 void sendMsg();
 void sendSensorMsg();
+void sendBmsMsg();
 void onWebSocketEvent(WStype_t type, uint8_t *payload, size_t length);
 void WiFiEvent(WiFiEvent_t event);
 
@@ -116,7 +131,8 @@ void setup() {
     Serial.println("Setup complete");
 
     // Initialize sensors
-    initializeSensors();
+    // initializeSensors();
+    bms.Init(); // This call sets up the bms driver
 }
 
 void loop() {
@@ -125,7 +141,8 @@ void loop() {
     delay(1);
     // Send messages to WebSocket server
     // sendMsg();
-    sendSensorMsg();
+    // sendSensorMsg();
+    sendBmsMsg();
 }
 
 
@@ -196,6 +213,70 @@ void sendSensorMsg() {
             lastTimeSensorsSent = millis();
         } else {
             Serial.println(F("Failed to send temperature data"));
+            lastTimeSensorsSent = millis();
+        }
+    }
+}
+
+void sendBmsMsg() {
+    if (millis() - lastTimeSensorsSent < MESSAGE_INTERVAL_SENSORS) {
+        return;
+    }
+    bms.update();
+
+    // Send BMS voltage data to WebSocket server
+    /*
+    Format of the JSON message:
+    {
+        "zone": "battery",
+        "command": "getVoltage",
+        "value": 123.4
+    }
+    */
+    char output[256];
+    StaticJsonDocument<256> doc;
+    doc["zone"] = "battery";
+    doc["command"] = "getVoltage";
+    doc["value"] = bms.get.packVoltage;
+    // Serialize JSON to buffer
+    size_t n = serializeJson(doc, output, sizeof(output));
+    if (n == sizeof(output)) {
+        Serial.println(F("Error: JSON message truncated"));
+    } else {
+        if(webSocket.sendTXT(output)) {
+            Serial.println(F("Voltage data sent"));
+            Serial.println(output);
+            lastTimeSensorsSent = millis();
+        } else {
+            Serial.println(F("Failed to send voltage data"));
+            lastTimeSensorsSent = millis();
+        }
+    }
+
+        /*
+    Format of the JSON message:
+    {
+        "zone": "battery",
+        "command": "getCurrent",
+        "value": 95.0
+    }
+    */
+    char output2[256];
+    StaticJsonDocument<256> doc2;
+    doc["zone"] = "battery";
+    doc["command"] = "getCurrent";
+    doc["value"] = bms.get.packCurrent;
+    // Serialize JSON to buffer
+    size_t n2 = serializeJson(doc, output2, sizeof(output2));
+    if (n2 == sizeof(output2)) {
+        Serial.println(F("Error: JSON message truncated"));
+    } else {
+        if(webSocket.sendTXT(output2)) {
+            Serial.println(F("Current data sent"));
+            Serial.println(output2);
+            lastTimeSensorsSent = millis();
+        } else {
+            Serial.println(F("Failed to send current data"));
             lastTimeSensorsSent = millis();
         }
     }
