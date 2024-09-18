@@ -152,12 +152,12 @@ fn main() -> anyhow::Result<()> {
     //in rpm &AdcDriver<'_, ADC1>
     let _rpm_limit = 3000;
 
-    let controller = ZoneControllerFactory::create_throttle_controller();
-    let rx_send = controller.rx_send.clone();
-    let tx = controller.tx.clone();
+    let throttle_controller = ZoneControllerFactory::create_throttle_controller();
+    let rx_send = throttle_controller.rx_send.clone();
+    let received_packet_tx = throttle_controller.received_packet_tx.clone();
     let _ws_client_thread = thread::spawn(move || {
         const SERVER_URI: &str = "ws://192.168.1.100:6969";
-        let mut client = ws_client::create(SERVER_URI, tx);
+        let mut client = ws_client::create(SERVER_URI, received_packet_tx);
         for outgoing_message in rx_send.iter() {
             info!("Sending message: {:?}", outgoing_message);
             if let Err(e) = client.send(FrameType::Text(false), outgoing_message.as_bytes()) {
@@ -165,7 +165,7 @@ fn main() -> anyhow::Result<()> {
             }
         }
     });
-    let controller = controller.start_message_handler_thread();
+    let throttle_controller = throttle_controller.start_message_handler_thread();
 
     ThreadSpawnConfiguration {
         name: Some(b"esc_read\0"),
@@ -180,7 +180,7 @@ fn main() -> anyhow::Result<()> {
 
     // Clone the Arc to share with the UART reading thread
     let rpm_left_writer = Arc::clone(&rpm_left);
-    let rpm_left_sender = controller.tx_send.clone();
+    let rpm_left_sender = throttle_controller.tx_send.clone();
 
     let _esc_left_thread = thread::spawn(move || {
         kelly_decoder::read_and_process(rpm_left_sender, rpm_left_writer, uart_left)
@@ -190,7 +190,7 @@ fn main() -> anyhow::Result<()> {
 
     // Clone the Arc to share with the UART reading thread
     let rpm_right_writer = Arc::clone(&rpm_right);
-    let rpm_right_sender = controller.tx_send.clone();
+    let rpm_right_sender = throttle_controller.tx_send.clone();
 
     let _esc_right_thread = thread::spawn(move || {
         kelly_decoder::read_and_process(rpm_right_sender, rpm_right_writer, uart_right)
@@ -205,8 +205,8 @@ fn main() -> anyhow::Result<()> {
     .set()
     .unwrap();
 
-    let rpm_limit = controller.rpm_limit.clone();
-    let gas_sender = controller.tx_send.clone();
+    let rpm_limit = throttle_controller.rpm_limit.clone();
+    let gas_sender = throttle_controller.tx_send.clone();
     let _gas_thread = thread::spawn(move || {
         gas_pedal_chain(
             gas_sender,
