@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 const BatteryPage = () => {
 
     const { batteryTemps, avgBatteryTemp, minTemp, maxTemp, voltage, batteryCurrent } = useStore();
-    const { setBatteryTemps, setBatteryVoltage } = useStore();
+    const { setBatteryTemps, setBatteryVoltage, setBatteryCurrent } = useStore();
 
     useEffect(() => {
         window.websocket.onBatteryMessage((incomingPacket: string) => {
@@ -25,6 +25,9 @@ const BatteryPage = () => {
                 break;
             case BatteryCommands.GET_VOLTAGE:
                 setBatteryVoltage(parsed.value);
+                break;
+            case BatteryCommands.GET_CURRENT:
+                setBatteryCurrent(parsed.value);
                 break;
             default:
                 console.error("Invalid command (data type) received in battery message!");
@@ -62,8 +65,8 @@ const BatteryPage = () => {
                         <div className="flex flex-col mt-2">
                             <div className="flex flex-row justify-evenly">
                                 <ValueCard label="Voltage" value={voltage.toFixed(1)} unit="V"/>
-                                <ValueCard label="Current" value={95} unit="A"/>
-                                <ValueCard label="Power" value={95 * voltage} unit="W"/>
+                                <ValueCard label="Current" value={batteryCurrent} unit="A"/>
+                                <ValueCard label="Power" value={batteryCurrent * voltage} unit="W"/>
                             </div>
                         </div>
                     </TabsContent>
