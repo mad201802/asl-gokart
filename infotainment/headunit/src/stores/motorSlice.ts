@@ -6,6 +6,7 @@ import { StateCreator } from 'zustand'
 export interface MotorSlice {
     gear: Gears
     driveMode: DriveModes
+    rawThrottle: number
     throttle: number
     rpm: number
     rpmBoundaries: [number, number]
@@ -17,6 +18,7 @@ export interface MotorSlice {
     minSettableSpeed: number
     setGear: (gear: Gears) => void
     setDriveMode: (driveMode: DriveModes) => void
+    setRawThrottle: (rawThrottle: number) => void
     setThrottle: (throttle: number) => void
     setRpm: (rpm: number) => void
     setWheelCircumference: (wheelCircumference: number) => void
@@ -49,9 +51,10 @@ export const createMotorSlice: StateCreator<
   > = (set, get) => ({
   gear: Gears.p,
   driveMode: DriveModes.eco,
+  rawThrottle: 0.69,
   throttle: 0.75,
-  rpm: 6000,
-  rpmBoundaries: [0, 10000],
+  rpm: 1250,
+  rpmBoundaries: [0, 1500],
   wheelCircumference: 1.415,
   speed: 0,
   dailyDistance: 1234.5,
@@ -60,6 +63,7 @@ export const createMotorSlice: StateCreator<
   minSettableSpeed: 7,
   setGear: (gear: Gears) => set(() => ({ gear: gear })),
   setDriveMode: (driveMode: DriveModes) => set(() => ({ driveMode: driveMode })),
+  setRawThrottle: (rawThrottle: number) => set(() => ({ rawThrottle: rawThrottle })),
   setThrottle: (throttle: number) => set(() => ({ throttle: throttle })),
   setRpm: (rpm: number) => {
     const wheelCircumference = get().wheelCircumference;

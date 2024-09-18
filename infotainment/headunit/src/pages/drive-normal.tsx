@@ -88,9 +88,8 @@ function interpolateColorBetween(
 
 const DriveNormalPage = () => {
 
-  const { gear, throttle, rpm, speed, rpmBoundaries, batteryPercentage } = useStore()
-  const { setRpm, setThrottle } = useStore();
-
+  const { gear, rawThrottle, throttle, rpm, speed, rpmBoundaries, batteryPercentage } = useStore()
+  const { setRpm, setRawThrottle, setThrottle } = useStore();
 
   useEffect(() => {
     window.websocket.onThrottleMessage((incomingPacket: string) => {
@@ -98,7 +97,8 @@ const DriveNormalPage = () => {
       const parsed: IncomingPacket = JSON.parse(incomingPacket);
       switch(parsed.command) {
         case ThrottleCommands.GET_THROTTLE:
-            setThrottle(parsed.value);
+            setRawThrottle(parsed.value[0]);
+            setThrottle(parsed.value[1]);
             break;
         case ThrottleCommands.GET_RPM:
             setRpm(parsed.value);
@@ -178,8 +178,8 @@ const DriveNormalPage = () => {
               <CircularProgressbarWithChildren
                 value={rpm}
                 circleRatio={0.75}
-                minValue={0}
-                maxValue={10000}
+                minValue={rpmBoundaries[0]}
+                maxValue={rpmBoundaries[1]}
                 styles={buildStyles({
                   pathColor: interpolateColor(
                     rpm,
