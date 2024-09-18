@@ -8,6 +8,7 @@ export interface MotorSlice {
     driveMode: DriveModes
     rawThrottle: number
     throttle: number
+    showRawThrottle: boolean
     rpm: number
     rpmBoundaries: [number, number]
     wheelCircumference: number
@@ -20,6 +21,7 @@ export interface MotorSlice {
     setDriveMode: (driveMode: DriveModes) => void
     setRawThrottle: (rawThrottle: number) => void
     setThrottle: (throttle: number) => void
+    setShowRawThrottle: (showRawThrottle: boolean) => void
     setRpm: (rpm: number) => void
     setWheelCircumference: (wheelCircumference: number) => void
     setSpeed: (speed: number) => void
@@ -53,6 +55,7 @@ export const createMotorSlice: StateCreator<
   driveMode: DriveModes.eco,
   rawThrottle: 0.69,
   throttle: 0.75,
+  showRawThrottle: true,
   rpm: 1250,
   rpmBoundaries: [0, 1500],
   wheelCircumference: 1.415,
@@ -65,6 +68,7 @@ export const createMotorSlice: StateCreator<
   setDriveMode: (driveMode: DriveModes) => set(() => ({ driveMode: driveMode })),
   setRawThrottle: (rawThrottle: number) => set(() => ({ rawThrottle: rawThrottle })),
   setThrottle: (throttle: number) => set(() => ({ throttle: throttle })),
+  setShowRawThrottle: (showRawThrottle: boolean) => set(() => ({ showRawThrottle: showRawThrottle })),
   setRpm: (rpm: number) => {
     const wheelCircumference = get().wheelCircumference;
     set(() => ({ 

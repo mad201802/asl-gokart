@@ -88,7 +88,7 @@ function interpolateColorBetween(
 
 const DriveNormalPage = () => {
 
-  const { gear, rawThrottle, throttle, rpm, speed, rpmBoundaries, batteryPercentage } = useStore()
+  const { gear, rawThrottle, throttle, showRawThrottle, rpm, speed, rpmBoundaries, batteryPercentage } = useStore()
   const { setRpm, setRawThrottle, setThrottle } = useStore();
 
   useEffect(() => {
@@ -155,7 +155,7 @@ const DriveNormalPage = () => {
                   trailColor: "#eee",
                 })}
               >
-                <p className="font-semibold text-4xl">{(throttle*100).toFixed(0)}%</p>
+                <p className="font-semibold text-4xl">{((showRawThrottle ? rawThrottle : throttle)*100).toFixed(0)}%</p>
                 <p>Throttle</p>
               </CircularProgressbarWithChildren>
             </div>
