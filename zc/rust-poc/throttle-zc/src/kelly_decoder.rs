@@ -1,14 +1,19 @@
-use std::{io, sync::{atomic::{AtomicU16, AtomicUsize, Ordering}, Arc}, thread, time::Duration};
+use std::{
+    io,
+    sync::{
+        atomic::{AtomicU16, Ordering},
+        Arc,
+    },
+};
 
 use crossbeam_channel::Sender;
-use esp_idf_svc::hal::delay::{FreeRtos, BLOCK};
+use esp_idf_svc::hal::delay::BLOCK;
 use log::{debug, error, info};
 use protocoll_lib::protocoll::ThrottleController;
 
 pub const PACKET_LENGTH: usize = 19;
 pub const CRC_INDEX: usize = 18;
 //pub const ERROR: i32 = -1;
-
 
 pub fn bswap_16(x: u16) -> u16 {
     ((x >> 8) & 0xff) | ((x << 8) & 0xff00)
@@ -76,7 +81,9 @@ pub struct PacketsStruct {
 }
 
 pub fn calculate_crc(pkt: &GenericPacket) -> u8 {
-    pkt.bytes[..CRC_INDEX].iter().fold(0u8, |acc, &byte| acc.wrapping_add(byte))
+    pkt.bytes[..CRC_INDEX]
+        .iter()
+        .fold(0u8, |acc, &byte| acc.wrapping_add(byte))
 }
 
 pub fn validate_checksum(pkt: &GenericPacket) -> bool {
@@ -143,15 +150,21 @@ pub fn import_bytes_to_packets(pkts: &mut PacketsStruct, bytes: &[u8]) {
             }
             None => {}
         }
+    } else {
+        error!("Checksum failed");
     }
 }
 
-pub fn read_controller(packet_a: bool, packet_b: bool, uart_driver: &esp_idf_svc::hal::uart::UartDriver) -> io::Result<PacketsStruct> {
+pub fn read_controller(
+    packet_a: bool,
+    packet_b: bool,
+    uart_driver: &esp_idf_svc::hal::uart::UartDriver,
+) -> io::Result<PacketsStruct> {
     let mut packets = PacketsStruct::default();
-    
+
     if packet_a {
         let packet_a_command: [u8; 3] = [0x3a, 0x00, 0x3a];
-        
+
         if let Err(e) = uart_driver.write(&packet_a_command) {
             error!("Failed to write packet_a_command: {}", e);
         }
@@ -186,18 +199,23 @@ pub fn read_controller(packet_a: bool, packet_b: bool, uart_driver: &esp_idf_svc
     Ok(packets)
 }
 
-pub fn read_and_process(tx_send: Sender<String>, shared_data_writer: Arc<AtomicU16>, uart_driver: esp_idf_svc::hal::uart::UartDriver) {
-    loop{
+pub fn read_and_process(
+    tx_send: Sender<String>,
+    shared_data_writer: Arc<AtomicU16>,
+    uart_driver: esp_idf_svc::hal::uart::UartDriver,
+) {
+    loop {
         // println!("UART thread: reading data");
         let data = read_controller(true, true, &uart_driver).unwrap();
         //let mut data = PacketsStruct::default();
 
-        //data.b.rpm = 1000;
+        let adjusted_rpm = data.b.rpm / 4;
+
         // Update the shared atomic variable
-        info!("rpm {}", data.b.rpm);
-        shared_data_writer.store(data.b.rpm, Ordering::SeqCst);
+        info!("[Kelly Decoder] Read RPM {}", adjusted_rpm);
+        shared_data_writer.store(adjusted_rpm, Ordering::SeqCst);
         //TODO differentiate between the two controllers
-        ThrottleController::send_rpm(&tx_send, data.b.rpm);
+        ThrottleController::send_rpm(&tx_send, adjusted_rpm);
         //thread::sleep(Duration::from_millis(300));
-    }   
+    }
 }

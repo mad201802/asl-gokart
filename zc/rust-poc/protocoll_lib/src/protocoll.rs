@@ -64,6 +64,7 @@ pub struct ReceivedPacket {
 enum NumericValue {
     UnsignedInt(u32),
     Float(f32),
+    MultiValue([f32; 2]),
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
@@ -76,6 +77,14 @@ pub struct Packet {
 pub trait ZoneController {
     fn handle_incoming(packet: Packet, concurrency: &ZoneControllerConcurrency);
     fn build_outgoing(command: Command, value: NumericValue) -> String {
+        let rpm_packet = Packet {
+            command: command,
+            value: value
+        };
+        return serde_json::to_string(&rpm_packet).expect("failed to serialize outgoing packet");
+    }
+
+    fn build_outgoing_multi_value(command: Command, value: NumericValue) -> String {
         let rpm_packet = Packet {
             command: command,
             value: value
@@ -169,8 +178,8 @@ impl ThrottleController {
         let serialized = ThrottleController::build_outgoing(Command::Throttle(ThrottleCommands::GetRpm), NumericValue::UnsignedInt(rpm.into()));
         tx_send.send(serialized).expect("Failed to send rpm into crossbeam channel");
     }
-    pub fn send_throttle(tx_send: &Sender<String>, throttle: f32) {
-        let serialized = ThrottleController::build_outgoing(Command::Throttle(ThrottleCommands::GetThrottle), NumericValue::Float(throttle));
+    pub fn send_throttle(tx_send: &Sender<String>, raw_throttle: f32, adjusted_throttle: f32) {
+        let serialized = ThrottleController::build_outgoing(Command::Throttle(ThrottleCommands::GetThrottle), NumericValue::MultiValue([raw_throttle, adjusted_throttle]));
         tx_send.send(serialized).expect("Failed to send throttle into crossbeam channel");
     }
     pub fn start_message_handler_thread(mut self) -> ThrottleController{
@@ -212,6 +221,7 @@ fn numeric_value_to_u32(numeric_value: &NumericValue) -> u32 {
     match numeric_value {
         NumericValue::Float(f) => *f as u32, // Convert float to u32
         NumericValue::UnsignedInt(u) => *u as u32, // Convert unsigned integer to u32
+        _ => 0,
     }
 }
 

@@ -1,42 +1,33 @@
-use std::{sync::mpsc::{self}, time::Duration};
+use std::
+    time::Duration
+;
 
-use crossbeam_channel::{unbounded, Sender, Receiver};
+use crossbeam_channel::Sender;
 use log::{error, info};
 
-use esp_idf_svc::{io::EspIOError, ws::client::{
-    EspWebSocketClient, EspWebSocketClientConfig, WebSocketEvent, WebSocketEventType,
-}};
+use esp_idf_svc::{
+    io::EspIOError,
+    ws::client::{
+        EspWebSocketClient, EspWebSocketClientConfig, WebSocketEvent, WebSocketEventType,
+    },
+};
 
-use protocoll_lib::protocoll::{deserialize, Packet, ReceivedPacket, SocketEvent};
+use protocoll_lib::protocoll::{deserialize, ReceivedPacket, SocketEvent};
 
-// pub fn create(server_uri: &str) -> (EspWebSocketClient<'_>, crossbeam_channel::Receiver<ExampleEvent>) {
-//     let timeout = Duration::from_secs(10);
-//     let (tx, rx) = unbounded();
-//     let wsconfig = EspWebSocketClientConfig {
-//         ..Default::default()
-//     };
-//     let client =
-//     EspWebSocketClient::new(server_uri, &wsconfig, timeout, move |event| {
-//         handle_event(tx.clone(), event)
-//     }).unwrap();
-//     return (client, rx);
-// }
-
-pub fn create(server_uri: &str, tx: Sender<ReceivedPacket>) -> EspWebSocketClient<'_> {
+pub fn create(server_uri: &str, ws_tx: Sender<ReceivedPacket>) -> EspWebSocketClient<'_> {
     let timeout = Duration::from_secs(10);
     let wsconfig = EspWebSocketClientConfig {
         ..Default::default()
     };
-    let client =
+    
+    
     EspWebSocketClient::new(server_uri, &wsconfig, timeout, move |event| {
-        handle_event(tx.clone(), event)
-    }).unwrap();
-    return client;
+        handle_event(ws_tx.clone(), event)
+    })
+    .unwrap()
 }
 
-
-fn handle_event(tx: Sender<ReceivedPacket>, event: &Result<WebSocketEvent, EspIOError>) {
-    
+fn handle_event(ws_tx: Sender<ReceivedPacket>, event: &Result<WebSocketEvent, EspIOError>) {
     if let Ok(event) = event {
         match event.event_type {
             WebSocketEventType::BeforeConnect => {
@@ -46,10 +37,10 @@ fn handle_event(tx: Sender<ReceivedPacket>, event: &Result<WebSocketEvent, EspIO
                 info!("Websocket connected");
                 let packet = ReceivedPacket {
                     event: SocketEvent::Connected,
-                    payload: None
+                    payload: None,
                 };
 
-                tx.send(packet).ok();
+                ws_tx.send(packet).ok();
             }
             WebSocketEventType::Disconnected => {
                 info!("Websocket disconnected");
@@ -61,25 +52,25 @@ fn handle_event(tx: Sender<ReceivedPacket>, event: &Result<WebSocketEvent, EspIO
                 info!("Websocket closed");
                 let packet = ReceivedPacket {
                     event: SocketEvent::Closed,
-                    payload: None
+                    payload: None,
                 };
 
-                tx.send(packet).ok(); 
-           }
+                ws_tx.send(packet).ok();
+            }
             WebSocketEventType::Text(text) => {
                 info!("Websocket recv, text: {text}");
-                match deserialize(text){
-                    Ok(p)  =>  {               
+                match deserialize(text) {
+                    Ok(p) => {
                         let packet = ReceivedPacket {
                             event: SocketEvent::MessageReceived,
-                            payload: Some(p)
+                            payload: Some(p),
                         };
-                        tx.send(packet).ok();
-                    },
+                        ws_tx.send(packet).ok();
+                    }
                     Err(e) => {
                         error!("Error deserializing {}", text);
                         error!("{}", e);
-                    },
+                    }
                 };
             }
             WebSocketEventType::Binary(binary) => {
