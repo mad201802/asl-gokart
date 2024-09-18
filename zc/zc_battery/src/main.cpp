@@ -111,7 +111,7 @@ void setup() {
 
     // Connect to WebSocket server
     webSocket.begin(serverUrl, serverPort, "/");
-    delay(1000);
+    delay(50);
     webSocket.loop();
     Serial.println("Setup complete");
 
@@ -122,10 +122,10 @@ void setup() {
 void loop() {
     // Maintain WebSocket connection
     webSocket.loop();
+    delay(1);
     // Send messages to WebSocket server
     // sendMsg();
     sendSensorMsg();
-    delay(1);
 }
 
 

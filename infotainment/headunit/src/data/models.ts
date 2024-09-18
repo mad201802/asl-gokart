@@ -10,6 +10,7 @@ export interface LabeledSwitchProps {
   id: string;
   label: string;
   defaultValue: boolean;
+  onChange?: (value: boolean) => void;
 }
 
 export interface ValueCardProps {

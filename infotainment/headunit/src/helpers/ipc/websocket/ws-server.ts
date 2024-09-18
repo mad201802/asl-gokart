@@ -24,7 +24,7 @@ export function startWebSocketServer(mainWindow: BrowserWindow) {
           console.log(`Received register packet for zone [${receivedMsg.zone}]`);
 
           if (Object.values(Zones).includes(receivedMsg.zone)) {
-            if (!connected_zonecontrollers.has(receivedMsg.zone)) {
+            // if (!connected_zonecontrollers.has(receivedMsg.zone)) {
               switch (receivedMsg.zone) {
                 case Zones.THROTTLE:
                   connected_zonecontrollers.set(receivedMsg.zone, new ThrottleController(ws));
@@ -39,9 +39,9 @@ export function startWebSocketServer(mainWindow: BrowserWindow) {
               console.log(`New zone controller connected: ${receivedMsg.zone}`);
               console.log(`Total zone controllers connected: ${connected_zonecontrollers.size}`);
               console.log(Array.from(connected_zonecontrollers.keys()));
-            } else {
-              console.error(`This zone has already been registered!`);
-            }
+            // } else {
+            //   console.error(`This zone has already been registered!`);
+            // }
           } else {
             console.error(`This zone does not exist!`);
           }
@@ -50,17 +50,19 @@ export function startWebSocketServer(mainWindow: BrowserWindow) {
 
           // Find the zone controller that received the message
           connected_zonecontrollers.forEach((zc: ZoneController, zone: Zones) => {
-            console.log(`Checking zone controller ${zone}`);
+            // console.log(`Checking zone controller ${zone}`);
 
             if (zc.webSocket === ws) {
-              console.log(`Found zone controller ${zone}`);
+              // console.log(`Found zone controller ${zone}`);
               switch (zone) {
                 case Zones.THROTTLE:
-                  console.log("Forwarding message to ipcRenderer's ThrottleListener");
+                  console.log("Forwarding message to ipcRenderer's ThrottleListener:");
+                  console.log(message.toString());
                   mainWindow.webContents.send(WEBSOCKET_THROTTLE_MESSAGE_CHANNEL, message.toString());
                   break;
                 case Zones.BATTERY:
-                  console.log("Forwarding message to ipcRenderer's BatteryListener");
+                  console.log("Forwarding message to ipcRenderer's BatteryListener:");
+                  console.log(message.toString());
                   mainWindow.webContents.send(WEBSOCKET_BATTERY_MESSAGE_CHANNEL, message.toString());
                   break;
                 default:
@@ -72,7 +74,7 @@ export function startWebSocketServer(mainWindow: BrowserWindow) {
       });
 
       ws.on('close', () => {
-        console.log('WebSocket client disconnected');
+        console.log(`WebSocket client disconnected. Code: ${ws.code} | Reason: ${ws.reason}`);
 
         // Remove the zone controller from the map
         connected_zonecontrollers.forEach((zc, key) => {
@@ -94,7 +96,7 @@ export function startWebSocketServer(mainWindow: BrowserWindow) {
   });
 
   server.listen(WSS_PORT, '0.0.0.0', () => {
-    console.log('WebSocket server is running on ws://localhost:' + WSS_PORT);
+    console.log('WebSocket server is running on ws://0.0.0.0:' + WSS_PORT);
   });
 
   server.on('error', (err) => {
