@@ -1,4 +1,4 @@
-use std::{sync::{atomic::{AtomicU16, AtomicU32, Ordering}, Arc, Mutex}, thread::JoinHandle};
+use std::{cmp::Reverse, sync::{atomic::{AtomicU16, AtomicU32, Ordering}, Arc, Mutex}, thread::JoinHandle};
 use crossbeam_channel::{unbounded, Receiver, Sender};
 use serde::{Deserialize, Serialize};
 use log::{debug, info};
@@ -30,7 +30,13 @@ pub enum ThrottleCommands {
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "command", rename_all = "camelCase")]
-enum GeneralCommands {
+pub enum ReverseCommands {
+    GetReverse,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[serde(tag = "command", rename_all = "camelCase")]
+pub enum GeneralCommands {
     Register,
 }
 
@@ -38,13 +44,8 @@ enum GeneralCommands {
 #[serde(tag = "zone", rename_all = "camelCase")]
 pub enum Command {
     Throttle(ThrottleCommands),
+    Reverse(ReverseCommands),
     General(GeneralCommands),
-}
-
-#[derive(Debug)]
-enum MessageType {
-    Command,
-    Ack,
 }
 
 pub enum SocketEvent {
@@ -61,7 +62,7 @@ pub struct ReceivedPacket {
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 #[serde(untagged)]
 //Int must be before float, because otherwise serde will always deserialize to a float
-enum NumericValue {
+pub enum NumericValue {
     UnsignedInt(u32),
     Float(f32),
     MultiValue([f32; 2]),
@@ -75,49 +76,44 @@ pub struct Packet {
 }
 
 pub trait ZoneController {
-    fn handle_incoming(packet: Packet, concurrency: &ZoneControllerConcurrency);
-    fn build_outgoing(command: Command, value: NumericValue) -> String {
-        let rpm_packet = Packet {
-            command: command,
-            value: value
-        };
-        return serde_json::to_string(&rpm_packet).expect("failed to serialize outgoing packet");
-    }
 
-    fn build_outgoing_multi_value(command: Command, value: NumericValue) -> String {
-        let rpm_packet = Packet {
+    /// Handle incoming packets
+    fn handle_incoming(packet: Packet, concurrency: &ZoneControllerConcurrency);
+
+    fn build_outgoing(command: Command, value: NumericValue) -> String {
+        let packet = Packet {
             command: command,
             value: value
         };
-        return serde_json::to_string(&rpm_packet).expect("failed to serialize outgoing packet");
+        return serde_json::to_string(&packet).expect("failed to serialize outgoing packet");
     }
 }
 
-enum ZoneControllerConcurrency {
+pub enum ZoneControllerConcurrency {
     Throttle {rpm_limit: Arc<AtomicU32>}
-    
 }
 
 pub struct ZoneControllerFactory;
 
 impl ZoneControllerFactory {
+
+    #[allow(dead_code)]
     fn create_battery_controller() -> BatteryController {
         BatteryController{}
     }
 
     pub fn create_throttle_controller() -> ThrottleController {
-        let (tx, rx) = unbounded::<ReceivedPacket>();
+        let (received_packet_tx, received_packet_rx) = unbounded::<ReceivedPacket>();
         let (tx_send, rx_send) = unbounded::<String>();
-        let intern_tx_send = tx_send.clone();
         let rpm_limit = Arc::new(AtomicU32::new(0));
         let rpm_limit_writer = Arc::clone(&rpm_limit);
+        
         rpm_limit_writer.store(500, Ordering::SeqCst);
 
         ThrottleController {
             zone: Zones::Throttle,
-            tx: tx,
-            rx: rx,
-            intern_tx_send: intern_tx_send,
+            received_packet_tx,
+            received_packet_rx,
             tx_send: tx_send,
             rx_send: rx_send,
             rpm_limit: rpm_limit,
@@ -131,9 +127,8 @@ pub struct BatteryController;
 
 pub struct ThrottleController {
     zone: Zones,
-    pub tx: Sender<ReceivedPacket>,
-    rx: Receiver<ReceivedPacket>,
-    intern_tx_send: Sender<String>,
+    pub received_packet_tx: Sender<ReceivedPacket>,
+    received_packet_rx: Receiver<ReceivedPacket>,
     pub tx_send: Sender<String>,
     pub rx_send: Receiver<String>,
     pub rpm_limit: Arc<AtomicU32>,
@@ -142,6 +137,7 @@ pub struct ThrottleController {
 }
 
 impl ZoneController for ThrottleController {
+
     fn handle_incoming(packet:Packet, concurrent: &ZoneControllerConcurrency) {
         match packet.command {
             Command::Throttle(throttle_cmd) => {
@@ -170,6 +166,13 @@ impl ZoneController for ThrottleController {
             Command::General(general_cmd) => {
                 handle_general_commands(general_cmd);
             }
+            Command::Reverse(reverse_commands) => {
+                match reverse_commands {
+                    ReverseCommands::GetReverse => {
+                        debug!("Handling Reverse: GetReverse command");
+                    }
+                }
+            },
         }
     }
 }
@@ -178,6 +181,10 @@ impl ThrottleController {
         let serialized = ThrottleController::build_outgoing(Command::Throttle(ThrottleCommands::GetRpm), NumericValue::UnsignedInt(rpm.into()));
         tx_send.send(serialized).expect("Failed to send rpm into crossbeam channel");
     }
+    pub fn send_reverse(tx_send: &Sender<String>, reverse: bool) {
+        let serialized = ThrottleController::build_outgoing(Command::Reverse(ReverseCommands::GetReverse), NumericValue::UnsignedInt(reverse as u32));
+        tx_send.send(serialized).expect("Failed to send reverse into crossbeam channel");
+    }
     pub fn send_throttle(tx_send: &Sender<String>, raw_throttle: f32, adjusted_throttle: f32) {
         let serialized = ThrottleController::build_outgoing(Command::Throttle(ThrottleCommands::GetThrottle), NumericValue::MultiValue([raw_throttle, adjusted_throttle]));
         tx_send.send(serialized).expect("Failed to send throttle into crossbeam channel");
@@ -185,7 +192,7 @@ impl ThrottleController {
     pub fn start_message_handler_thread(mut self) -> ThrottleController{
         let rpm_limit_writer = self.rpm_limit_writer.clone();
         let tx_send= self.tx_send.clone();
-        let rx = self.rx.clone();
+        let rx = self.received_packet_rx.clone();
         let join_handle = std::thread::spawn(move || {
             let concurrent = ZoneControllerConcurrency::Throttle { rpm_limit: (rpm_limit_writer) };
             
