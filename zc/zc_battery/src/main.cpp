@@ -7,6 +7,8 @@
 #include "daly-bms-uart.h"
 
 
+const char* FIRMWARE_VERSION = "0.2.0";
+
 // Pinout BMS Connector:
 // Yellow -> BMS RX
 // Green  -> BMS TX
@@ -102,7 +104,7 @@ void setup() {
     Serial.begin(115200);
     delay(1000);
     Serial.println("####################################");
-    Serial.println("ZC_BATTERY Fw. v.0.1.0");
+    Serial.println("ZC_BATTERY Fw. v." + String(FIRMWARE_VERSION));
     Serial.println("");
     Serial.println("Authors: AEROSPACE-LAB Team Gokart");
     Serial.println("####################################");
