@@ -15,3 +15,34 @@ I recommend setting the CARGO_TARGET_DIR, because otherwise the build cache will
 ### Common Problems:
 - Toolchain not found:
   - Source the export file: . $HOME/export-esp.sh or add it to your .bashrc / .zshrc
+
+
+### Pinout of `zc_throttle`
+
+#### DAC I²C (Throttle Signal to Motor Controllers)
+
+| Description | Olimex ESP32-POE-ISO Pin | Wire Color | Wire To |
+|-------------|--------------------------|------------|---------|
+| Olimex SDA | `GPIO13`                        | ?      | SDA of DAC      |
+| Olimex SCL | `GPIO16`                        | ?      | SCL of DAC      |
+
+
+#### Raw Throttle Analog Input (ADC)
+
+| Description | Olimex ESP32-POE-ISO Pin | Wire Color | Wire To |
+|-------------|--------------------------|------------|---------|
+| Throttle Signal ADC | `GPIO35`                        | ?      | Throttle Pedal Signal     |
+
+#### Left Motor Controller UART
+
+| Description | Olimex ESP32-POE-ISO Pin | Wire Color | Wire To |
+|-------------|--------------------------|------------|---------|
+| Olimex TX      | `GPIO4`                        | ?      | RX of Left Motor Controller      |
+| Olimex RX      | `GPIO36`                        | ?      | TX of Left Motor Controller      |
+
+#### Right Motor Controller UART
+
+| Description | Olimex ESP32-POE-ISO Pin | Wire Color | Wire To |
+|-------------|--------------------------|------------|---------|
+| Olimex TX      | `GPIO32`                        | ?      | RX of Right Motor Controller      |
+| Olimex RX      | `GPIO33`                        | ?      | TX of Right Motor Controller      |
