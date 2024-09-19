@@ -34,18 +34,12 @@ WebSocketsClient webSocket;             // WebSocket client instance
 const char* serverUrl = "192.168.1.100";  // WebSocket server address
 const int serverPort = 6969;              // WebSocket server port
 
-long lastTimeSent = 0;                 // Last time a message was sent
 long lastTimeTempSent = 0;
 long lastTimeBmsSent = 0;
-int MESSAGE_INTERVAL = 5000;       // Interval between messages
-int MESSAGE_INTERVAL_TEMP = 100;
+int MESSAGE_INTERVAL_TEMP = 1000;
 int MESSAGE_INTERVAL_BMS = 50;
 
-float EXAMPLE_TEMP_ARRAY[] = { 20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0, 55.0};
-
-
 void sendRegister();
-void sendMsg();
 void sendSensorMsg();
 void sendBmsMsg();
 void onWebSocketEvent(WStype_t type, uint8_t *payload, size_t length);
@@ -159,16 +153,6 @@ void loop() {
 void sendRegister() {
   webSocket.sendTXT("{ \"zone\": \"battery\" }");
   Serial.println("Register package sent");
-}
-
-void sendMsg() {
-    if (millis() - lastTimeSent < MESSAGE_INTERVAL) {
-        return;
-    }
-    Serial.println("Sending message to WebSocket server...");
-    // Send a message to the WebSocket server
-    webSocket.sendTXT("{ \"zone\": \"battery\", \"command\": \"getVoltage\", \"value\": 123.4 }");
-    lastTimeSent = millis();
 }
 
 void sendSensorMsg() {
