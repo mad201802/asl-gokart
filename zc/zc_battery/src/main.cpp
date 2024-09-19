@@ -6,6 +6,14 @@
 #include "SensorManager.h"
 #include "daly-bms-uart.h"
 
+
+// Pinout BMS Connector:
+// Yellow -> BMS RX
+// Green  -> BMS TX
+
+// Wire Yellow to U1TXD (GPIO4) on the Olimex ESP32-POE-ISO
+// Wire Green to U1RXD (GPIO36) on the Olimex ESP32-POE-ISO
+
 #define BMS_SERIAL Serial1 // Set the serial port for communication with the Daly BMS
 // Construct the BMS driver and passing in the Serial interface (which pins to use)
 Daly_BMS_UART bms(BMS_SERIAL);
@@ -23,13 +31,15 @@ long biggestDelay = 0;
 WebSocketsClient webSocket;             // WebSocket client instance
 
 
-const char* serverUrl = "192.168.1.99";  // WebSocket server address
+const char* serverUrl = "192.168.1.100";  // WebSocket server address
 const int serverPort = 6969;              // WebSocket server port
 
 long lastTimeSent = 0;                 // Last time a message was sent
-long lastTimeSensorsSent = 0;
+long lastTimeTempSent = 0;
+long lastTimeBmsSent = 0;
 int MESSAGE_INTERVAL = 5000;       // Interval between messages
-int MESSAGE_INTERVAL_SENSORS = 100;
+int MESSAGE_INTERVAL_TEMP = 100;
+int MESSAGE_INTERVAL_BMS = 50;
 
 float EXAMPLE_TEMP_ARRAY[] = { 20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0, 55.0};
 
@@ -131,7 +141,7 @@ void setup() {
     Serial.println("Setup complete");
 
     // Initialize sensors
-    // initializeSensors();
+    initializeSensors();
     bms.Init(); // This call sets up the bms driver
 }
 
@@ -141,7 +151,7 @@ void loop() {
     delay(1);
     // Send messages to WebSocket server
     // sendMsg();
-    // sendSensorMsg();
+    sendSensorMsg();
     sendBmsMsg();
 }
 
@@ -162,7 +172,7 @@ void sendMsg() {
 }
 
 void sendSensorMsg() {
-    if (millis() - lastTimeSensorsSent < MESSAGE_INTERVAL_SENSORS) {
+    if (millis() - lastTimeTempSent < MESSAGE_INTERVAL_TEMP) {
         return;
     }
 
@@ -210,16 +220,16 @@ void sendSensorMsg() {
         if(webSocket.sendTXT(output)) {
             Serial.println(F("Temperature data sent"));
             Serial.println(output);
-            lastTimeSensorsSent = millis();
+            lastTimeTempSent = millis();
         } else {
             Serial.println(F("Failed to send temperature data"));
-            lastTimeSensorsSent = millis();
+            lastTimeTempSent = millis();
         }
     }
 }
 
 void sendBmsMsg() {
-    if (millis() - lastTimeSensorsSent < MESSAGE_INTERVAL_SENSORS) {
+    if (millis() - lastTimeBmsSent < MESSAGE_INTERVAL_BMS) {
         return;
     }
     bms.update();
@@ -246,10 +256,10 @@ void sendBmsMsg() {
         if(webSocket.sendTXT(output)) {
             Serial.println(F("Voltage data sent"));
             Serial.println(output);
-            lastTimeSensorsSent = millis();
+            lastTimeBmsSent = millis();
         } else {
             Serial.println(F("Failed to send voltage data"));
-            lastTimeSensorsSent = millis();
+            lastTimeBmsSent = millis();
         }
     }
 
@@ -274,10 +284,10 @@ void sendBmsMsg() {
         if(webSocket.sendTXT(output2)) {
             Serial.println(F("Current data sent"));
             Serial.println(output2);
-            lastTimeSensorsSent = millis();
+            lastTimeBmsSent = millis();
         } else {
             Serial.println(F("Failed to send current data"));
-            lastTimeSensorsSent = millis();
+            lastTimeBmsSent = millis();
         }
     }
 }
