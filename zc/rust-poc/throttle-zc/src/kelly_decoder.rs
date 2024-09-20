@@ -216,6 +216,7 @@ pub fn read_and_process(
         shared_data_writer.store(adjusted_rpm, Ordering::SeqCst);
         //TODO differentiate between the two controllers
         ThrottleController::send_rpm(&tx_send, adjusted_rpm);
+        ThrottleController::send_reverse(&tx_send, data.a.reverse.into());
         //thread::sleep(Duration::from_millis(300));
     }
 }
