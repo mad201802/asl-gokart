@@ -12,7 +12,7 @@ export const CodeInput = () => {
 
     const { adminPin, setAdminMode } = useStore();
 
-    const PIN = "12345";
+    const PIN = "69420";
 
     let handleLogin = (pin: string) => {
         if(pin === PIN) {
