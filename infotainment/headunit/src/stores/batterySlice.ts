@@ -38,7 +38,7 @@ export const createBatterySlice: StateCreator<
       };
     }),
     setBatteryVoltage: (voltage: number) => set(() => {
-      const minVoltage = 53;
+      const minVoltage = 51.2;
       const maxVoltage = 67.2;
       const batteryPercentage = (voltage - minVoltage) / (maxVoltage - minVoltage);
       return { 

@@ -18,3 +18,7 @@ export interface ValueCardProps {
   value: string | number;
   unit?: string;
 }
+
+export interface BatteryIndicatorProps {
+  batteryLevel: number;
+}
