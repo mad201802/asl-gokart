@@ -9,6 +9,7 @@ export interface MotorSlice {
     rawThrottle: number
     throttle: number
     showRawThrottle: boolean
+    pipeThroughRawThrottle: boolean
     rpm: number
     rpmBoundaries: [number, number]
     wheelCircumference: number
@@ -17,11 +18,13 @@ export interface MotorSlice {
     speedLimit: number
     maxSettableSpeed: number
     minSettableSpeed: number
+    pedalMultiplier: number
     setGear: (gear: Gears) => void
     setDriveMode: (driveMode: DriveModes) => void
     setRawThrottle: (rawThrottle: number) => void
     setThrottle: (throttle: number) => void
     setShowRawThrottle: (showRawThrottle: boolean) => void
+    setPipeThroughRawThrottle: (pipeThroughRawThrottle: boolean) => void
     setRpm: (rpm: number) => void
     setWheelCircumference: (wheelCircumference: number) => void
     setSpeed: (speed: number) => void
@@ -29,6 +32,7 @@ export interface MotorSlice {
     setSpeedLimit: (speedLimit: number) => void
     setMaxSettableSpeed: (maxSettableSpeed: number) => void
     setMinSettableSpeed: (minSettableSpeed: number) => void
+    setPedalMultiplier: (pedalMultiplier: number) => void
   }
 
 const sendThrottleLimitPacket = (limit: number, wheelCircumference: number) => {
@@ -44,7 +48,27 @@ const sendThrottleLimitPacket = (limit: number, wheelCircumference: number) => {
     console.log(JSON.stringify(newPacket));
     window.websocket.send(newPacket, Zones.THROTTLE);
   }
+
+const sendPedalMultiplierPacket = (multiplier: number) => {
+    const newPacket: OutgoingPacket = {
+      zone: Zones.THROTTLE,
+      command: ThrottleCommands.SET_PEDAL_MULTIPLIER,
+      value: Math.round(multiplier)
+    };
+    console.log(JSON.stringify(newPacket));
+    window.websocket.send(newPacket, Zones.THROTTLE);
+  }
   
+const sendPipeThroughRawThrottlePacket = (pipeThroughRawThrottle: boolean) => {
+    const newPacket: OutgoingPacket = {
+      zone: Zones.THROTTLE,
+      command: ThrottleCommands.SET_PIPE_THROUGH_RAW_THROTTLE,
+      value: pipeThroughRawThrottle
+    };
+    console.log(JSON.stringify(newPacket));
+    window.websocket.send(newPacket, Zones.THROTTLE);
+  }
+
 export const createMotorSlice: StateCreator<
   MotorSlice,
   [],
@@ -56,6 +80,7 @@ export const createMotorSlice: StateCreator<
   rawThrottle: 0.69,
   throttle: 0.75,
   showRawThrottle: true,
+  pipeThroughRawThrottle: false,
   rpm: 1250,
   rpmBoundaries: [0, 1500],
   wheelCircumference: 1.415,
@@ -64,11 +89,16 @@ export const createMotorSlice: StateCreator<
   speedLimit: 35,
   maxSettableSpeed: 35,
   minSettableSpeed: 7,
+  pedalMultiplier: 100,
   setGear: (gear: Gears) => set(() => ({ gear: gear })),
   setDriveMode: (driveMode: DriveModes) => set(() => ({ driveMode: driveMode })),
   setRawThrottle: (rawThrottle: number) => set(() => ({ rawThrottle: rawThrottle })),
   setThrottle: (throttle: number) => set(() => ({ throttle: throttle })),
   setShowRawThrottle: (showRawThrottle: boolean) => set(() => ({ showRawThrottle: showRawThrottle })),
+  setPipeThroughRawThrottle: (pipeThroughRawThrottle: boolean) => {
+    set(() => ({ pipeThroughRawThrottle: pipeThroughRawThrottle }));
+    sendPipeThroughRawThrottlePacket(pipeThroughRawThrottle);
+  },
   setRpm: (rpm: number) => {
     const wheelCircumference = get().wheelCircumference;
     set(() => ({ 
@@ -85,4 +115,8 @@ export const createMotorSlice: StateCreator<
   },
   setMaxSettableSpeed: (maxSettableSpeed: number) => set(() => ({ maxSettableSpeed: maxSettableSpeed })),
   setMinSettableSpeed: (minSettableSpeed: number) => set(() => ({ minSettableSpeed: minSettableSpeed })),
+  setPedalMultiplier: (pedalMultiplier: number) => {
+    set(() => ({ pedalMultiplier: pedalMultiplier }));
+    sendPedalMultiplierPacket(pedalMultiplier);
+  },
   })

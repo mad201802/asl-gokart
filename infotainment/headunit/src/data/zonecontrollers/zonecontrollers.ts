@@ -26,6 +26,8 @@ export enum ThrottleCommands {
     GET_DRIVEMODE = "getDriveMode",
     SET_DRIVEMODE = "setDriveMode",
     SET_LIMIT = "setLimit",
+    SET_PEDAL_MULTIPLIER = "setPedalMultiplier",
+    SET_PIPE_THROUGH_RAW_THROTTLE = "setPipeThroughRawThrottle",
     GET_REVERSE = "getReverse",
 }
 
