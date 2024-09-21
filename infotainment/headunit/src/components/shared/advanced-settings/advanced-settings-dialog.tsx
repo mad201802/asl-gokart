@@ -22,7 +22,8 @@ const AvancedSettingsDialog = () => {
 
     const [showBrightnessWarning, setShowBrightnessWarning] = useState(false);
 
-    const { screenBrightness, setScreenBrightness, showRawThrottle, setShowRawThrottle } = useStore();
+    const { screenBrightness, showRawThrottle } = useStore();
+    const { setScreenBrightness, setShowRawThrottle } = useStore();
 
     let handleSliderChange = (value: number) => {
         setScreenBrightness(value);
@@ -54,7 +55,6 @@ const AvancedSettingsDialog = () => {
               {showBrightnessWarning && <p className="text-red-500">Brightness might be too low for driving in bright daylight!</p>}
 
               <LabeledSwitch id={""} label={"Show raw throttle"} onChange={(v) => setShowRawThrottle(v)} defaultValue={showRawThrottle} />
-
             </div>
             </DialogDescription>
             <DialogFooter>
