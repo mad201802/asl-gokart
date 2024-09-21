@@ -1,4 +1,4 @@
-use std::{cmp::Reverse, sync::{atomic::{AtomicU16, AtomicU32, Ordering}, Arc, Mutex}, thread::JoinHandle};
+use std::{cmp::Reverse, sync::{atomic::{AtomicBool, AtomicU16, AtomicU32, Ordering}, Arc, Mutex}, thread::JoinHandle};
 use crossbeam_channel::{unbounded, Receiver, Sender};
 use serde::{Deserialize, Serialize};
 use log::{debug, info};
@@ -19,33 +19,31 @@ impl std::fmt::Display for Zones {
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "command", rename_all = "camelCase")]
-pub enum ThrottleCommands {
+pub enum ThrottleZoneCommands {
     SetLimit,
+    SetFunMode,
+    SetPedalMultiplier,
     GetThrottle,
     GetRpm,
     CalibrateLow,
     CalibrateHigh,
     EscData,
+    GetReverse
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "command", rename_all = "camelCase")]
-pub enum ReverseCommands {
-    GetReverse,
-}
-
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
-#[serde(tag = "command", rename_all = "camelCase")]
-pub enum GeneralCommands {
+pub enum ZoneIndependentCommands {
     Register,
 }
 
+//Contains a entry for each zone that refers to the enum that contains the available commands for this zone.
+//In addition there are shared commands refered to with 'General'
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "zone", rename_all = "camelCase")]
 pub enum Command {
-    Throttle(ThrottleCommands),
-    Reverse(ReverseCommands),
-    General(GeneralCommands),
+    Throttle(ThrottleZoneCommands),
+    General(ZoneIndependentCommands),
 }
 
 pub enum SocketEvent {
@@ -66,6 +64,7 @@ pub enum NumericValue {
     UnsignedInt(u32),
     Float(f32),
     MultiValue([f32; 2]),
+    Boolean(bool)
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
@@ -90,7 +89,7 @@ pub trait ZoneController {
 }
 
 pub enum ZoneControllerConcurrency {
-    Throttle {rpm_limit: Arc<AtomicU32>}
+    Throttle {rpm_limit: Arc<AtomicU32>, fun_mode: Arc<AtomicBool>, pedal_multiplier: Arc<AtomicU32>}
 }
 
 pub struct ZoneControllerFactory;
@@ -107,6 +106,10 @@ impl ZoneControllerFactory {
         let (tx_send, rx_send) = unbounded::<String>();
         let rpm_limit = Arc::new(AtomicU32::new(0));
         let rpm_limit_writer = Arc::clone(&rpm_limit);
+        let fun_mode = Arc::new(AtomicBool::new(false));
+        let fun_mode_writer = Arc::clone(&fun_mode);
+        let pedal_multiplier = Arc::new(AtomicU32::new(0));
+        let pedal_multiplier_writer = Arc::clone(&pedal_multiplier);
         
         rpm_limit_writer.store(500, Ordering::SeqCst);
 
@@ -114,10 +117,14 @@ impl ZoneControllerFactory {
             zone: Zones::Throttle,
             received_packet_tx,
             received_packet_rx,
-            tx_send: tx_send,
-            rx_send: rx_send,
-            rpm_limit: rpm_limit,
-            rpm_limit_writer: rpm_limit_writer,
+            tx_send,
+            rx_send,
+            rpm_limit,
+            rpm_limit_writer,
+            fun_mode,
+            fun_mode_writer,
+            pedal_multiplier,
+            pedal_multiplier_writer,
             join_handle:  None,
         }
     }
@@ -133,6 +140,10 @@ pub struct ThrottleController {
     pub rx_send: Receiver<String>,
     pub rpm_limit: Arc<AtomicU32>,
     rpm_limit_writer: Arc<AtomicU32>,
+    pub fun_mode: Arc<AtomicBool>,
+    fun_mode_writer: Arc<AtomicBool>, //Used to bypass rpm limiter; pedal_multiplier is still used
+    pub pedal_multiplier: Arc<AtomicU32>,
+    pedal_multiplier_writer: Arc<AtomicU32>, //Multiplier in %; when set to 50, the throttle output is 50% (when using fun mode)
     join_handle: Option<JoinHandle<()>>,
 }
 
@@ -142,59 +153,77 @@ impl ZoneController for ThrottleController {
         match packet.command {
             Command::Throttle(throttle_cmd) => {
                 match throttle_cmd {
-                    ThrottleCommands::SetLimit => {
-                        if let ZoneControllerConcurrency::Throttle { rpm_limit } = concurrent {
+                    ThrottleZoneCommands::SetLimit => {
+                        if let ZoneControllerConcurrency::Throttle { rpm_limit, fun_mode, pedal_multiplier } = concurrent {
                              // Modify the value
                             rpm_limit.store(numeric_value_to_u32(&packet.value), Ordering::SeqCst);
                             println!("Updated RPM limit: {}", rpm_limit.load(Ordering::Relaxed));
                         }
                         debug!("Handling Throttle: SetLimit command");
                     }
-                    ThrottleCommands::CalibrateLow => {
+                    ThrottleZoneCommands::CalibrateLow => {
                         debug!("Handling Throttle: CalibrateLow command");
                     }
-                    ThrottleCommands::CalibrateHigh => {
+                    ThrottleZoneCommands::CalibrateHigh => {
                         debug!("Handling Throttle: CalibrateHigh command");
                     }
-                    ThrottleCommands::EscData => {
+                    ThrottleZoneCommands::EscData => {
                         debug!("Handling Throttle: EscData command");
                     }
-                    ThrottleCommands::GetThrottle => todo!(),
-                    ThrottleCommands::GetRpm => todo!(),
+                    ThrottleZoneCommands::GetThrottle => todo!(),
+                    ThrottleZoneCommands::GetRpm => todo!(),
+                    ThrottleZoneCommands::GetReverse => {
+                        debug!("Handling Reverse: GetReverse command");
+                    }
+                    ThrottleZoneCommands::SetFunMode => {
+                        if let ZoneControllerConcurrency::Throttle { rpm_limit, fun_mode, pedal_multiplier } = concurrent {
+                            // Modify the value
+                           fun_mode.store(numeric_value_to_bool(&packet.value), Ordering::SeqCst);
+                           println!("Updated fun mode to: {}", fun_mode.load(Ordering::Relaxed));
+                       }
+                        debug!("Handling Throttle: SetFun command");
+                    },
+                    ThrottleZoneCommands::SetPedalMultiplier => {
+                        if let ZoneControllerConcurrency::Throttle { rpm_limit, fun_mode, pedal_multiplier } = concurrent {
+                            // Modify the value
+                           pedal_multiplier.store(numeric_value_to_u32(&packet.value), Ordering::SeqCst);
+                           println!("Updated Pedal multiplier: {}", pedal_multiplier.load(Ordering::Relaxed));
+                       }
+                        debug!("Handling Throttle: SetPedalMutiplier command");
+                    },
                 }
             }
             Command::General(general_cmd) => {
                 handle_general_commands(general_cmd);
-            }
-            Command::Reverse(reverse_commands) => {
-                match reverse_commands {
-                    ReverseCommands::GetReverse => {
-                        debug!("Handling Reverse: GetReverse command");
-                    }
-                }
             },
         }
     }
 }
 impl ThrottleController {
     pub fn send_rpm(tx_send: &Sender<String>, rpm: u16) {
-        let serialized = ThrottleController::build_outgoing(Command::Throttle(ThrottleCommands::GetRpm), NumericValue::UnsignedInt(rpm.into()));
+        let serialized = ThrottleController::build_outgoing(Command::Throttle(ThrottleZoneCommands::GetRpm), NumericValue::UnsignedInt(rpm.into()));
         tx_send.send(serialized).expect("Failed to send rpm into crossbeam channel");
     }
     pub fn send_reverse(tx_send: &Sender<String>, reverse: bool) {
-        let serialized = ThrottleController::build_outgoing(Command::Reverse(ReverseCommands::GetReverse), NumericValue::UnsignedInt(reverse as u32));
+        let serialized = ThrottleController::build_outgoing(Command::Throttle(ThrottleZoneCommands::GetReverse), NumericValue::UnsignedInt(reverse as u32));
         tx_send.send(serialized).expect("Failed to send reverse into crossbeam channel");
     }
     pub fn send_throttle(tx_send: &Sender<String>, raw_throttle: f32, adjusted_throttle: f32) {
-        let serialized = ThrottleController::build_outgoing(Command::Throttle(ThrottleCommands::GetThrottle), NumericValue::MultiValue([raw_throttle, adjusted_throttle]));
+        let serialized = ThrottleController::build_outgoing(Command::Throttle(ThrottleZoneCommands::GetThrottle), NumericValue::MultiValue([raw_throttle, adjusted_throttle]));
         tx_send.send(serialized).expect("Failed to send throttle into crossbeam channel");
     }
     pub fn start_message_handler_thread(mut self) -> ThrottleController{
         let rpm_limit_writer = self.rpm_limit_writer.clone();
+        let fun_mode_writer = self.fun_mode_writer.clone();
+        let pedal_multiplier_writer = self.pedal_multiplier_writer.clone();
         let tx_send= self.tx_send.clone();
         let rx = self.received_packet_rx.clone();
         let join_handle = std::thread::spawn(move || {
-            let concurrent = ZoneControllerConcurrency::Throttle { rpm_limit: (rpm_limit_writer) };
+            let concurrent = ZoneControllerConcurrency::Throttle { 
+                rpm_limit: rpm_limit_writer,
+                fun_mode: fun_mode_writer,
+                pedal_multiplier: pedal_multiplier_writer
+            };
             
             loop {
                 for packet in rx.iter() {
@@ -216,9 +245,9 @@ impl ThrottleController {
         return self;
     }
 }
-fn handle_general_commands(command: GeneralCommands) {
+fn handle_general_commands(command: ZoneIndependentCommands) {
     match command {
-        GeneralCommands::Register => {
+        ZoneIndependentCommands::Register => {
             debug!("Handling General: Register command");
         }
     }
@@ -229,6 +258,13 @@ fn numeric_value_to_u32(numeric_value: &NumericValue) -> u32 {
         NumericValue::Float(f) => *f as u32, // Convert float to u32
         NumericValue::UnsignedInt(u) => *u as u32, // Convert unsigned integer to u32
         _ => 0,
+    }
+}
+
+fn numeric_value_to_bool(numeric_value: &NumericValue) -> bool {
+    match numeric_value {
+        NumericValue::Boolean(f) => *f as bool, // Convert float to u32
+        _ => false,
     }
 }
 
@@ -247,7 +283,7 @@ mod tests {
 
     #[test]
     fn test_serialize_throttle_packet() {
-        let command = Command::Throttle(ThrottleCommands::GetThrottle);
+        let command = Command::Throttle(ThrottleZoneCommands::GetThrottle);
         let value = NumericValue::Float(0.25);
 
         let json_output = ThrottleController::build_outgoing(command, value);
@@ -259,7 +295,7 @@ mod tests {
     }
     #[test]
     fn test_serialize_rpm_packet() {
-        let command = Command::Throttle(ThrottleCommands::GetRpm);
+        let command = Command::Throttle(ThrottleZoneCommands::GetRpm);
         let value = NumericValue::UnsignedInt(4000);
 
         let json_output = ThrottleController::build_outgoing(command, value);
@@ -267,6 +303,18 @@ mod tests {
         assert_eq!(
             json_output,
             r#"{"zone":"throttle","command":"getRpm","value":4000}"#
+        );
+    }
+    #[test]
+    fn test_serialize_reverse_status_packet() {
+        let command = Command::Throttle(ThrottleZoneCommands::GetReverse);
+        let value = NumericValue::UnsignedInt(0);
+
+        let json_output = ThrottleController::build_outgoing(command, value);
+
+        assert_eq!(
+            json_output,
+            r#"{"zone":"throttle","command":"getReverse","value":0}"#
         );
     }
     #[test]
@@ -278,10 +326,43 @@ mod tests {
         assert_eq!(
             output,
             Packet {
-                command: Command::Throttle(ThrottleCommands::SetLimit),
+                command: Command::Throttle(ThrottleZoneCommands::SetLimit),
                 value: NumericValue::UnsignedInt(3000)
             }
         );
     }
+
+    #[test]
+    fn test_deserialize_set_fun_mode_packet() {
+        let packet = r#"{"zone":"throttle","command":"setFunMode","value":true}"#;
+        let output: Packet = deserialize(&packet).ok().expect("Failed to deserialize");
+
+        let expected = Packet {
+            command: Command::Throttle(ThrottleZoneCommands::SetFunMode),
+            value: NumericValue::Boolean(true)
+        };
+
+        assert_eq!(
+            output,
+            expected
+        );
+    }
+
+    #[test]
+    fn test_deserialize_set_pedal_multiplier_packet() {
+        let packet = r#"{"zone":"throttle","command":"setPedalMultiplier","value":50}"#;
+        let output: Packet = deserialize(&packet).ok().expect("Failed to deserialize");
+
+        let expected = Packet {
+            command: Command::Throttle(ThrottleZoneCommands::SetPedalMultiplier),
+            value: NumericValue::UnsignedInt(50)
+        };
+
+        assert_eq!(
+            output,
+            expected
+        );
+    }
+
 }
 
