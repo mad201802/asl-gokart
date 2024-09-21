@@ -104,7 +104,7 @@ const DriveNormalPage = () => {
             setRpm(parsed.value);
             break;
         case ThrottleCommands.GET_REVERSE:
-            setGear(parsed.value ? Gears.r : Gears.d);
+            setGear(parsed.value === 1 ? Gears.r : Gears.d);
             break;
         default:
             console.error("Invalid command (data type) received in throttle message!");
@@ -129,9 +129,9 @@ const DriveNormalPage = () => {
   // TODO: Transfer color scaling boundaries to individual states (or only max. value) and multiply times 0.75 or 0.5 for the scale.
   const rpmSegments: Segment[] = [
     { value: 0, color: "#339900" },
-    { value: 5000, color: "#339900" },
-    { value: 7500, color: "#ffcc00" },
-    { value: 10000, color: "#cc3300" },
+    { value: 750, color: "#339900" },
+    { value: 1000, color: "#ffcc00" },
+    { value: 1500, color: "#cc3300" },
   ];
 
   return (
@@ -144,11 +144,11 @@ const DriveNormalPage = () => {
           <div className="flex flex-col items-center justify-center">
             <div className="w-[200px]">
               <CircularProgressbarWithChildren
-                value={throttle*100}
+                value={((showRawThrottle ? rawThrottle : throttle)*100)}
                 circleRatio={0.75}
                 styles={buildStyles({
                   pathColor: interpolateColor(
-                    throttle*100,
+                    ((showRawThrottle ? rawThrottle : throttle)*100),
                     throttleBoundaries[0],
                     throttleBoundaries[1],
                     throttleSegments
