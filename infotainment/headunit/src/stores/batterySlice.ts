@@ -7,8 +7,10 @@ export interface BatterySlice {
     maxTemp: number,
     batteryPercentage: number,
     voltage: number,
+    batteryCurrent: number,
     setBatteryTemps: (temps: number[]) => void,
-    setBatteryVoltage: (voltage: number) => void
+    setBatteryVoltage: (voltage: number) => void,
+    setBatteryCurrent: (current: number) => void,
   }
   
 export const createBatterySlice: StateCreator<
@@ -23,6 +25,7 @@ export const createBatterySlice: StateCreator<
     maxTemp: 0,
     batteryPercentage: 0.33,
     voltage: 67.2,
+    batteryCurrent: 95,
     setBatteryTemps: (temps: number[]) => set(() => {
       const avgBatteryTemp = temps.reduce((a, b) => a + b, 0) / temps.length;
       const minTemp = Math.min(...temps);
@@ -35,11 +38,12 @@ export const createBatterySlice: StateCreator<
       };
     }),
     setBatteryVoltage: (voltage: number) => set(() => {
-      const minVoltage = 53;
+      const minVoltage = 51.2;
       const maxVoltage = 67.2;
       const batteryPercentage = (voltage - minVoltage) / (maxVoltage - minVoltage);
       return { 
         voltage: voltage,
         batteryPercentage: batteryPercentage };
     }),
+    setBatteryCurrent: (current: number) => set(() => ({ batteryCurrent: current }))
   })

@@ -1,16 +1,40 @@
 use esp_idf_svc::{
     eth::{BlockingEth, EspEth, EthDriver, RmiiEth},
     eventloop::EspSystemEventLoop,
-    hal::{gpio::{self, Gpio12, Gpio17, Gpio18, Gpio19, Gpio21, Gpio22, Gpio23, Gpio25, Gpio26, Gpio27, Gpio5, PinDriver}, mac::MAC},
+    hal::{
+        gpio::{
+            self, Gpio12, Gpio17, Gpio18, Gpio19, Gpio21, Gpio22, Gpio23, Gpio25, Gpio26, Gpio27,
+            Gpio5, PinDriver,
+        },
+        mac::MAC,
+    },
     ipv4,
-    netif::{EspNetif, NetifConfiguration, NetifStack}
+    netif::{EspNetif, NetifConfiguration, NetifStack},
 };
 
 use std::net::Ipv4Addr;
 
 use log::info;
 
-pub fn start_eth(mac: MAC, gpio12: Gpio12, gpio25: Gpio25, gpio26:Gpio26, gpio27: Gpio27, gpio23: Gpio23, gpio22: Gpio22, gpio21: Gpio21, gpio19: Gpio19, gpio18: Gpio18, gpio17: Gpio17, gpio5: Gpio5, sys_loop: &EspSystemEventLoop) -> (PinDriver<Gpio12, gpio::Output>, BlockingEth<EspEth<RmiiEth>>) {
+#[allow(clippy::too_many_arguments)]
+pub fn start_eth(
+    mac: MAC,
+    gpio12: Gpio12,
+    gpio25: Gpio25,
+    gpio26: Gpio26,
+    gpio27: Gpio27,
+    gpio23: Gpio23,
+    gpio22: Gpio22,
+    gpio21: Gpio21,
+    gpio19: Gpio19,
+    gpio18: Gpio18,
+    gpio17: Gpio17,
+    gpio5: Gpio5,
+    sys_loop: &EspSystemEventLoop,
+) -> (
+    PinDriver<Gpio12, gpio::Output>,
+    BlockingEth<EspEth<RmiiEth>>,
+) {
     //ETH power
     let mut lan_power: PinDriver<_, gpio::Output> = PinDriver::output(gpio12).unwrap();
     lan_power.set_high().unwrap();
@@ -37,7 +61,10 @@ pub fn start_eth(mac: MAC, gpio12: Gpio12, gpio25: Gpio25, gpio26:Gpio26, gpio27
     //Custom config to set a static IP instead of using DHCP
     let client_settings = ipv4::ClientSettings {
         ip: Ipv4Addr::new(192, 168, 1, 69),
-        subnet: ipv4::Subnet { gateway: (Ipv4Addr::new(192, 168, 1, 1)), mask: ( ipv4::Mask(24) ) },
+        subnet: ipv4::Subnet {
+            gateway: (Ipv4Addr::new(192, 168, 1, 1)),
+            mask: (ipv4::Mask(24)),
+        },
         dns: Option::None,
         secondary_dns: Option::None,
     };
@@ -53,7 +80,7 @@ pub fn start_eth(mac: MAC, gpio12: Gpio12, gpio25: Gpio25, gpio26:Gpio26, gpio27
         custom_mac: None,
     };
 
-    let netif_static =  EspNetif::new_with_conf(&static_conf).expect("Failed to create EspNetif");
+    let netif_static = EspNetif::new_with_conf(&static_conf).expect("Failed to create EspNetif");
 
     let eth = EspEth::wrap_all(eth_driver, netif_static).unwrap();
     info!("Eth created");
@@ -61,7 +88,6 @@ pub fn start_eth(mac: MAC, gpio12: Gpio12, gpio25: Gpio25, gpio26:Gpio26, gpio27
     let mut eth = BlockingEth::wrap(eth, sys_loop.clone()).unwrap();
 
     info!("Starting eth...");
-    
 
     eth.start().unwrap();
 
@@ -72,5 +98,4 @@ pub fn start_eth(mac: MAC, gpio12: Gpio12, gpio25: Gpio25, gpio26:Gpio26, gpio27
     //lan_power needs to be returned because otherwise the power for the ethernet module will be shut off
     //eth needs to be returned because otherwise the interface is deleted by rust after this function finishes
     (lan_power, eth)
-
 }

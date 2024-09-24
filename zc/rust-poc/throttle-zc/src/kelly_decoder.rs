@@ -1,11 +1,22 @@
-use std::io;
+use std::{
+    io,
+    sync::{
+        atomic::{AtomicU16, Ordering},
+        Arc,
+    }, 
+    time::Duration,
+};
 
+use crossbeam_channel::Sender;
 use esp_idf_svc::hal::delay::BLOCK;
-use log::{error, debug};
+use esp_idf_sys::TickType_t;
+use log::{debug, error, info};
+use protocoll_lib::protocoll::ThrottleController;
 
 pub const PACKET_LENGTH: usize = 19;
 pub const CRC_INDEX: usize = 18;
-//pub const ERROR: i32 = -1;
+const UART_TIMEOUT: TickType_t = 100;
+//pub const ERROR: i32 = -1;BLOCK
 
 pub fn bswap_16(x: u16) -> u16 {
     ((x >> 8) & 0xff) | ((x << 8) & 0xff00)
@@ -73,7 +84,9 @@ pub struct PacketsStruct {
 }
 
 pub fn calculate_crc(pkt: &GenericPacket) -> u8 {
-    pkt.bytes[..CRC_INDEX].iter().fold(0u8, |acc, &byte| acc.wrapping_add(byte))
+    pkt.bytes[..CRC_INDEX]
+        .iter()
+        .fold(0u8, |acc, &byte| acc.wrapping_add(byte))
 }
 
 pub fn validate_checksum(pkt: &GenericPacket) -> bool {
@@ -140,15 +153,21 @@ pub fn import_bytes_to_packets(pkts: &mut PacketsStruct, bytes: &[u8]) {
             }
             None => {}
         }
+    } else {
+        error!("Checksum failed");
     }
 }
 
-pub fn read_controller(packet_a: bool, packet_b: bool, uart_driver: &esp_idf_svc::hal::uart::UartDriver) -> io::Result<PacketsStruct> {
+pub fn read_controller(
+    packet_a: bool,
+    packet_b: bool,
+    uart_driver: &esp_idf_svc::hal::uart::UartDriver,
+) -> io::Result<PacketsStruct> {
     let mut packets = PacketsStruct::default();
-    
+
     if packet_a {
         let packet_a_command: [u8; 3] = [0x3a, 0x00, 0x3a];
-        
+
         if let Err(e) = uart_driver.write(&packet_a_command) {
             error!("Failed to write packet_a_command: {}", e);
         }
@@ -157,7 +176,7 @@ pub fn read_controller(packet_a: bool, packet_b: bool, uart_driver: &esp_idf_svc
         let mut packet_response = [0u8; PACKET_LENGTH];
 
         //TODO Consider setting a hard timeout instead of waiting unlimited
-        if let Err(e) = uart_driver.read(&mut packet_response, BLOCK) {
+        if let Err(e) = uart_driver.read(&mut packet_response, UART_TIMEOUT) {
             error!("Failed to read packet_response: {}", e);
         }
         debug!("Received packet_response: {:?}", packet_response);
@@ -172,8 +191,9 @@ pub fn read_controller(packet_a: bool, packet_b: bool, uart_driver: &esp_idf_svc
         debug!("wrote b");
 
         let mut packet_response = [0u8; PACKET_LENGTH];
-        uart_driver.read(&mut packet_response, BLOCK).unwrap();
-
+        if let Err(e) = uart_driver.read(&mut packet_response, UART_TIMEOUT) {
+            error!("Failed to read packet_response: {}", e);
+        }
         debug!("Received packet_response: {:?}", packet_response);
 
         import_bytes_to_packets(&mut packets, &packet_response);
@@ -181,4 +201,36 @@ pub fn read_controller(packet_a: bool, packet_b: bool, uart_driver: &esp_idf_svc
     }
 
     Ok(packets)
+}
+
+pub fn read_and_process(
+    tx_send: Sender<String>,
+    shared_data_writer: Arc<AtomicU16>,
+    uart_driver: esp_idf_svc::hal::uart::UartDriver,
+) {
+    let mut i: u8 = 0;
+    loop {
+        match read_controller(true, true, &uart_driver) {
+            Ok(data) => {
+                // Ensure no divide by zero (though dividing by 4 here is fine, adjust as needed)
+                let adjusted_rpm = data.b.rpm / 4;
+                info!("[Kelly Decoder] Read RPM {}", adjusted_rpm);
+    
+                // Update the shared atomic variable
+                shared_data_writer.store(adjusted_rpm, Ordering::SeqCst);
+
+                if i == 10 {
+                    i = 0;
+                    // Send RPM and reverse signals, handling any possible errors
+                    ThrottleController::send_rpm(&tx_send, adjusted_rpm);
+        
+                    ThrottleController::send_reverse(&tx_send, data.a.reverse);
+                }
+                i += 1;
+            }
+            Err(e) => {
+                error!("Failed to read data from controller: {}", e);
+            }
+        }   
+    }
 }
