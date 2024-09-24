@@ -21,7 +21,7 @@ impl std::fmt::Display for Zones {
 #[serde(tag = "command", rename_all = "camelCase")]
 pub enum ThrottleZoneCommands {
     SetLimit,
-    SetFunMode,
+    SetPipeThroughRawThrottle,
     SetPedalMultiplier,
     GetThrottle,
     GetRpm,
@@ -89,7 +89,7 @@ pub trait ZoneController {
 }
 
 pub enum ZoneControllerConcurrency {
-    Throttle {rpm_limit: Arc<AtomicU32>, fun_mode: Arc<AtomicBool>, pedal_multiplier: Arc<AtomicU32>}
+    Throttle {rpm_limit: Arc<AtomicU32>, pipe_through_raw_throttle: Arc<AtomicBool>, pedal_multiplier: Arc<AtomicU32>}
 }
 
 pub struct ZoneControllerFactory;
@@ -106,9 +106,9 @@ impl ZoneControllerFactory {
         let (tx_send, rx_send) = unbounded::<String>();
         let rpm_limit = Arc::new(AtomicU32::new(0));
         let rpm_limit_writer = Arc::clone(&rpm_limit);
-        let fun_mode = Arc::new(AtomicBool::new(false));
-        let fun_mode_writer = Arc::clone(&fun_mode);
-        let pedal_multiplier = Arc::new(AtomicU32::new(0));
+        let pipe_through_raw_throttle = Arc::new(AtomicBool::new(false));
+        let pipe_through_raw_throttle_writer = Arc::clone(&pipe_through_raw_throttle);
+        let pedal_multiplier = Arc::new(AtomicU32::new(100));
         let pedal_multiplier_writer = Arc::clone(&pedal_multiplier);
         
         rpm_limit_writer.store(500, Ordering::SeqCst);
@@ -121,8 +121,8 @@ impl ZoneControllerFactory {
             rx_send,
             rpm_limit,
             rpm_limit_writer,
-            fun_mode,
-            fun_mode_writer,
+            pipe_through_raw_throttle,
+            pipe_through_raw_throttle_writer,
             pedal_multiplier,
             pedal_multiplier_writer,
             join_handle:  None,
@@ -140,8 +140,8 @@ pub struct ThrottleController {
     pub rx_send: Receiver<String>,
     pub rpm_limit: Arc<AtomicU32>,
     rpm_limit_writer: Arc<AtomicU32>,
-    pub fun_mode: Arc<AtomicBool>,
-    fun_mode_writer: Arc<AtomicBool>, //Used to bypass rpm limiter; pedal_multiplier is still used
+    pub pipe_through_raw_throttle: Arc<AtomicBool>,
+    pipe_through_raw_throttle_writer: Arc<AtomicBool>, //Used to bypass rpm limiter; pedal_multiplier is still used
     pub pedal_multiplier: Arc<AtomicU32>,
     pedal_multiplier_writer: Arc<AtomicU32>, //Multiplier in %; when set to 50, the throttle output is 50% (when using fun mode)
     join_handle: Option<JoinHandle<()>>,
@@ -154,7 +154,7 @@ impl ZoneController for ThrottleController {
             Command::Throttle(throttle_cmd) => {
                 match throttle_cmd {
                     ThrottleZoneCommands::SetLimit => {
-                        if let ZoneControllerConcurrency::Throttle { rpm_limit, fun_mode, pedal_multiplier } = concurrent {
+                        if let ZoneControllerConcurrency::Throttle { rpm_limit, pipe_through_raw_throttle, pedal_multiplier } = concurrent {
                              // Modify the value
                             rpm_limit.store(numeric_value_to_u32(&packet.value), Ordering::SeqCst);
                             println!("Updated RPM limit: {}", rpm_limit.load(Ordering::Relaxed));
@@ -175,16 +175,16 @@ impl ZoneController for ThrottleController {
                     ThrottleZoneCommands::GetReverse => {
                         debug!("Handling Reverse: GetReverse command");
                     }
-                    ThrottleZoneCommands::SetFunMode => {
-                        if let ZoneControllerConcurrency::Throttle { rpm_limit, fun_mode, pedal_multiplier } = concurrent {
+                    ThrottleZoneCommands::SetPipeThroughRawThrottle => {
+                        if let ZoneControllerConcurrency::Throttle { rpm_limit, pipe_through_raw_throttle, pedal_multiplier } = concurrent {
                             // Modify the value
-                           fun_mode.store(numeric_value_to_bool(&packet.value), Ordering::SeqCst);
-                           println!("Updated fun mode to: {}", fun_mode.load(Ordering::Relaxed));
+                           pipe_through_raw_throttle.store(numeric_value_to_bool(&packet.value), Ordering::SeqCst);
+                           println!("Updated fun mode to: {}", pipe_through_raw_throttle.load(Ordering::Relaxed));
                        }
                         debug!("Handling Throttle: SetFun command");
                     },
                     ThrottleZoneCommands::SetPedalMultiplier => {
-                        if let ZoneControllerConcurrency::Throttle { rpm_limit, fun_mode, pedal_multiplier } = concurrent {
+                        if let ZoneControllerConcurrency::Throttle { rpm_limit, pipe_through_raw_throttle, pedal_multiplier } = concurrent {
                             // Modify the value
                            pedal_multiplier.store(numeric_value_to_u32(&packet.value), Ordering::SeqCst);
                            println!("Updated Pedal multiplier: {}", pedal_multiplier.load(Ordering::Relaxed));
@@ -214,14 +214,14 @@ impl ThrottleController {
     }
     pub fn start_message_handler_thread(mut self) -> ThrottleController{
         let rpm_limit_writer = self.rpm_limit_writer.clone();
-        let fun_mode_writer = self.fun_mode_writer.clone();
+        let pipe_through_raw_throttle_writer = self.pipe_through_raw_throttle_writer.clone();
         let pedal_multiplier_writer = self.pedal_multiplier_writer.clone();
         let tx_send= self.tx_send.clone();
         let rx = self.received_packet_rx.clone();
         let join_handle = std::thread::spawn(move || {
             let concurrent = ZoneControllerConcurrency::Throttle { 
                 rpm_limit: rpm_limit_writer,
-                fun_mode: fun_mode_writer,
+                pipe_through_raw_throttle: pipe_through_raw_throttle_writer,
                 pedal_multiplier: pedal_multiplier_writer
             };
             
@@ -333,12 +333,12 @@ mod tests {
     }
 
     #[test]
-    fn test_deserialize_set_fun_mode_packet() {
-        let packet = r#"{"zone":"throttle","command":"setFunMode","value":true}"#;
+    fn test_deserialize_set_pipe_through_raw_throttle_packet() {
+        let packet = r#"{"zone":"throttle","command":"setPipeThroughRawThrottle","value":true}"#;
         let output: Packet = deserialize(&packet).ok().expect("Failed to deserialize");
 
         let expected = Packet {
-            command: Command::Throttle(ThrottleZoneCommands::SetFunMode),
+            command: Command::Throttle(ThrottleZoneCommands::SetPipeThroughRawThrottle),
             value: NumericValue::Boolean(true)
         };
 
