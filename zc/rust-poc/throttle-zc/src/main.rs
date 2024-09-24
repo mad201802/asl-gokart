@@ -2,9 +2,9 @@ use crossbeam_channel::Sender;
 // Espressif IDF Service layer imports
 use esp_idf_svc::hal::{
     adc::{
-        attenuation::{DB_11, DB_6},
+        attenuation::DB_11,
         oneshot::{config::AdcChannelConfig, AdcChannelDriver, AdcDriver},
-        ADC1, ADC2,
+        ADC1,
     },
     cpu::Core,
     gpio::Gpio35,
@@ -20,7 +20,7 @@ use std::{
     env,
     net::UdpSocket,
     sync::{
-        atomic::{AtomicU16, AtomicU32, Ordering},
+        atomic::{AtomicBool, AtomicU16, AtomicU32, Ordering},
         Arc,
     },
     thread,
@@ -206,6 +206,8 @@ fn main() -> anyhow::Result<()> {
     .unwrap();
 
     let rpm_limit = throttle_controller.rpm_limit.clone();
+    let fun_mode = throttle_controller.fun_mode.clone();
+    let pedal_multiplier = throttle_controller.pedal_multiplier.clone();
     let gas_sender = throttle_controller.tx_send.clone();
     let _gas_thread = thread::spawn(move || {
         gas_pedal_chain(
@@ -213,6 +215,8 @@ fn main() -> anyhow::Result<()> {
             rpm_left,
             rpm_right,
             rpm_limit,
+            fun_mode,
+            pedal_multiplier,
             p.adc1,
             pins.gpio35,
             dac,
@@ -229,70 +233,138 @@ fn gas_pedal_chain(
     rpm_left: Arc<AtomicU16>,
     rpm_right: Arc<AtomicU16>,
     rpm_limit: Arc<AtomicU32>,
+    fun_mode: Arc<AtomicBool>,
+    pedal_multiplier: Arc<AtomicU32>,
     adc: ADC1,
     pin: Gpio35,
     mut dac: MCP4728<I2cDriver<'_>>,
 ) {
-    //Gas input
+    // Gas input
     let throttle = AdcDriver::new(adc).unwrap();
-    // configuring pin to analog read, you can regulate the adc input voltage range depending on your need
-    // for this example we use the attenuation of 11db which sets the input voltage range to around 0-3.6V
     let config = AdcChannelConfig {
         attenuation: DB_11,
         calibration: true,
         ..Default::default()
     };
-
     let mut throttle_pin = AdcChannelDriver::new(&throttle, pin, &config).unwrap();
 
-    const GAS_LOW: u32 = 900;
-    const GAS_HIGH: u32 = 3155;
+    const GAS_LOW: u32 = 650;
+    const GAS_HIGH: u32 = 3050;
+    const MAX_THROTTLE: u16 = 4095;  // 12-bit DAC max value
+    const INTEGRAL_LIMIT: f32 = 1000.0;  // Anti-windup limit for the integral term
+    
+    // PID controller gains
+    const KP: f32 = 0.5;   // Proportional gain
+    const KI: f32 = 0.01;  // Integral gain
+    const KD: f32 = 0.1;   // Derivative gain
+
+    let mut integral_sum: f32 = 0.0;     // Integral term accumulator
+    let mut previous_error: f32 = 0.0;   // Previous error for derivative calculation
     let mut i: u8 = 0;
+    let mut bypass_pid = fun_mode.load(Ordering::SeqCst);
+    let mut current_pedal_multiplier = pedal_multiplier.load(Ordering::SeqCst);
+
     loop {
-        // let start = Instant::now();
-        let rpm_left = rpm_left.load(Ordering::SeqCst);
-        let rpm_right = rpm_right.load(Ordering::SeqCst);
-        let rpm_limit = rpm_limit.load(Ordering::SeqCst);
+        // Throttle input
         let throttle_read: u32 = throttle.read(&mut throttle_pin).unwrap().into();
-        //info!("dalc throttle {}", current_throttle);
-        let mut to_substract = GAS_LOW;
+        let mut to_subtract = GAS_LOW;
         if throttle_read < GAS_LOW {
-            to_substract = throttle_read;
+            to_subtract = throttle_read;
         }
-        let mut calculated_throttle: u32 = throttle_read - to_substract; //(throttle * throttle_limiter) / 100;
-                                                                            //info!("After subtract {}", calculated_throttle);
-        calculated_throttle = (calculated_throttle * 4095) / (GAS_HIGH - GAS_LOW);
-        //info!("After stretch {}", calculated_throttle);
-        //set throttle to 0 if current rpm is over the limit
-        calculated_throttle *=
-            (rpm_limit >= rpm_left.into() && rpm_limit >= rpm_right.into()) as u32;
-        //calculated_throttle *= (rpm_limit >= rpm_right.into()) as u32;
-        //maximum allowed value of throttle is 4095, because it's 12 bit
-        let calculated_throttle: u16 = min(4095, calculated_throttle) as u16;
-        let _ = dac.fast_write(
-            calculated_throttle,
-            calculated_throttle,
-            calculated_throttle,
-            calculated_throttle,
-        );
 
-        //equals about 150ms
-        if i == 50 {
+        let mut calculated_throttle: u32 = throttle_read - to_subtract;
+        calculated_throttle = (calculated_throttle * MAX_THROTTLE as u32) / (GAS_HIGH - GAS_LOW);
+        let mapped_throttle = calculated_throttle.clone();
+
+        let mut calculated_throttle: u16 = calculated_throttle as u16;
+
+        if !bypass_pid {
+            let rpm_left = rpm_left.load(Ordering::SeqCst) as u32;
+            let rpm_right = rpm_right.load(Ordering::SeqCst) as u32;
+            let rpm_limit = rpm_limit.load(Ordering::SeqCst);
+
+            calculated_throttle = (((calculated_throttle as u32) * current_pedal_multiplier) / 100) as u16;
+
+            calculated_throttle *= (rpm_limit >= rpm_left.into() && rpm_limit >= rpm_right.into()) as u16;
+
+            //maximum allowed value of throttle is 4095, because it's 12 bit
+            let calculated_throttle :u16 = min(4095, calculated_throttle) as u16;
+            let _ = dac.fast_write(
+                calculated_throttle,
+                calculated_throttle,
+                calculated_throttle,
+                calculated_throttle,
+            );        
+        } else {
+            //Limit the throttle by the pedal mutliplier percentage
+            calculated_throttle = (((calculated_throttle as u32) * current_pedal_multiplier) / 100) as u16;
+            //maximum allowed value of throttle is 4095, because it's 12 bit
+            calculated_throttle = min(4095, calculated_throttle) as u16;
+            let _ = dac.fast_write(
+                calculated_throttle,
+                calculated_throttle,
+                calculated_throttle,
+                calculated_throttle,
+            );
+        }
+
+        //Send current throttle values to the headunit every 10 iterations
+        if i == 10 {
             i = 0;
-            ThrottleController::send_throttle(&tx_gas_send, throttle_read as f32 / 4095_f32, calculated_throttle as f32 / 4095_f32);
-            info!("[Gas Pedal Chain] RPM Limit: {} | RPM Left: {} | RPM Right: {}", rpm_limit, rpm_left, rpm_right);
-            let _message = format!(r#"{{"calculated_throttle": {}}}"#, calculated_throttle);
-            info!("[Gas Pedal Chain] Calculated Throttle {}", calculated_throttle);
+            ThrottleController::send_throttle(
+                &tx_gas_send,
+                mapped_throttle as f32 / 4095_f32,
+                calculated_throttle as f32 / 4095_f32
+            );
+            bypass_pid = fun_mode.load(Ordering::SeqCst);
+            current_pedal_multiplier = pedal_multiplier.load(Ordering::SeqCst);
         }
 
-        //info!("{}", message);
-        //let duration = start.elapsed();
-        //thread::sleep(Duration::from_millis(50));
-        //println!("Time taken for execution in throttle thread: {:?}", duration);
-        //client.send(FrameType::Text(false), message.as_bytes())?;
         i += 1;
     }
+
 }
+
+
+//// PID:
+/// 
+///             
+// Calculate RPM average and error
+// let rpm_avg = (rpm_left + rpm_right) / 2;
+// let rpm_error = (rpm_limit - rpm_avg) as f32;
+
+// // Proportional term
+// let proportional = KP * rpm_error;
+
+// // Integral term with anti-windup
+// integral_sum += rpm_error * KI;
+// if integral_sum > INTEGRAL_LIMIT {
+//     integral_sum = INTEGRAL_LIMIT;
+// } else if integral_sum < -INTEGRAL_LIMIT {
+//     integral_sum = -INTEGRAL_LIMIT;
+// }
+
+// // Derivative term
+// let derivative = KD * (rpm_error - previous_error);
+// previous_error = rpm_error;
+
+// // PID output: combination of P, I, and D terms
+// let mut throttle_adjustment = proportional + integral_sum + derivative;
+// throttle_adjustment = throttle_adjustment.clamp(0.0, MAX_THROTTLE as f32);
+
+// // Set throttle to 0 if RPM exceeds the limit
+// if rpm_left >= rpm_limit || rpm_right >= rpm_limit {
+//     throttle_adjustment = 0.0;
+// }
+
+// // Write the calculated throttle to the DAC
+// calculated_throttle = throttle_adjustment as u16;
+// let _ = dac.fast_write(
+//     calculated_throttle,
+//     calculated_throttle,
+//     calculated_throttle,
+//     calculated_throttle,
+// );
 
 #[cfg(not(esp32))]
 fn main() {

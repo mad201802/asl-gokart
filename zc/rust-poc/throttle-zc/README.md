@@ -20,7 +20,6 @@ I recommend setting the CARGO_TARGET_DIR, because otherwise the build cache will
 ### Pinout of `zc_throttle`
 
 #### DAC I²C (Throttle Signal to Motor Controllers)
-
 | Description | Olimex ESP32-POE-ISO Pin | Wire Color | Wire To |
 |-------------|--------------------------|------------|---------|
 | Olimex SDA | `GPIO13`                        | ?      | SDA of DAC      |
@@ -37,7 +36,7 @@ I recommend setting the CARGO_TARGET_DIR, because otherwise the build cache will
 
 | Description | Olimex ESP32-POE-ISO Pin | Wire Color | Wire To |
 |-------------|--------------------------|------------|---------|
-| Olimex TX      | `GPIO4`                        | ?      | RX of Left Motor Controller      |
+| Olimex TX      | `GPIO4`                       | ?      | RX of Left Motor Controller      |
 | Olimex RX      | `GPIO36`                        | ?      | TX of Left Motor Controller      |
 
 #### Right Motor Controller UART

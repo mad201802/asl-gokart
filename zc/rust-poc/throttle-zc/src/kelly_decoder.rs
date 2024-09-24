@@ -3,17 +3,20 @@ use std::{
     sync::{
         atomic::{AtomicU16, Ordering},
         Arc,
-    },
+    }, 
+    time::Duration,
 };
 
 use crossbeam_channel::Sender;
 use esp_idf_svc::hal::delay::BLOCK;
+use esp_idf_sys::TickType_t;
 use log::{debug, error, info};
 use protocoll_lib::protocoll::ThrottleController;
 
 pub const PACKET_LENGTH: usize = 19;
 pub const CRC_INDEX: usize = 18;
-//pub const ERROR: i32 = -1;
+const UART_TIMEOUT: TickType_t = 100;
+//pub const ERROR: i32 = -1;BLOCK
 
 pub fn bswap_16(x: u16) -> u16 {
     ((x >> 8) & 0xff) | ((x << 8) & 0xff00)
@@ -173,7 +176,7 @@ pub fn read_controller(
         let mut packet_response = [0u8; PACKET_LENGTH];
 
         //TODO Consider setting a hard timeout instead of waiting unlimited
-        if let Err(e) = uart_driver.read(&mut packet_response, BLOCK) {
+        if let Err(e) = uart_driver.read(&mut packet_response, UART_TIMEOUT) {
             error!("Failed to read packet_response: {}", e);
         }
         debug!("Received packet_response: {:?}", packet_response);
@@ -188,8 +191,9 @@ pub fn read_controller(
         debug!("wrote b");
 
         let mut packet_response = [0u8; PACKET_LENGTH];
-        uart_driver.read(&mut packet_response, BLOCK).unwrap();
-
+        if let Err(e) = uart_driver.read(&mut packet_response, UART_TIMEOUT) {
+            error!("Failed to read packet_response: {}", e);
+        }
         debug!("Received packet_response: {:?}", packet_response);
 
         import_bytes_to_packets(&mut packets, &packet_response);
@@ -204,19 +208,29 @@ pub fn read_and_process(
     shared_data_writer: Arc<AtomicU16>,
     uart_driver: esp_idf_svc::hal::uart::UartDriver,
 ) {
+    let mut i: u8 = 0;
     loop {
-        // println!("UART thread: reading data");
-        let data = read_controller(true, true, &uart_driver).unwrap();
-        //let mut data = PacketsStruct::default();
+        match read_controller(true, true, &uart_driver) {
+            Ok(data) => {
+                // Ensure no divide by zero (though dividing by 4 here is fine, adjust as needed)
+                let adjusted_rpm = data.b.rpm / 4;
+                info!("[Kelly Decoder] Read RPM {}", adjusted_rpm);
+    
+                // Update the shared atomic variable
+                shared_data_writer.store(adjusted_rpm, Ordering::SeqCst);
 
-        let adjusted_rpm = data.b.rpm / 4;
-
-        // Update the shared atomic variable
-        info!("[Kelly Decoder] Read RPM {}", adjusted_rpm);
-        shared_data_writer.store(adjusted_rpm, Ordering::SeqCst);
-        //TODO differentiate between the two controllers
-        ThrottleController::send_rpm(&tx_send, adjusted_rpm);
-        ThrottleController::send_reverse(&tx_send, data.a.reverse.into());
-        //thread::sleep(Duration::from_millis(300));
+                if i == 10 {
+                    i = 0;
+                    // Send RPM and reverse signals, handling any possible errors
+                    ThrottleController::send_rpm(&tx_send, adjusted_rpm);
+        
+                    ThrottleController::send_reverse(&tx_send, data.a.reverse);
+                }
+                i += 1;
+            }
+            Err(e) => {
+                error!("Failed to read data from controller: {}", e);
+            }
+        }   
     }
 }
