@@ -206,7 +206,7 @@ fn main() -> anyhow::Result<()> {
     .unwrap();
 
     let rpm_limit = throttle_controller.rpm_limit.clone();
-    let fun_mode = throttle_controller.fun_mode.clone();
+    let pipe_through_raw_throttle = throttle_controller.pipe_through_raw_throttle.clone();
     let pedal_multiplier = throttle_controller.pedal_multiplier.clone();
     let gas_sender = throttle_controller.tx_send.clone();
     let _gas_thread = thread::spawn(move || {
@@ -215,7 +215,7 @@ fn main() -> anyhow::Result<()> {
             rpm_left,
             rpm_right,
             rpm_limit,
-            fun_mode,
+            pipe_through_raw_throttle,
             pedal_multiplier,
             p.adc1,
             pins.gpio35,
@@ -233,7 +233,7 @@ fn gas_pedal_chain(
     rpm_left: Arc<AtomicU16>,
     rpm_right: Arc<AtomicU16>,
     rpm_limit: Arc<AtomicU32>,
-    fun_mode: Arc<AtomicBool>,
+    pipe_through_raw_throttle: Arc<AtomicBool>,
     pedal_multiplier: Arc<AtomicU32>,
     adc: ADC1,
     pin: Gpio35,
@@ -261,7 +261,7 @@ fn gas_pedal_chain(
     let mut integral_sum: f32 = 0.0;     // Integral term accumulator
     let mut previous_error: f32 = 0.0;   // Previous error for derivative calculation
     let mut i: u8 = 0;
-    let mut bypass_pid = fun_mode.load(Ordering::SeqCst);
+    let mut bypass_pid = pipe_through_raw_throttle.load(Ordering::SeqCst);
     let mut current_pedal_multiplier = pedal_multiplier.load(Ordering::SeqCst);
 
     loop {
@@ -316,7 +316,7 @@ fn gas_pedal_chain(
                 mapped_throttle as f32 / 4095_f32,
                 calculated_throttle as f32 / 4095_f32
             );
-            bypass_pid = fun_mode.load(Ordering::SeqCst);
+            bypass_pid = pipe_through_raw_throttle.load(Ordering::SeqCst);
             current_pedal_multiplier = pedal_multiplier.load(Ordering::SeqCst);
         }
 
