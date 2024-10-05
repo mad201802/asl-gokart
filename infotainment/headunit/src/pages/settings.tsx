@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import AvancedSettingsDialog from "@/components/shared/advanced-settings/advanced-settings-dialog";
 import AdminSettingsDialog from "@/components/admin-mode/admin-settings-dialog";
 import React from "react";
+import PowerMenu from "@/components/power-menu/power-menu";
 
 const SettingsPage = () => {
 
@@ -107,6 +108,11 @@ const SettingsPage = () => {
               max={maxSettableSpeed} 
               step={1} />                    
           </div> 
+          <div className="flex flex-row justify-between items-center space-x-4">
+              <Label htmlFor="power-menu" className="text-base mr-5">Power Menu</Label>
+              <PowerMenu />
+          </div>
+
         </div>   
    
       </div>
