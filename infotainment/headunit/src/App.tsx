@@ -13,6 +13,7 @@ import SettingsPage from "./pages/settings";
 import CarPage from "./pages/car";
 import BatteryPage from "./pages/battery";
 import { Toaster } from "@/components/ui/sonner"
+import MotorPage from "./pages/motor";
 
 export default function App() {
     const { i18n } = useTranslation();
@@ -56,6 +57,7 @@ export default function App() {
                     <>
                         <Routes>
                             <Route path="/" element={<DriveNormalPage />} />
+                            <Route path="/motor" element={<MotorPage />} />
                             <Route path="/car" element={<CarPage />} />
                             <Route path="/settings" element={<SettingsPage />} />
                             <Route path="/battery" element={<BatteryPage />} />
