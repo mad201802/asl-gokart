@@ -5,11 +5,13 @@ import { WEBSOCKET_SEND_CHANNEL, WEBSOCKET_THROTTLE_MESSAGE_CHANNEL } from "./we
 import { connected_zonecontrollers, startWebSocketServer } from "./websocket/ws-server";
 import { OutgoingPacket } from "@/data/zonecontrollers/packets";
 import { Zones } from "@/data/zonecontrollers/zonecontrollers";
+import { addAppEventListeners } from "./application/app-listeners";
 
 export default function registerListeners(mainWindow: BrowserWindow) {
     addWindowEventListeners(mainWindow);
     addThemeEventListeners();
     startWebSocketServer(mainWindow);
+    addAppEventListeners();
 
     ipcMain.on(WEBSOCKET_SEND_CHANNEL, (event, message: OutgoingPacket, zoneToSendTo: Zones) => {
         // Send the message to the zone controller matching the specified zone
