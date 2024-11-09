@@ -69,6 +69,16 @@ const sendPipeThroughRawThrottlePacket = (pipeThroughRawThrottle: boolean) => {
     window.websocket.send(newPacket, Zones.THROTTLE);
   }
 
+const sendResetDailyDistancePacket = () => {
+    const newPacket: OutgoingPacket = {
+      zone: Zones.THROTTLE,
+      command: ThrottleCommands.SET_DAILY_DISTANCE,
+      value: 0
+    };
+    console.log(JSON.stringify(newPacket));
+    window.websocket.send(newPacket, Zones.THROTTLE);
+  }
+
 export const createMotorSlice: StateCreator<
   MotorSlice,
   [],
