@@ -28,7 +28,8 @@ pub enum ThrottleZoneCommands {
     CalibrateLow,
     CalibrateHigh,
     EscData,
-    GetReverse
+    GetReverse,
+    SetReconnectUART
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
@@ -89,7 +90,7 @@ pub trait ZoneController {
 }
 
 pub enum ZoneControllerConcurrency {
-    Throttle {rpm_limit: Arc<AtomicU32>, pipe_through_raw_throttle: Arc<AtomicBool>, pedal_multiplier: Arc<AtomicU32>}
+    Throttle {rpm_limit: Arc<AtomicU32>, pipe_through_raw_throttle: Arc<AtomicBool>, pedal_multiplier: Arc<AtomicU32>, reconnect_uart: Arc<AtomicBool>}
 }
 
 pub struct ZoneControllerFactory;
@@ -110,6 +111,8 @@ impl ZoneControllerFactory {
         let pipe_through_raw_throttle_writer = Arc::clone(&pipe_through_raw_throttle);
         let pedal_multiplier = Arc::new(AtomicU32::new(100));
         let pedal_multiplier_writer = Arc::clone(&pedal_multiplier);
+        let reconnect_uart = Arc::new(AtomicBool::new(false));
+        let reconnect_uart_writer=Arc::clone(&reconnect_uart);
         
         rpm_limit_writer.store(500, Ordering::SeqCst);
 
@@ -125,6 +128,8 @@ impl ZoneControllerFactory {
             pipe_through_raw_throttle_writer,
             pedal_multiplier,
             pedal_multiplier_writer,
+            reconnect_uart,
+            reconnect_uart_writer,
             join_handle:  None,
         }
     }
@@ -144,6 +149,8 @@ pub struct ThrottleController {
     pipe_through_raw_throttle_writer: Arc<AtomicBool>, //Used to bypass rpm limiter; pedal_multiplier is still used
     pub pedal_multiplier: Arc<AtomicU32>,
     pedal_multiplier_writer: Arc<AtomicU32>, //Multiplier in %; when set to 50, the throttle output is 50% (when using fun mode)
+    pub reconnect_uart: Arc<AtomicBool>,
+    reconnect_uart_writer: Arc<AtomicBool>, //Multiplier in %; when set to 50, the throttle output is 50% (when using fun mode)
     join_handle: Option<JoinHandle<()>>,
 }
 
@@ -154,7 +161,7 @@ impl ZoneController for ThrottleController {
             Command::Throttle(throttle_cmd) => {
                 match throttle_cmd {
                     ThrottleZoneCommands::SetLimit => {
-                        if let ZoneControllerConcurrency::Throttle { rpm_limit, pipe_through_raw_throttle, pedal_multiplier } = concurrent {
+                        if let ZoneControllerConcurrency::Throttle { rpm_limit, pipe_through_raw_throttle, pedal_multiplier , reconnect_uart} = concurrent {
                              // Modify the value
                             rpm_limit.store(numeric_value_to_u32(&packet.value), Ordering::SeqCst);
                             println!("Updated RPM limit: {}", rpm_limit.load(Ordering::Relaxed));
@@ -176,7 +183,7 @@ impl ZoneController for ThrottleController {
                         debug!("Handling Reverse: GetReverse command");
                     }
                     ThrottleZoneCommands::SetPipeThroughRawThrottle => {
-                        if let ZoneControllerConcurrency::Throttle { rpm_limit, pipe_through_raw_throttle, pedal_multiplier } = concurrent {
+                        if let ZoneControllerConcurrency::Throttle { rpm_limit, pipe_through_raw_throttle, pedal_multiplier, reconnect_uart } = concurrent {
                             // Modify the value
                            pipe_through_raw_throttle.store(numeric_value_to_bool(&packet.value), Ordering::SeqCst);
                            println!("Updated fun mode to: {}", pipe_through_raw_throttle.load(Ordering::Relaxed));
@@ -184,10 +191,18 @@ impl ZoneController for ThrottleController {
                         debug!("Handling Throttle: SetFun command");
                     },
                     ThrottleZoneCommands::SetPedalMultiplier => {
-                        if let ZoneControllerConcurrency::Throttle { rpm_limit, pipe_through_raw_throttle, pedal_multiplier } = concurrent {
+                        if let ZoneControllerConcurrency::Throttle { rpm_limit, pipe_through_raw_throttle, pedal_multiplier, reconnect_uart } = concurrent {
                             // Modify the value
                            pedal_multiplier.store(numeric_value_to_u32(&packet.value), Ordering::SeqCst);
                            println!("Updated Pedal multiplier: {}", pedal_multiplier.load(Ordering::Relaxed));
+                       }
+                        debug!("Handling Throttle: SetPedalMutiplier command");
+                    },
+                    ThrottleZoneCommands::SetReconnectUART => {
+                        if let ZoneControllerConcurrency::Throttle { rpm_limit, pipe_through_raw_throttle, pedal_multiplier, reconnect_uart } = concurrent {
+                            // Modify the value
+                            reconnect_uart.store(numeric_value_to_bool(&packet.value), Ordering::SeqCst);
+                           println!("Updated reconnect uart trigger: {}", reconnect_uart.load(Ordering::Relaxed));
                        }
                         debug!("Handling Throttle: SetPedalMutiplier command");
                     },
@@ -216,13 +231,15 @@ impl ThrottleController {
         let rpm_limit_writer = self.rpm_limit_writer.clone();
         let pipe_through_raw_throttle_writer = self.pipe_through_raw_throttle_writer.clone();
         let pedal_multiplier_writer = self.pedal_multiplier_writer.clone();
+        let reconnect_uart_writer = self.reconnect_uart_writer.clone();
         let tx_send= self.tx_send.clone();
         let rx = self.received_packet_rx.clone();
         let join_handle = std::thread::spawn(move || {
             let concurrent = ZoneControllerConcurrency::Throttle { 
                 rpm_limit: rpm_limit_writer,
                 pipe_through_raw_throttle: pipe_through_raw_throttle_writer,
-                pedal_multiplier: pedal_multiplier_writer
+                pedal_multiplier: pedal_multiplier_writer,
+                reconnect_uart: reconnect_uart_writer
             };
             
             loop {
@@ -356,6 +373,22 @@ mod tests {
         let expected = Packet {
             command: Command::Throttle(ThrottleZoneCommands::SetPedalMultiplier),
             value: NumericValue::UnsignedInt(50)
+        };
+
+        assert_eq!(
+            output,
+            expected
+        );
+    }
+
+    #[test]
+    fn test_deserialize_reconnect_uart() {
+        let packet = r#"{"zone":"throttle","command":"setReconnectUART","value":True}"#;
+        let output: Packet = deserialize(&packet).ok().expect("Failed to deserialize");
+
+        let expected = Packet {
+            command: Command::Throttle(ThrottleZoneCommands::SetReconnectUART),
+            value: NumericValue::Boolean(true)
         };
 
         assert_eq!(

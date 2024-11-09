@@ -181,9 +181,10 @@ fn main() -> anyhow::Result<()> {
     // Clone the Arc to share with the UART reading thread
     let rpm_left_writer = Arc::clone(&rpm_left);
     let rpm_left_sender = throttle_controller.tx_send.clone();
+    let reconnect_uart = throttle_controller.reconnect_uart.clone();
 
     let _esc_left_thread = thread::spawn(move || {
-        kelly_decoder::read_and_process(rpm_left_sender, rpm_left_writer, uart_left)
+        kelly_decoder::read_and_process(rpm_left_sender, rpm_left_writer, uart_left, reconnect_uart)
     });
 
     let rpm_right = Arc::new(AtomicU16::new(0));
@@ -192,8 +193,9 @@ fn main() -> anyhow::Result<()> {
     let rpm_right_writer = Arc::clone(&rpm_right);
     let rpm_right_sender = throttle_controller.tx_send.clone();
 
+    let reconnect_uart = throttle_controller.reconnect_uart.clone();
     let _esc_right_thread = thread::spawn(move || {
-        kelly_decoder::read_and_process(rpm_right_sender, rpm_right_writer, uart_right)
+        kelly_decoder::read_and_process(rpm_right_sender, rpm_right_writer, uart_right, reconnect_uart)
     });
 
     ThreadSpawnConfiguration {

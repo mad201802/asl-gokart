@@ -1,14 +1,14 @@
 use std::{
-    io,
+    io::{self, Read},
     sync::{
-        atomic::{AtomicU16, Ordering},
+        atomic::{AtomicBool, AtomicU16, Ordering},
         Arc,
     }, 
     time::Duration,
 };
 
 use crossbeam_channel::Sender;
-use esp_idf_svc::hal::delay::BLOCK;
+use esp_idf_svc::hal::{delay::BLOCK, uart::UartDriver, units::Hertz};
 use esp_idf_sys::TickType_t;
 use log::{debug, error, info};
 use protocoll_lib::protocoll::ThrottleController;
@@ -207,6 +207,7 @@ pub fn read_and_process(
     tx_send: Sender<String>,
     shared_data_writer: Arc<AtomicU16>,
     uart_driver: esp_idf_svc::hal::uart::UartDriver,
+    reconnect_uart: Arc<AtomicBool>
 ) {
     let mut i: u8 = 0;
     loop {
@@ -225,6 +226,19 @@ pub fn read_and_process(
                     ThrottleController::send_rpm(&tx_send, adjusted_rpm);
         
                     ThrottleController::send_reverse(&tx_send, data.a.reverse);
+                    if reconnect_uart.load(Ordering::SeqCst) {
+                        match uart_driver.baudrate() {
+                            Ok(baudrate) => {
+                                info!("Trying to reconnect UART");
+                                uart_driver.change_baudrate(baudrate);
+                                reconnect_uart.store(false, Ordering::SeqCst);
+                            }
+                            Err(_) => {
+                                error!("Failed to read UART baudrate and reset it.")
+                            }
+                        }
+                        
+                    }
                 }
                 i += 1;
             }
