@@ -28,7 +28,9 @@ export enum ThrottleCommands {
     SET_LIMIT = "setLimit",
     SET_PEDAL_MULTIPLIER = "setPedalMultiplier",
     SET_PIPE_THROUGH_RAW_THROTTLE = "setPipeThroughRawThrottle",
+    SET_DAILY_DISTANCE = "setDailyDistance",
     GET_REVERSE = "getReverse",
+    SET_RECONNECT_UART = "setReconnectUART",
 }
 
 export class ZoneController{

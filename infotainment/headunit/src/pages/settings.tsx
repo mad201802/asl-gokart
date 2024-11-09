@@ -20,13 +20,13 @@ import { HeaderBar } from "@/components/shared/header-bar";
 import { toast } from "sonner";
 import AvancedSettingsDialog from "@/components/shared/advanced-settings/advanced-settings-dialog";
 import AdminSettingsDialog from "@/components/admin-mode/admin-settings-dialog";
-import React from "react";
+import React, { useEffect } from "react";
 import PowerMenu from "@/components/power-menu/power-menu";
 
 const SettingsPage = () => {
 
-  const { driveMode, adminMode, speedLimit, minSettableSpeed, maxSettableSpeed } = useStore();
-  const { setDriveMode, setAdminMode, setAdminPin, setSpeedLimit } = useStore();
+  const { driveMode, adminMode, speedLimit, minSettableSpeed, maxSettableSpeed, appVersion } = useStore();
+  const { setDriveMode, setAdminMode, setAdminPin, setSpeedLimit, setAppVersion } = useStore();
 
 //  const [speedLimitUiLabel, setSpeedLimitUiLabel] = React.useState(speedLimit);
 
@@ -36,10 +36,22 @@ const SettingsPage = () => {
     toast("Admin mode disabled!");
   }
 
+  useEffect(() => {
+    const fetchAppVersion = async () => {
+      try {
+        const version = await window.app.getVersion();
+        setAppVersion(version);
+      } catch (e) {
+      console.error(e);
+      }
+    };
+    fetchAppVersion();
+  }, []);
+
 
 
   return (
-    <div className="w-full flex flex-col">
+    <div className="w-full h-full flex flex-col">
       <HeaderBar />
 
       {/* ### "Tabelle" mit Rows ### */}
@@ -115,6 +127,10 @@ const SettingsPage = () => {
 
         </div>   
    
+      </div>
+
+      <div className="flex flex-row mt-auto justify-center items-start px-2 py-1 pt-10">
+        Release {appVersion}
       </div>
 
     </div>

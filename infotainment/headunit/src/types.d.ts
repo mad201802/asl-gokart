@@ -28,12 +28,17 @@ interface WebSocketContext {
     onBatteryMessage: (callback: (batteryMessage: string) => void) => void;
 }
 
+interface AppContext {
+    getVersion: () => Promise<string>;
+}
+
 
 declare global {
     interface Window {
         themeMode: ThemeModeContext;
         electronWindow: ElectronWindow;
         websocket: WebSocketContext;
+        app: AppContext;
     }
 } 
 
