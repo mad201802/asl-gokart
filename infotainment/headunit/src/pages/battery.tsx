@@ -66,7 +66,10 @@ const BatteryPage = () => {
                             <div className="flex flex-row justify-evenly">
                                 <ValueCard label="Voltage" value={voltage.toFixed(1)} unit="V"/>
                                 <ValueCard label="Current" value={batteryCurrent.toFixed(0)} unit="A"/>
-                                <ValueCard label="Power" value={(batteryCurrent * voltage).toFixed(0)} unit="W"/>
+                                { ((batteryCurrent * voltage) < 1000) ?
+                                    <ValueCard label="Power" value={(batteryCurrent * voltage).toFixed(0)} unit="W"/> :
+                                    <ValueCard label="Power" value={(batteryCurrent * voltage / 1000).toFixed(1)} unit="kW"/>
+                                }
                             </div>
                         </div>
                     </TabsContent>
