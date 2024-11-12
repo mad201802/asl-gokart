@@ -7,7 +7,7 @@
 #include "daly-bms-uart.h"
 
 
-const char* FIRMWARE_VERSION = "0.2.0";
+const char* FIRMWARE_VERSION = "0.2.1";
 
 // Pinout BMS Connector:
 // Yellow -> BMS RX
@@ -29,17 +29,19 @@ float biggestSOC = 0;
 long biggestDelay = 0;
 
 // Olimex IP-Adresse unten im Code anpassen!
-// WICHITG: IP-Adresse und Port des WebSocket-Servers hier anpassen:
+// WICHITG: IP-Adresse und Port des WebSocket-Servers (headunit) hier anpassen:
 WebSocketsClient webSocket;             // WebSocket client instance
 
 
-const char* serverUrl = "192.168.1.100";  // WebSocket server address
-const int serverPort = 6969;              // WebSocket server port
+const char* serverUrl = "192.168.1.100";    // WebSocket server / "headunit" IPv4 address
+const int serverPort = 6969;                // WebSocket server / "headunit" port
+bool SEND_TEMP = true;                      // Send temperature data YES/NO (true/false)    
+bool SEND_BMS = true;                       // Send BMS data YES/NO (true/false)
+int MESSAGE_INTERVAL_TEMP = 1000;           // Send temperature data every X ms
+int MESSAGE_INTERVAL_BMS = 5;              // Send BMS data every X ms
 
 long lastTimeTempSent = 0;
 long lastTimeBmsSent = 0;
-int MESSAGE_INTERVAL_TEMP = 1000;
-int MESSAGE_INTERVAL_BMS = 50;
 
 void sendRegister();
 void sendSensorMsg();
@@ -136,9 +138,12 @@ void setup() {
     webSocket.loop();
     Serial.println("Setup complete");
 
-    // Initialize sensors
-    initializeSensors();
-    bms.Init(); // This call sets up the bms driver
+    if(SEND_TEMP) {
+        initializeSensors();     // Initialize temperature sensors
+    }
+    if(SEND_BMS) {
+        bms.Init();              // This call sets up the bms driver
+    }
 }
 
 void loop() {
@@ -146,9 +151,16 @@ void loop() {
     webSocket.loop();
     delay(1);
     // Send messages to WebSocket server
-    // sendMsg();
-    sendSensorMsg();
-    sendBmsMsg();
+    if(SEND_TEMP) {
+        sendSensorMsg();
+    } else {
+        Serial.println("WARNING: Temperature data sending disabled in config options!");
+    }
+    if(SEND_BMS) {
+        sendBmsMsg();
+    } else {
+        Serial.println("WARNING: BMS data sending disabled in config options!");
+    }
 }
 
 
