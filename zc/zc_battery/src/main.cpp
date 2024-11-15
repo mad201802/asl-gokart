@@ -140,9 +140,13 @@ void setup() {
 
     if(SEND_TEMP) {
         initializeSensors();     // Initialize temperature sensors
+    } else {
+        Serial.println("WARNING: Temperature data sending disabled in config options!");
     }
     if(SEND_BMS) {
         bms.Init();              // This call sets up the bms driver
+    } else {
+        Serial.println("WARNING: BMS data sending disabled in config options!");
     }
 }
 
@@ -153,13 +157,9 @@ void loop() {
     // Send messages to WebSocket server
     if(SEND_TEMP) {
         sendSensorMsg();
-    } else {
-        Serial.println("WARNING: Temperature data sending disabled in config options!");
     }
     if(SEND_BMS) {
         sendBmsMsg();
-    } else {
-        Serial.println("WARNING: BMS data sending disabled in config options!");
     }
 }
 
