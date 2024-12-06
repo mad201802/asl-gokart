@@ -6,6 +6,7 @@ export enum Zones {
     BATTERY = "battery",
     MOTOR = "motor",
     THROTTLE = "throttle",
+    BUTTONS = "buttons",
 }
 
 export enum BatteryCommands {
@@ -31,6 +32,10 @@ export enum ThrottleCommands {
     SET_DAILY_DISTANCE = "setDailyDistance",
     GET_REVERSE = "getReverse",
     SET_RECONNECT_UART = "setReconnectUART",
+}
+
+export enum ButtonsCommands {
+    GET_TURN_SIGNAL_BUTTONS = "getTurnSignalButtons",
 }
 
 export class ZoneController{

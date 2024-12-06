@@ -26,6 +26,7 @@ interface WebSocketContext {
     send: (message: OutgoingPacket, zone: Zones) => void;
     onThrottleMessage: (callback: (throttleMessage: string) => void) => void;
     onBatteryMessage: (callback: (batteryMessage: string) => void) => void;
+    onButtonsMessage: (callback: (buttonsMessage: string) => void) => void;
 }
 
 interface AppContext {
@@ -41,9 +42,3 @@ declare global {
         app: AppContext;
     }
 } 
-
-// declare interface Window {
-//     themeMode: ThemeModeContext;
-//     electronWindow: ElectronWindow;
-//     websocket: WebSocketContext;
-// }

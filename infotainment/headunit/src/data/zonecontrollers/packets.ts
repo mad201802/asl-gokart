@@ -1,4 +1,4 @@
-import { BatteryCommands, ThrottleCommands, Zones } from "./zonecontrollers"
+import { BatteryCommands, ButtonsCommands, ThrottleCommands, Zones } from "./zonecontrollers"
 
 export interface OutgoingPacket {
     zone: Zones,
@@ -8,7 +8,7 @@ export interface OutgoingPacket {
 
 export interface IncomingPacket {
     zone: Zones,
-    command: BatteryCommands | ThrottleCommands,
+    command: BatteryCommands | ThrottleCommands | ButtonsCommands,
     value: any 
 }
 
