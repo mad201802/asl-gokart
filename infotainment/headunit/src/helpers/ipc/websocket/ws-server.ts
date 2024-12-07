@@ -1,6 +1,6 @@
 import { BrowserWindow } from 'electron';
 import { BatteryContoller, ThrottleController, ZoneController, Zones } from '@/data/zonecontrollers/zonecontrollers';
-import { WEBSOCKET_BATTERY_MESSAGE_CHANNEL, WEBSOCKET_THROTTLE_MESSAGE_CHANNEL, WEBSOCKET_BUTTONS_MESSAGE_CHANNEL } from './ws-channels';
+import { WEBSOCKET_BATTERY_MESSAGE_CHANNEL, WEBSOCKET_THROTTLE_MESSAGE_CHANNEL, WEBSOCKET_BUTTONS_MESSAGE_CHANNEL, WEBSOCKET_LIGHTS_MESSAGE_CHANNEL } from './ws-channels';
 import * as http from 'http';
 const WebSocket = require('faye-websocket').WebSocket;
 
@@ -33,6 +33,9 @@ export function startWebSocketServer(mainWindow: BrowserWindow) {
                   connected_zonecontrollers.set(receivedMsg.zone, new BatteryContoller(ws));
                   break;
                 case Zones.BUTTONS:
+                  connected_zonecontrollers.set(receivedMsg.zone, new ZoneController(ws));
+                  break;
+                case Zones.LIGHTS:
                   connected_zonecontrollers.set(receivedMsg.zone, new ZoneController(ws));
                   break;
                 default:
@@ -72,6 +75,11 @@ export function startWebSocketServer(mainWindow: BrowserWindow) {
                   console.log("Forwarding message to ipcRenderer's ButtonsListener:");
                   console.log(message.toString());
                   mainWindow.webContents.send(WEBSOCKET_BUTTONS_MESSAGE_CHANNEL, message.toString());
+                  break;
+                case Zones.LIGHTS:
+                  console.log("Forwarding message to ipcRenderer's LightsListener:");
+                  console.log(message.toString());
+                  mainWindow.webContents.send(WEBSOCKET_LIGHTS_MESSAGE_CHANNEL, message.toString());
                   break;
                 default:
                   console.error("Couldn't send message to ipcRenderer: No zc registered for this message yet!");

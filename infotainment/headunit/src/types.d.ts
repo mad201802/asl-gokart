@@ -27,6 +27,7 @@ interface WebSocketContext {
     onThrottleMessage: (callback: (throttleMessage: string) => void) => void;
     onBatteryMessage: (callback: (batteryMessage: string) => void) => void;
     onButtonsMessage: (callback: (buttonsMessage: string) => void) => void;
+    onLightsMessage: (callback: (lightsMessage: string) => void) => void;
 }
 
 interface AppContext {

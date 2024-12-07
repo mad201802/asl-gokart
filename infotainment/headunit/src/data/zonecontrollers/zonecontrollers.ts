@@ -7,6 +7,7 @@ export enum Zones {
     MOTOR = "motor",
     THROTTLE = "throttle",
     BUTTONS = "buttons",
+    LIGHTS = "lights",
 }
 
 export enum BatteryCommands {
@@ -36,6 +37,14 @@ export enum ThrottleCommands {
 
 export enum ButtonsCommands {
     GET_TURN_SIGNAL_BUTTONS = "getTurnSignalButtons",
+}
+
+export enum LightsCommands {
+    GET_TURN_SIGNAL_LIGHTS = "getTurnSignalLights",
+    SET_TURN_SIGNAL_LIGHTS = "setTurnSignalLights",
+    SET_TOGGLE_TURN_SIGNAL_LEFT = "setToggleTurnSignalLeft",
+    SET_TOGGLE_TURN_SIGNAL_RIGHT = "setToggleTurnSignalRight",
+    SET_TOGGLE_HAZARD_LIGHTS = "setToggleHazardLights",
 }
 
 export class ZoneController{

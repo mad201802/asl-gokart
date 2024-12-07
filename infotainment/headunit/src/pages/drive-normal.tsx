@@ -10,8 +10,8 @@ import "react-circular-progressbar/dist/styles.css";
 import { HeaderBar } from "@/components/shared/header-bar";
 import ResetDailyDistanceDialog from "@/components/shared/reset-daily-distance-dialog";
 import React, { useEffect } from "react";
-import { IncomingPacket, RegisterPacket } from "@/data/zonecontrollers/packets";
-import { ButtonsCommands, ThrottleCommands } from "@/data/zonecontrollers/zonecontrollers";
+import { IncomingPacket, OutgoingPacket, RegisterPacket } from "@/data/zonecontrollers/packets";
+import { ButtonsCommands, LightsCommands, ThrottleCommands, Zones } from "@/data/zonecontrollers/zonecontrollers";
 import { OctagonAlert, SquareArrowLeft, SquareArrowRight } from "lucide-react";
 
 interface Segment {
@@ -112,15 +112,50 @@ const DriveNormalPage = () => {
       }
     });
 
+    window.websocket.onLightsMessage((incomingPacket: string) => {
+      console.log("Received incoming lights message in drive-normal.tsx");
+      const parsed: IncomingPacket = JSON.parse(incomingPacket);
+      switch(parsed.command) {
+        case LightsCommands.GET_TURN_SIGNAL_LIGHTS:
+            setTurnSignalLeft(parsed.value[0]);
+            setTurnSignalRight(parsed.value[2]);
+            // Set hazard light state after turn signal state to avoid overwriting
+            setHazardLights(parsed.value[1]);
+            break;
+        default:
+            console.error("Invalid command (data type) received in buttons message!");
+      }
+    });
+
     window.websocket.onButtonsMessage((incomingPacket: string) => {
       console.log("Received incoming buttons message in drive-normal.tsx");
       const parsed: IncomingPacket = JSON.parse(incomingPacket);
       switch(parsed.command) {
         case ButtonsCommands.GET_TURN_SIGNAL_BUTTONS:
-            setTurnSignalLeft(parsed.value[0]);
-            setTurnSignalRight(parsed.value[2]);
-            // Set hazard light state after turn signal state to avoid overwriting
-            setHazardLights(parsed.value[1]);
+            if(parsed.value[0] === true) {
+              // Left turn signal button pressed
+              const newPacket: OutgoingPacket = {
+                zone: Zones.LIGHTS,
+                command: LightsCommands.SET_TOGGLE_TURN_SIGNAL_LEFT,
+              }
+              window.websocket.send(newPacket, Zones.LIGHTS);
+            }
+            if(parsed.value[1] === true) {
+              // Hazard lights button pressed
+              const newPacket: OutgoingPacket = {
+                zone: Zones.LIGHTS,
+                command: LightsCommands.SET_TOGGLE_HAZARD_LIGHTS,
+              }
+              window.websocket.send(newPacket, Zones.LIGHTS);
+            }
+            if(parsed.value[2] === true) {
+              // Right turn signal button pressed
+              const newPacket: OutgoingPacket = {
+                zone: Zones.LIGHTS,
+                command: LightsCommands.SET_TOGGLE_TURN_SIGNAL_RIGHT,
+              }
+              window.websocket.send(newPacket, Zones.LIGHTS);
+            }
             break;
         default:
             console.error("Invalid command (data type) received in buttons message!");

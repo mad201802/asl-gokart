@@ -1,14 +1,14 @@
-import { BatteryCommands, ButtonsCommands, ThrottleCommands, Zones } from "./zonecontrollers"
+import { BatteryCommands, ButtonsCommands, LightsCommands, ThrottleCommands, Zones } from "./zonecontrollers"
 
 export interface OutgoingPacket {
     zone: Zones,
-    command: BatteryCommands | ThrottleCommands,
-    value?: string | number | number[] | boolean 
+    command: BatteryCommands | ThrottleCommands | LightsCommands,
+    value?: string | number | number[] | boolean | boolean[]
 }
 
 export interface IncomingPacket {
     zone: Zones,
-    command: BatteryCommands | ThrottleCommands | ButtonsCommands,
+    command: BatteryCommands | ThrottleCommands | ButtonsCommands | LightsCommands,
     value: any 
 }
 

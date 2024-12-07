@@ -1,4 +1,4 @@
-import { WEBSOCKET_BATTERY_MESSAGE_CHANNEL, WEBSOCKET_BUTTONS_MESSAGE_CHANNEL, WEBSOCKET_MESSAGE_CHANNEL, WEBSOCKET_SEND_CHANNEL, WEBSOCKET_THROTTLE_MESSAGE_CHANNEL } from './ws-channels';
+import { WEBSOCKET_BATTERY_MESSAGE_CHANNEL, WEBSOCKET_BUTTONS_MESSAGE_CHANNEL, WEBSOCKET_LIGHTS_MESSAGE_CHANNEL, WEBSOCKET_MESSAGE_CHANNEL, WEBSOCKET_SEND_CHANNEL, WEBSOCKET_THROTTLE_MESSAGE_CHANNEL } from './ws-channels';
 import { WebSocket } from 'ws';
 import { IncomingPacket, OutgoingPacket } from '@/data/zonecontrollers/packets';
 import { Zones } from '@/data/zonecontrollers/zonecontrollers';
@@ -19,6 +19,9 @@ export function exposeWebSocketContext() {
         },
         onButtonsMessage: (callback: (buttonsMessage: string) => void) => {
             ipcRenderer.on(WEBSOCKET_BUTTONS_MESSAGE_CHANNEL, (_, message) => callback(message));
+        },
+        onLightsMessage: (callback: (lightsMessage: string) => void) => {
+            ipcRenderer.on(WEBSOCKET_LIGHTS_MESSAGE_CHANNEL, (_, message) => callback(message));
         },
     });
 }
