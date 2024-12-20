@@ -1,7 +1,7 @@
 import { StateCreator } from 'zustand'
-import { ButtonMappings } from '@/data/models'
+import { ButtonMapping, ButtonMappings } from '@/data/models'
 
-const exampleButtonMappings: ButtonMappings = new Map<string, [(number | boolean), (string | undefined)][]>()
+const exampleButtonMappings: ButtonMappings = new Map()
 exampleButtonMappings.set("tony", [[false, "turnSignalLeft"], [false, "turnSignalRight"], [true, "hazardLights"]])
 exampleButtonMappings.set("anna", [[99, "brightnessFront"], [255, "brightnessRear"]])
 exampleButtonMappings.set("felicitas", [[true, "underglowActive"], [255, undefined]])

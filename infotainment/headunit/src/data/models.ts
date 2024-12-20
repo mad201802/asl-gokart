@@ -22,8 +22,8 @@ export interface ValueCardProps {
 export interface BatteryIndicatorProps {
   batteryLevel: number;
 }
-
-export type ButtonMappings = Map<string, [(number | boolean), (string | undefined)][]>
+export type ButtonMapping = [(number | boolean), (string | undefined)]
+export type ButtonMappings = Map<string, ButtonMapping[]>
 
 // example ButtonMappings:
 // {
