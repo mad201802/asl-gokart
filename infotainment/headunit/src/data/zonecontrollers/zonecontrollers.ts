@@ -36,7 +36,7 @@ export enum ThrottleCommands {
 }
 
 export enum ButtonsCommands {
-    GET_TURN_SIGNAL_BUTTONS = "getTurnSignalButtons",
+    GET_NEW_VALUE = "getNewValue",
 }
 
 export enum LightsCommands {
