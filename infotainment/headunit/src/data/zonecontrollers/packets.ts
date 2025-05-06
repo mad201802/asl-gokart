@@ -8,6 +8,7 @@ export interface OutgoingPacket {
 
 export interface IncomingPacket {
     zone: Zones,
+    identifier?: string,
     command: BatteryCommands | ThrottleCommands | ButtonsCommands | LightsCommands,
     value: any 
 }
