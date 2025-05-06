@@ -10,8 +10,9 @@ import "react-circular-progressbar/dist/styles.css";
 import { HeaderBar } from "@/components/shared/header-bar";
 import ResetDailyDistanceDialog from "@/components/shared/reset-daily-distance-dialog";
 import React, { useEffect } from "react";
-import { IncomingPacket, RegisterPacket } from "@/data/zonecontrollers/packets";
-import { ThrottleCommands } from "@/data/zonecontrollers/zonecontrollers";
+import { IncomingPacket, OutgoingPacket, RegisterPacket } from "@/data/zonecontrollers/packets";
+import { ButtonsCommands, LightsCommands, ThrottleCommands, Zones } from "@/data/zonecontrollers/zonecontrollers";
+import { OctagonAlert, SquareArrowLeft, SquareArrowRight } from "lucide-react";
 
 interface Segment {
   value: number;
@@ -88,8 +89,8 @@ function interpolateColorBetween(
 
 const DriveNormalPage = () => {
 
-  const { gear, rawThrottle, throttle, showRawThrottle, rpm, speed, rpmBoundaries, batteryPercentage } = useStore()
-  const { setRpm, setRawThrottle, setThrottle, setGear } = useStore();
+  const { gear, rawThrottle, throttle, showRawThrottle, rpm, speed, rpmBoundaries, batteryPercentage, turnSignalRight, turnSignalLeft } = useStore()
+  const { setRpm, setRawThrottle, setThrottle, setGear, setTurnSignalRight, setTurnSignalLeft, setHazardLights } = useStore();
 
   useEffect(() => {
     window.websocket.onThrottleMessage((incomingPacket: string) => {
@@ -108,6 +109,56 @@ const DriveNormalPage = () => {
             break;
         default:
             console.error("Invalid command (data type) received in throttle message!");
+      }
+    });
+
+    window.websocket.onLightsMessage((incomingPacket: string) => {
+      console.log("Received incoming lights message in drive-normal.tsx");
+      const parsed: IncomingPacket = JSON.parse(incomingPacket);
+      switch(parsed.command) {
+        case LightsCommands.GET_TURN_SIGNAL_LIGHTS:
+            setTurnSignalLeft(parsed.value[0]);
+            setTurnSignalRight(parsed.value[2]);
+            // Set hazard light state after turn signal state to avoid overwriting
+            setHazardLights(parsed.value[1]);
+            break;
+        default:
+            console.error("Invalid command (data type) received in buttons message!");
+      }
+    });
+
+    window.websocket.onButtonsMessage((incomingPacket: string) => {
+      console.log("Received incoming buttons message in drive-normal.tsx");
+      const parsed: IncomingPacket = JSON.parse(incomingPacket);
+      switch(parsed.command) {
+        case ButtonsCommands.GET_TURN_SIGNAL_BUTTONS:
+            if(parsed.value[0] === true) {
+              // Left turn signal button pressed
+              const newPacket: OutgoingPacket = {
+                zone: Zones.LIGHTS,
+                command: LightsCommands.SET_TOGGLE_TURN_SIGNAL_LEFT,
+              }
+              window.websocket.send(newPacket, Zones.LIGHTS);
+            }
+            if(parsed.value[1] === true) {
+              // Hazard lights button pressed
+              const newPacket: OutgoingPacket = {
+                zone: Zones.LIGHTS,
+                command: LightsCommands.SET_TOGGLE_HAZARD_LIGHTS,
+              }
+              window.websocket.send(newPacket, Zones.LIGHTS);
+            }
+            if(parsed.value[2] === true) {
+              // Right turn signal button pressed
+              const newPacket: OutgoingPacket = {
+                zone: Zones.LIGHTS,
+                command: LightsCommands.SET_TOGGLE_TURN_SIGNAL_RIGHT,
+              }
+              window.websocket.send(newPacket, Zones.LIGHTS);
+            }
+            break;
+        default:
+            console.error("Invalid command (data type) received in buttons message!");
       }
     });
 
@@ -165,6 +216,11 @@ const DriveNormalPage = () => {
           </div>
           <div className="flex flex-col items-center justify-center">
             <div className="flex flex-row items-center gap-x-4">
+              { (turnSignalLeft) ?
+                <SquareArrowLeft size={36} className="text-green-400" />
+                :
+                <SquareArrowLeft size={36} className="text-gray-700" />
+              }
               <TabsSelector 
                 label="" 
                 options={tabsSelectorStates().gears}
@@ -172,6 +228,11 @@ const DriveNormalPage = () => {
                 value={gear}
                 readOnly={true}
                   />
+              { (turnSignalRight) ?
+                <SquareArrowRight size={36} className="text-green-400" />
+                :
+                <SquareArrowRight size={36} className="text-gray-700" />
+              }
             </div>
             <p className="font-semibold text-9xl">{speed.toFixed(0)}</p>
             <p className="font">km/h</p>
@@ -201,12 +262,33 @@ const DriveNormalPage = () => {
             </div>
           </div>
         </div>
-        <div>
-          <ResetDailyDistanceDialog />
+        <div className="grid grid-cols-3 w-full">
+          <div className="flex flex-row items-start gap-x-6 justify-evenly">
+                {/* Use color text-red-500 if critical or text-orange-400 if warning */}
+
+                {/* <OctagonAlert size={36} className="text-orange-400" /> */}
+                <OctagonAlert size={36} className="text-gray-700" />
+                {/* <OctagonAlert size={36} className="text-red-500" /> */}
+                <OctagonAlert size={36} className="text-gray-700" />
+                {/* <OctagonAlert size={36} className="text-red-500" /> */}
+                <OctagonAlert size={36} className="text-gray-700" />
+
+          </div>
+          <div className="flex flex-row justify-evenly">
+            <ResetDailyDistanceDialog />
+          </div>
+          <div className="flex flex-row items-end gap-x-6 justify-evenly">
+                {/* <OctagonAlert size={36} className="text-orange-400" /> */}
+                <OctagonAlert size={36} className="text-gray-700" />
+                {/* <OctagonAlert size={36} className="text-green-500" /> */}
+                <OctagonAlert size={36} className="text-gray-700" />
+                {/* <OctagonAlert size={36} className="text-blue-500" /> */}
+                <OctagonAlert size={36} className="text-gray-700" />
+          </div>
         </div>
         <div className="w-full flex flex-col items-center justify-center pt-4">
           <p>Battery</p>
-          <Progress className="w-[30%] h-[10px]" value={batteryPercentage*100} />
+          <Progress className="rounded-md w-[30%] h-[40px]" value={batteryPercentage*100} />
             <p>{(batteryPercentage*100).toFixed(1)}%</p>
         </div>
       </div>
