@@ -8,7 +8,7 @@ import {
     DialogTrigger,
   } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button";
-import ButtonMapperTable from "./button-mapper-table";
+import ButtonTesterTable from "./button-tester-table";
 import { DialogOverlay, DialogPortal } from "@radix-ui/react-dialog";
   
 
@@ -18,19 +18,19 @@ const ButtonMapperDialog = () => {
             <Dialog>
             <DialogTrigger>
                 <Button>
-                    Change Button Mapping
+                    Test Buttons
                 </Button>
             </DialogTrigger>
             <DialogPortal>
                 <DialogOverlay>
                     <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                         <DialogHeader>
-                        <DialogTitle>Configure Physical Buttons</DialogTitle>
+                        <DialogTitle>Test Physical Buttons</DialogTitle>
                         <DialogDescription>
                             <div className="mb-4">
-                                Here you can configure the physical buttons on your device.
+                                Here you can test the physical buttons built into the gokart.
                             </div>
-                            <ButtonMapperTable />
+                            <ButtonTesterTable />
                         </DialogDescription>
                         </DialogHeader>
                     </DialogContent>            
