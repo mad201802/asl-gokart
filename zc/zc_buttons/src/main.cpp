@@ -6,7 +6,8 @@
 #include <Bounce2.h>
 
 
-const char* FIRMWARE_VERSION = "0.0.1";
+const char* FIRMWARE_VERSION = "0.0.2";
+const char* ZC_BUTTON_IDENTIFIER = "tony";
 
 #define NUMBER_OF_BUTTONS 3
 // Button pins
@@ -99,6 +100,7 @@ void setup() {
     delay(1000);
     Serial.println("####################################");
     Serial.println("ZC_BUTTONS Fw. v." + String(FIRMWARE_VERSION));
+    Serial.println("Identifier: " + String(ZC_BUTTON_IDENTIFIER));
     Serial.println("");
     Serial.println("Authors: AEROSPACE-LAB Team Gokart");
     Serial.println("####################################");
@@ -146,7 +148,30 @@ void loop() {
 
 
 void sendRegister() {
-  webSocket.sendTXT("{ \"zone\": \"buttons\" }");
+    /*
+    Format of the JSON message:
+    {
+        "zone": "buttons"
+    }
+    */
+    char output[256];
+    StaticJsonDocument<256> registerMsg;
+    registerMsg["zone"] = "buttons";
+
+    // Serialize JSON to buffer
+    size_t n = serializeJson(registerMsg, output, sizeof(output));
+    if (n == sizeof(output)) {
+        Serial.println(F("Error: JSON message truncated"));
+    } else {
+        if(webSocket.sendTXT(output)) {
+            Serial.println(F("Register msg sent"));
+            Serial.println(output);
+        } else {
+            Serial.println(F("Failed to send register msg"));
+        }
+    }
+
+
   Serial.println("Register package sent");
 }
 
@@ -160,8 +185,6 @@ void sendButtonsMsg() {
     // webSocket.sendPing();
     /* ############### WARNING - THIS CAUSES THE HEADUNIT TO SEND A FAULTY PONG FRAME AND THUS RESULTS IN A DISCONNECT OF THE OLIMEX WS CLIENT */
 
-
-    // Get temperature data from sensors
     Serial.println("Buttons array before sending: ");
     boolean* buttons = getButtonStates();
     for (int i = 0; i < NUMBER_OF_BUTTONS; i++) {
@@ -174,19 +197,22 @@ void sendButtonsMsg() {
     /*
     Format of the JSON message:
     {
-        "zone": "battery",
-        "command": "getTemp",
-        "value": [20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0, 55.0]
+        "zone": "buttons",
+        "identifier": "tony",
+        "command": "getNewValue",
+        "value": true
     }
     */
     char output[256];
     StaticJsonDocument<256> doc;
     doc["zone"] = "buttons";
-    doc["command"] = "getTurnSignalButtons";
-    JsonArray value = doc["value"].to<JsonArray>();
-    for (int i = 0; i < NUMBER_OF_BUTTONS; i++) {
-        value.add(buttons[i]);
-    }
+    doc["identifier"] = ZC_BUTTON_IDENTIFIER;
+    doc["command"] = "getNewValue";
+    // JsonArray value = doc["value"].to<JsonArray>();
+    // for (int i = 0; i < NUMBER_OF_BUTTONS; i++) {
+    //     value.add(buttons[i]);
+    // }
+    doc["value"] = buttons[0];
 
     // Optional: Reduce memory footprint
     // doc.shrinkToFit();
