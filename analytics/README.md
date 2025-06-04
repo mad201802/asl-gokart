@@ -1,19 +1,17 @@
-# Create T3 App
+# asl-gokart/analytics
 
-This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
+This is the analytics dashboard for the `asl-gokart` project, built with the [T3 Stack](https://create.t3.gg/).
 
-## What's next? How do I make an app with this?
+## Setting Up the Dev Environment
 
-We try to keep this project as simple as possible, so you can start with just the scaffolding we set up for you, and add additional things later when they become necessary.
+To set up the development environment, follow these steps:
 
-If you are not familiar with the different technologies used in this project, please refer to the respective docs. If you still are in the wind, please join our [Discord](https://t3.gg/discord) and ask for help.
-
-- [Next.js](https://nextjs.org)
-- [NextAuth.js](https://next-auth.js.org)
-- [Prisma](https://prisma.io)
-- [Drizzle](https://orm.drizzle.team)
-- [Tailwind CSS](https://tailwindcss.com)
-- [tRPC](https://trpc.io)
+1. Clone the repo
+2. Install the dependencies using `npm install`
+3. Create a `.env` file in the root directory and set the required environment variables. You can use the `.env.example` file as a reference.
+4. Initialize the database by running `npx prisma db push` to create the tables.
+5. Run the development server with `npm run dev`
+6. (TODO: Add script to seed the database with initial data)
 
 ## Learn More
 
@@ -21,8 +19,6 @@ To learn more about the [T3 Stack](https://create.t3.gg/), take a look at the fo
 
 - [Documentation](https://create.t3.gg/)
 - [Learn the T3 Stack](https://create.t3.gg/en/faq#what-learning-resources-are-currently-available) — Check out these awesome tutorials
-
-You can check out the [create-t3-app GitHub repository](https://github.com/t3-oss/create-t3-app) — your feedback and contributions are welcome!
 
 ## How do I deploy this?
 
