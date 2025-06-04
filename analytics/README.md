@@ -13,6 +13,16 @@ To set up the development environment, follow these steps:
 5. Run the development server with `npm run dev`
 6. (TODO: Add script to seed the database with initial data)
 
+## 🎨 Color Palette (WIP)
+
+| Zweck                               | Farbe     | Bemerkung                                            |
+| ----------------------------------- | --------- | ---------------------------------------------------- |
+| Haupt-Akzent (z. B. Buttons, Links) | `#42aaff` | Helle, auffällige Variante von `#039ede`, freundlich |
+| Sekundärer Akzent                   | `#88cfff` | Weicher Kontrast für dezente Hervorhebungen          |
+| Warnung/Fehlerhinweis               | `#ff5555` | Klare, moderne Rot-Variante                          |
+| Erfolg/Bestätigung                  | `#29d697` | Frisches, tech-orientiertes Grün                     |
+| Neutral (z. B. Info)                | `#b0bec5` | Dezentes Grau-Blau für zurückhaltende Textelemente   |
+
 ## Learn More
 
 To learn more about the [T3 Stack](https://create.t3.gg/), take a look at the following resources:
