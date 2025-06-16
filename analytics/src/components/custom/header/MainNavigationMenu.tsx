@@ -27,7 +27,7 @@ export function MainNavigationMenu() {
                 <NavigationMenuLink asChild>
                   <a
                     className="from-muted/50 to-muted flex h-full w-full flex-col justify-end rounded-md bg-linear-to-b p-6 no-underline outline-hidden select-none focus:shadow-md"
-                    href="/"
+                    href="/dashboard"
                   >
                     <div className="mt-4 mb-2 text-lg font-medium">
                       asl-gokart/analytics
@@ -38,7 +38,7 @@ export function MainNavigationMenu() {
                   </a>
                 </NavigationMenuLink>
               </li>
-              <ListItem href="/settings" title="Settings">
+              <ListItem href="/dashboard/settings" title="Settings">
                 Adjust your preferences and manage settings for your account.
               </ListItem>
               <ListItem href="/development" title="Development">
