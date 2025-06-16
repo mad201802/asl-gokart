@@ -57,9 +57,11 @@ model Session {
 model User {
     id            String    @id @default(cuid())
     name          String?
+    nickname      String?   @unique
     email         String?   @unique
     emailVerified DateTime?
     image         String?
+    joinedAt      DateTime @default(now())
     accounts      Account[]
     sessions      Session[]
     posts         Post[]
@@ -71,4 +73,15 @@ model VerificationToken {
     expires    DateTime
 
     @@unique([identifier, token])
+}
+
+model SensorData {
+    id        Int      @id @default(autoincrement())
+    name      String
+    value     Float
+    unit      String
+    timestamp DateTime
+    createdAt DateTime @default(now())
+
+    @@index([id])
 }
