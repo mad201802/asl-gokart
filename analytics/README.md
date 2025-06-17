@@ -10,8 +10,30 @@ To set up the development environment, follow these steps:
 2. Install the dependencies using `npm install`
 3. Create a `.env` file in the root directory and set the required environment variables. You can use the `.env.example` file as a reference.
 4. Initialize the database by running `npx prisma db push` to create the tables.
-5. Run the development server with `npm run dev`
-6. (TODO: Add script to seed the database with initial data)
+5. Setup influxDB v3 Core as a Docker container by running the following command:
+   ```bash
+   docker compoe up -d
+   ```
+6. Enter the InfluxDB container:
+   ```bash
+   docker exec -it influxdb3-core bash
+   ```
+7. Create an admin token:
+   ```bash
+    influxdb3 create token --admin
+   ```
+   Note the token down and set it in your `.env` file as `INFLUX_TOKEN`.
+8. Set the bash environment variable `INFLUXDB3_AUTH_TOKEN` to the token you just created:
+   ```bash
+    export INFLUXDB3_AUTH_TOKEN=<your-token>
+   ```
+9. Create a new database called `asl-gokart`:
+   ```bash
+    influxdb3 create database asl-gokart
+   ```
+10. Open up a terminal in the root directory of this project again.
+11.  Run the development server with `npm run dev`
+12. (TODO: Add script to seed the database with initial data)
 
 ## 🎨 Color Palette (WIP)
 
