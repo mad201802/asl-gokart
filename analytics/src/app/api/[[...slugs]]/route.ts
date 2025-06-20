@@ -31,7 +31,8 @@ const app = new Elysia({ prefix: '/api' })
             })
             
             // Write data to InfluxDB
-            const line = "sensor_data,name=" + body.name + " value=" + body.value + " " + new Date(body.timestamp).getTime();
+            const timestampNanos = new Date(body.timestamp).getTime() * 1000000; // Convert to nanoseconds
+            const line = "sensor_data,name=" + body.name + " value=" + body.value + " " + timestampNanos;
             await influxDB.write(line);
             
             
@@ -56,7 +57,7 @@ const app = new Elysia({ prefix: '/api' })
         try {
             // Fetch data from InfluxDB
             const query = `
-                SELECT * FROM sensor_data
+                SELECT * FROM "sensor_data"
                 ORDER BY time DESC
                 LIMIT 100
             `
@@ -74,6 +75,13 @@ const app = new Elysia({ prefix: '/api' })
             }
         } catch (err) {
             console.error('Error fetching sensor data:', err);
+            // If table doesn't exist yet, return empty array
+            if (err instanceof Error && err.message && err.message.includes('not found')) {
+                return {
+                    success: true,
+                    data: []
+                }
+            }
             return error(500, 'Failed to fetch sensor data')
         }
     })
