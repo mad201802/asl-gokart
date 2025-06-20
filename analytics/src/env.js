@@ -17,6 +17,7 @@ export const env = createEnv({
     AUTH_GITHUB_SECRET: z.string(),
     DATABASE_URL: z.string().url(),
     INFLUX_HOST: z.string().url(),
+    INFLUX_PORT: z.string(),
     INFLUX_TOKEN: z.string(),
     INFLUX_DATABASE: z.string(),
     NODE_ENV: z
@@ -45,6 +46,7 @@ export const env = createEnv({
     AUTH_GITHUB_SECRET: process.env.AUTH_GITHUB_SECRET,
     DATABASE_URL: process.env.DATABASE_URL,
     INFLUX_HOST: process.env.INFLUX_HOST,
+    INFLUX_PORT: process.env.INFLUX_PORT,
     INFLUX_TOKEN: process.env.INFLUX_TOKEN,
     INFLUX_DATABASE: process.env.INFLUX_DATABASE,
     NODE_ENV: process.env.NODE_ENV,

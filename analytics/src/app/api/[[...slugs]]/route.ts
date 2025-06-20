@@ -3,12 +3,14 @@ import { Elysia, t } from 'elysia';
 import { PrismaClient } from '@prisma/client'
 import { InfluxDBClient, Point } from '@influxdata/influxdb3-client';
 
-const host = process.env.INFLUX_HOST || 'http://localhost:8181';
+const host = process.env.INFLUX_HOST || 'http://localhost';
+const port = process.env.INFLUX_PORT || '8181';
+const influxUrl = `${host}:${port}`;
 const token = process.env.INFLUX_TOKEN;
 const database = process.env.INFLUX_DATABASE;
 
 const prisma = new PrismaClient()
-const influxDB = new InfluxDBClient({ host, token, database});
+const influxDB = new InfluxDBClient({ host: influxUrl, token, database});
 
 
 const app = new Elysia({ prefix: '/api' })
