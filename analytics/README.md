@@ -12,7 +12,7 @@ To set up the development environment, follow these steps:
 4. Initialize the database by running `npx prisma db push` to create the tables.
 5. Setup influxDB v3 Core as a Docker container by running the following command:
    ```bash
-   docker compoe up -d
+   docker compose up -d
    ```
 6. Enter the InfluxDB container:
    ```bash
