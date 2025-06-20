@@ -10,13 +10,13 @@ To set up the development environment, follow these steps:
 2. Install the dependencies using `npm install`
 3. Create a `.env` file in the root directory and set the required environment variables. You can use the `.env.example` file as a reference.
 4. Initialize the database by running `npx prisma db push` to create the tables.
-5. Setup influxDB v3 Core as a Docker container by running the following command:
+5. Setup influxDB v3 Core and grafana as docker containers by running the following command:
    ```bash
-   docker compose up -d
+   sudo docker compose up -d
    ```
 6. Enter the InfluxDB container:
    ```bash
-   docker exec -it influxdb3-core bash
+   sudo docker exec -it influxdb3-core bash
    ```
 7. Create an admin token:
    ```bash
@@ -31,9 +31,21 @@ To set up the development environment, follow these steps:
    ```bash
     influxdb3 create database asl-gokart
    ```
-10. Open up a terminal in the root directory of this project again.
-11.  Run the development server with `npm run dev`
-12. (TODO: Add script to seed the database with initial data)
+10. Exit the InfluxDB container:
+   ```bash
+    exit
+   ```
+11. Stop the docker containers by running:
+   ```bash
+    sudo docker compose down
+   ```
+12. Start the docker containers again to start grafana with the token you just created:
+   ```bash
+    sudo docker compose up -d
+   ```
+13. Open up a terminal in the root directory of this project.
+14.  Run the development server with `npm run dev`
+15. (TODO: Add script to seed the database with initial data)
 
 ## 🎨 Color Palette (WIP)
 
