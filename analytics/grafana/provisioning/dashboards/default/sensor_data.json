@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 1,
+  "id": 2,
   "links": [],
   "panels": [
     {
@@ -110,14 +110,14 @@
           },
           "editorMode": "builder",
           "format": "table",
-          "rawSql": "SELECT \"value\", \"time\" FROM \"sensor_data\" WHERE \"time\" >= $__timeFrom AND \"time\" <= $__timeTo ",
+          "rawSql": "SELECT \"batteryVoltage\", \"time\" FROM \"sensor_data\" WHERE \"time\" >= $__timeFrom AND \"time\" <= $__timeTo ",
           "refId": "A",
           "sql": {
             "columns": [
               {
                 "parameters": [
                   {
-                    "name": "value",
+                    "name": "batteryVoltage",
                     "type": "functionParameter"
                   }
                 ],

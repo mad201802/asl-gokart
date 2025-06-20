@@ -34,7 +34,7 @@ const app = new Elysia({ prefix: '/api' })
             
             // Write data to InfluxDB
             const timestampNanos = new Date(body.timestamp).getTime() * 1000000; // Convert to nanoseconds
-            const line = "sensor_data,name=" + body.name + " value=" + body.value + " " + timestampNanos;
+            const line = `sensor_data,name=${body.name},unit=${body.unit} ${body.name}=${body.value} ${timestampNanos}`;
             await influxDB.write(line);
             
             
