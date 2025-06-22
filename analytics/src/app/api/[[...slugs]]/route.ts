@@ -55,6 +55,27 @@ const app = new Elysia({ prefix: '/api' })
             timestamp: t.String()
         })
     })
+    .post('/gokart/generate', async ( { body, error}) => {
+        try  {
+            // Generate 250 random sensor data entries for "batteryVoltage" in the influxDB
+            // They should all be in the last 24 hours from now and hold values between 51.2 and 67.2 V
+            const now = new Date();
+            const points = [];
+            for (let i = 0; i < 250; i++) {
+                const randomValue = (Math.random() * (67.2 - 51.2) + 51.2).toFixed(2);
+                const timestamp = new Date(now.getTime() - Math.floor(Math.random() * 24 * 60 * 60 * 1000)); // Random time in the last 24 hours
+                const timestampNanos = timestamp.getTime() * 1000000; // Convert to nanoseconds
+                const line = `sensor_data,name=batteryVoltage,unit=V batteryVoltage=${randomValue} ${timestampNanos}`;
+                points.push(line);
+            }
+            await influxDB.write(points.join('\n'));
+            console.log('Generated 250 random sensor data entries for batteryVoltage');
+            
+        } catch (err) {
+            console.error('Error generating sensor data:', err);
+            return error(500, 'Failed to generate sensor data')
+        }
+    })
     .get('/gokart', async ({ error }) => {
         try {
             // Fetch data from InfluxDB
