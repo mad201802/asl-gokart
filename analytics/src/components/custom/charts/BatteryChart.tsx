@@ -139,6 +139,8 @@ const chartConfig = {
 export function BatteryChartArea() {
   const [timeRange, setTimeRange] = React.useState("90d")
 
+  // TODO: Get data from tRPC endpoint on sensorData router
+
   const filteredData = chartData.filter((item) => {
     const date = new Date(item.date)
     const referenceDate = new Date("2024-06-30")
