@@ -21,8 +21,8 @@ export function MainNavigationMenu() {
       <NavigationMenuList>
         <NavigationMenuItem>
           <NavigationMenuTrigger>Home</NavigationMenuTrigger>
-          <NavigationMenuContent>
-            <ul className="grid gap-2 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
+          <NavigationMenuContent className="relative z-50">
+            <ul className="grid gap-2 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr] grid-rows-[auto] auto-rows-min p-4">              
               <li className="row-span-3">
                 <NavigationMenuLink asChild>
                   <a
@@ -42,6 +42,9 @@ export function MainNavigationMenu() {
                 Adjust your preferences and manage settings for your account.
               </ListItem>
               <ListItem href="/development" title="Development">
+                How to install dependencies and structure your app.
+              </ListItem>
+              <ListItem href="http://localhost:8182" title="Grafana">
                 How to install dependencies and structure your app.
               </ListItem>
             </ul>
