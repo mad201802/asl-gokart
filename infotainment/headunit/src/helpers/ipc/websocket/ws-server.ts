@@ -4,6 +4,7 @@ import { WEBSOCKET_BATTERY_MESSAGE_CHANNEL, WEBSOCKET_THROTTLE_MESSAGE_CHANNEL, 
 import * as http from 'http';
 import { ButtonHandler } from './handlers/button-handler';
 import { defaultButtonMappings } from './handlers/default-mapping';
+import { processAnalytics } from '@/helpers/analytics_helpers';
 const WebSocket = require('faye-websocket').WebSocket;
 
 const WSS_PORT = 6969;
@@ -75,6 +76,7 @@ export function startWebSocketServer(mainWindow: BrowserWindow) {
                   console.log("Forwarding message to ipcRenderer's BatteryListener:");
                   console.log(message.toString());
                   mainWindow.webContents.send(WEBSOCKET_BATTERY_MESSAGE_CHANNEL, message.toString());
+                  processAnalytics(message.toString());
                   break;
                 case Zones.BUTTONS:
                   console.log("Forwarding message to ipcRenderer's ButtonsListener:");
