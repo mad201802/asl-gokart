@@ -80,9 +80,9 @@ def smooth_battery_iterator():
         yield int(value)
 
 
-with connect("ws://localhost:6969") as websocket:
-    websocket.send(json.dumps(create_register_packet("throttle")))
-    websocket.send(json.dumps(create_register_packet("battery")))
+with connect("ws://localhost:6969") as websocketThrottle, connect("ws://localhost:6969") as websocketBattery:
+    websocketThrottle.send(json.dumps(create_register_packet("throttle")))
+    websocketBattery.send(json.dumps(create_register_packet("battery")))
     throttle_gen = smooth_throttle_iterator()
     rpm_gen = smooth_rpm_iterator()
     battery_gen = smooth_battery_iterator()
@@ -92,7 +92,7 @@ with connect("ws://localhost:6969") as websocket:
         rpm_value = next(rpm_gen)
         battery_value = next(battery_gen)
         print(f"Throttle: {throttle_value} RPM: {rpm_value} Battery: {battery_value}")
-        websocket.send(json.dumps(create_data_packet("throttle", "getThrottle", [throttle_value, throttle_value])))
-        websocket.send(json.dumps(create_data_packet("throttle", "getRpm", rpm_value)))
-        websocket.send(json.dumps(create_data_packet("battery", "getVoltage", battery_value)))
+        websocketThrottle.send(json.dumps(create_data_packet("throttle", "getThrottle", [throttle_value, throttle_value])))
+        websocketThrottle.send(json.dumps(create_data_packet("throttle", "getRpm", rpm_value)))
+        websocketBattery.send(json.dumps(create_data_packet("battery", "getVoltage", battery_value)))
         time.sleep(0.3 * random.random())  # Sleep for 100ms between messages
