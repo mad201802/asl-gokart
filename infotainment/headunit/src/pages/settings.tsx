@@ -25,8 +25,8 @@ import PowerMenu from "@/components/power-menu/power-menu";
 
 const SettingsPage = () => {
 
-  const { driveMode, adminMode, speedLimit, minSettableSpeed, maxSettableSpeed, appVersion } = useStore();
-  const { setDriveMode, setAdminMode, setAdminPin, setSpeedLimit, setAppVersion } = useStore();
+  const { driveMode, adminMode, speedLimit, minSettableSpeed, maxSettableSpeed, appVersion, analyticsEnabled } = useStore();
+  const { setDriveMode, setAdminMode, setAdminPin, setSpeedLimit, setAppVersion, setAnalyticsEnabled } = useStore();
 
 //  const [speedLimitUiLabel, setSpeedLimitUiLabel] = React.useState(speedLimit);
 
@@ -48,6 +48,14 @@ const SettingsPage = () => {
     fetchAppVersion();
   }, []);
 
+  let handleToggleAnalytics = (enabled: boolean) => {
+    window.app.toggleAnalytics(enabled)
+      .then((result) => {
+        setAnalyticsEnabled(result);
+        toast(`Cloud Analytics ${result ? "enabled" : "disabled"}!`);
+      });
+  }
+
 
 
   return (
@@ -58,7 +66,12 @@ const SettingsPage = () => {
       <div className="flex flex-row justify-between items-start px-2 py-1 pt-10">
         {/* ### 1. Einstellungsblock ### */}
         <div className="flex flex-col items-left justify-center gap-y-2 pl-7">
-          <LabeledSwitch id="advanced-logging" label="Advanced Logging" defaultValue={false} />
+          <LabeledSwitch 
+            id="analytics-enabled" 
+            label="Cloud Analytics" 
+            defaultValue={analyticsEnabled} 
+            onChange={(v) => handleToggleAnalytics(v)}
+            />
           <LabeledSwitch id="airplane-mode" label="Airplane Mode" defaultValue={false} />
           <LabeledSwitch id="on-by-default" label="On by Default" defaultValue={true} />
         </div>

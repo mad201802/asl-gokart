@@ -32,6 +32,7 @@ interface WebSocketContext {
 
 interface AppContext {
     getVersion: () => Promise<string>;
+    toggleAnalytics: (enabled: boolean) => Promise<boolean>;
 }
 
 
