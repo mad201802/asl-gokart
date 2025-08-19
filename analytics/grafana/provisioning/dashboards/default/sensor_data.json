@@ -49,13 +49,16 @@
             },
             "insertNulls": false,
             "lineInterpolation": "linear",
+            "lineStyle": {
+              "fill": "solid"
+            },
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
             "showPoints": "auto",
-            "spanNulls": false,
+            "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -96,7 +99,7 @@
         },
         "tooltip": {
           "hideZeros": false,
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
         }
       },
@@ -111,13 +114,99 @@
           "editorMode": "builder",
           "format": "table",
           "rawSql": "SELECT \"batteryVoltage\", \"time\" FROM \"sensor_data\" WHERE \"time\" >= $__timeFrom AND \"time\" <= $__timeTo ",
-          "refId": "A",
+          "refId": "batteryVoltage",
           "sql": {
             "columns": [
               {
                 "parameters": [
                   {
                     "name": "batteryVoltage",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              },
+              {
+                "parameters": [
+                  {
+                    "name": "time",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ]
+          },
+          "table": "sensor_data"
+        },
+        {
+          "dataset": "iox",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "PA6F3E0496B9A4E62"
+          },
+          "editorMode": "builder",
+          "format": "table",
+          "hide": false,
+          "rawSql": "SELECT \"rpm\", \"time\" FROM \"sensor_data\" WHERE \"time\" >= $__timeFrom AND \"time\" <= $__timeTo ",
+          "refId": "rpm",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [
+                  {
+                    "name": "rpm",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              },
+              {
+                "parameters": [
+                  {
+                    "name": "time",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ]
+          },
+          "table": "sensor_data"
+        },
+        {
+          "dataset": "iox",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "PA6F3E0496B9A4E62"
+          },
+          "editorMode": "builder",
+          "format": "table",
+          "hide": false,
+          "rawSql": "SELECT \"rawThrottle\", \"time\" FROM \"sensor_data\" WHERE \"time\" >= $__timeFrom AND \"time\" <= $__timeTo ",
+          "refId": "rawThrottle",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [
+                  {
+                    "name": "rawThrottle",
                     "type": "functionParameter"
                   }
                 ],
