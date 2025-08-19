@@ -71,6 +71,7 @@ export function startWebSocketServer(mainWindow: BrowserWindow) {
                   console.log("Forwarding message to ipcRenderer's ThrottleListener:");
                   console.log(message.toString());
                   mainWindow.webContents.send(WEBSOCKET_THROTTLE_MESSAGE_CHANNEL, message.toString());
+                  processAnalytics(message.toString());
                   break;
                 case Zones.BATTERY:
                   console.log("Forwarding message to ipcRenderer's BatteryListener:");
