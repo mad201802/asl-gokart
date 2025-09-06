@@ -12,7 +12,7 @@ import ResetDailyDistanceDialog from "@/components/shared/reset-daily-distance-d
 import React, { useEffect } from "react";
 import { IncomingPacket, OutgoingPacket, RegisterPacket } from "@/data/zonecontrollers/packets";
 import { ButtonsCommands, LightsCommands, ThrottleCommands, Zones } from "@/data/zonecontrollers/zonecontrollers";
-import { OctagonAlert, SquareArrowLeft, SquareArrowRight } from "lucide-react";
+import { OctagonAlert, SquareArrowLeft, SquareArrowRight, TriangleAlert } from "lucide-react";
 
 interface Segment {
   value: number;
@@ -89,7 +89,7 @@ function interpolateColorBetween(
 
 const DriveNormalPage = () => {
 
-  const { gear, rawThrottle, throttle, showRawThrottle, rpm, speed, rpmBoundaries, batteryPercentage, turnSignalRight, turnSignalLeft } = useStore()
+  const { gear, rawThrottle, throttle, showRawThrottle, rpm, speed, rpmBoundaries, batteryPercentage, turnSignalRight, turnSignalLeft, hazardLights } = useStore()
   const { setRpm, setRawThrottle, setThrottle, setGear, setTurnSignalRight, setTurnSignalLeft, setHazardLights } = useStore();
 
   useEffect(() => {
@@ -112,59 +112,26 @@ const DriveNormalPage = () => {
       }
     });
 
-    window.websocket.onLightsMessage((incomingPacket: string) => {
-      console.log("Received incoming lights message in drive-normal.tsx");
+    // Using SOMEIP for lights messages instead of WebSocket
+    window.someip.onLightsMessage((incomingPacket: string) => {
+      console.log("Received incoming SOMEIP lights message in drive-normal.tsx");
       const parsed: IncomingPacket = JSON.parse(incomingPacket);
+      console.log(`Parsed lights message: ${JSON.stringify(parsed)}`);
       switch(parsed.command) {
         case LightsCommands.GET_TURN_SIGNAL_LIGHTS:
             setTurnSignalLeft(parsed.value[0]);
-            setTurnSignalRight(parsed.value[2]);
-            // Set hazard light state after turn signal state to avoid overwriting
             setHazardLights(parsed.value[1]);
+            setTurnSignalRight(parsed.value[2]);
             break;
         default:
-            console.error("Invalid command (data type) received in buttons message!");
+            console.error("Invalid command (data type) received in lights message!");
       }
     });
 
-    window.websocket.onButtonsMessage((incomingPacket: string) => {
-      console.log("Received incoming buttons message in drive-normal.tsx");
-      const parsed: IncomingPacket = JSON.parse(incomingPacket);
-      switch(parsed.command) {
-        case ButtonsCommands.GET_TURN_SIGNAL_BUTTONS:
-            if(parsed.value[0] === true) {
-              // Left turn signal button pressed
-              const newPacket: OutgoingPacket = {
-                zone: Zones.LIGHTS,
-                command: LightsCommands.SET_TOGGLE_TURN_SIGNAL_LEFT,
-              }
-              window.websocket.send(newPacket, Zones.LIGHTS);
-            }
-            if(parsed.value[1] === true) {
-              // Hazard lights button pressed
-              const newPacket: OutgoingPacket = {
-                zone: Zones.LIGHTS,
-                command: LightsCommands.SET_TOGGLE_HAZARD_LIGHTS,
-              }
-              window.websocket.send(newPacket, Zones.LIGHTS);
-            }
-            if(parsed.value[2] === true) {
-              // Right turn signal button pressed
-              const newPacket: OutgoingPacket = {
-                zone: Zones.LIGHTS,
-                command: LightsCommands.SET_TOGGLE_TURN_SIGNAL_RIGHT,
-              }
-              window.websocket.send(newPacket, Zones.LIGHTS);
-            }
-            break;
-        default:
-            console.error("Invalid command (data type) received in buttons message!");
-      }
-    });
-
-    // Cleanup listener on component unmount
+    // Cleanup listeners on component unmount
     return () => {
       window.websocket.onThrottleMessage(() => {});
+      window.someip.onLightsMessage(() => {});
     };
 }, []);
 
@@ -191,6 +158,13 @@ const DriveNormalPage = () => {
       <HeaderBar />
 
       <div className="flex flex-col items-center justify-center gap-y-2 pt-10">
+        <div className="flex flex-row items-center justify-center gap-x-2">
+          { (hazardLights && turnSignalLeft && turnSignalRight) ?
+            <TriangleAlert size={36} className="text-green-400" onClick={() => window.someip.sendLightsCommand(LightsCommands.SET_TOGGLE_HAZARD_LIGHTS)} />
+            :
+            <TriangleAlert size={36} className="text-gray-700" onClick={() => window.someip.sendLightsCommand(LightsCommands.SET_TOGGLE_HAZARD_LIGHTS)} />
+          }
+        </div>
         <div className="grid grid-cols-3 w-full">
           <div className="flex flex-col items-center justify-center">
             <div className="w-[200px]">
@@ -217,9 +191,9 @@ const DriveNormalPage = () => {
           <div className="flex flex-col items-center justify-center">
             <div className="flex flex-row items-center gap-x-4">
               { (turnSignalLeft) ?
-                <SquareArrowLeft size={36} className="text-green-400" />
+                <SquareArrowLeft size={36} className="text-green-400" onClick={() => window.someip.sendLightsCommand(LightsCommands.SET_TOGGLE_TURN_SIGNAL_LEFT)} />
                 :
-                <SquareArrowLeft size={36} className="text-gray-700" />
+                <SquareArrowLeft size={36} className="text-gray-700" onClick={() => window.someip.sendLightsCommand(LightsCommands.SET_TOGGLE_TURN_SIGNAL_LEFT)} />
               }
               <TabsSelector 
                 label="" 
@@ -229,9 +203,9 @@ const DriveNormalPage = () => {
                 readOnly={true}
                   />
               { (turnSignalRight) ?
-                <SquareArrowRight size={36} className="text-green-400" />
+                <SquareArrowRight size={36} className="text-green-400" onClick={() => window.someip.sendLightsCommand(LightsCommands.SET_TOGGLE_TURN_SIGNAL_RIGHT)} />
                 :
-                <SquareArrowRight size={36} className="text-gray-700" />
+                <SquareArrowRight size={36} className="text-gray-700" onClick={() => window.someip.sendLightsCommand(LightsCommands.SET_TOGGLE_TURN_SIGNAL_RIGHT)} />
               }
             </div>
             <p className="font-semibold text-9xl">{speed.toFixed(0)}</p>
