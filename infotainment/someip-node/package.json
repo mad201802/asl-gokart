@@ -1,8 +1,9 @@
 {
   "name": "@asl-gokart/someip-node",
   "version": "1.0.0",
-  "description": "Template project for writing node package with napi-rs",
+  "description": "SOMEIP protocol implementation for Node.js using NAPI-RS",
   "main": "index.js",
+  "types": "index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+ssh://git@github.com/napi-rs/package-template.git"
@@ -70,6 +71,7 @@
     "@oxc-node/core": "^0.0.32",
     "@taplo/cli": "^0.7.0",
     "@tybys/wasm-util": "^0.10.0",
+    "@types/node": "^24.3.0",
     "ava": "^6.4.1",
     "chalk": "^5.4.1",
     "husky": "^9.1.7",
