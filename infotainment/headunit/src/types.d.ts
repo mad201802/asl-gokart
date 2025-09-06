@@ -2,7 +2,8 @@
 // plugin that tells the Electron app where to look for the Vite-bundled app code (depending on
 
 import { WebSocket } from "ws";
-import { IncomingPacket, OutgoingPacket, Zones } from "./data/zonecontrollers/packets";
+import { IncomingPacket, OutgoingPacket } from "./data/zonecontrollers/packets";
+import { LightsCommands, Zones } from "./data/zonecontrollers/zonecontrollers";
 
 // whether you're running in development or production).
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
@@ -35,12 +36,17 @@ interface AppContext {
     toggleAnalytics: (enabled: boolean) => Promise<boolean>;
 }
 
+interface SomeipContext {
+    sendLightsCommand: (command: LightsCommands, value?: boolean | boolean[]) => void;
+    onLightsMessage: (callback: (lightsMessage: string) => void) => void;
+}
 
 declare global {
     interface Window {
         themeMode: ThemeModeContext;
         electronWindow: ElectronWindow;
         websocket: WebSocketContext;
+        someip: SomeipContext;
         app: AppContext;
     }
 } 
