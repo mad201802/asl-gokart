@@ -56,4 +56,5 @@ const {
   },
 })
 export default __napiModule.exports
-export const plus100 = __napiModule.exports.plus100
+export const ServiceApplication = __napiModule.exports.ServiceApplication
+export const ServiceApplicationJs = __napiModule.exports.ServiceApplicationJs

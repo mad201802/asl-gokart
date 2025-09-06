@@ -78,7 +78,12 @@ function requireNative() {
         loadErrors.push(e)
       }
       try {
-        return require('@asl-gokart/someip-node-android-arm64')
+        const binding = require('@asl-gokart/someip-node-android-arm64')
+        const bindingPackageVersion = require('@asl-gokart/someip-node-android-arm64/package.json').version
+        if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
+          throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
+        }
+        return binding
       } catch (e) {
         loadErrors.push(e)
       }
@@ -89,7 +94,12 @@ function requireNative() {
         loadErrors.push(e)
       }
       try {
-        return require('@asl-gokart/someip-node-android-arm-eabi')
+        const binding = require('@asl-gokart/someip-node-android-arm-eabi')
+        const bindingPackageVersion = require('@asl-gokart/someip-node-android-arm-eabi/package.json').version
+        if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
+          throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
+        }
+        return binding
       } catch (e) {
         loadErrors.push(e)
       }
@@ -104,7 +114,12 @@ function requireNative() {
         loadErrors.push(e)
       }
       try {
-        return require('@asl-gokart/someip-node-win32-x64-msvc')
+        const binding = require('@asl-gokart/someip-node-win32-x64-msvc')
+        const bindingPackageVersion = require('@asl-gokart/someip-node-win32-x64-msvc/package.json').version
+        if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
+          throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
+        }
+        return binding
       } catch (e) {
         loadErrors.push(e)
       }
@@ -115,7 +130,12 @@ function requireNative() {
         loadErrors.push(e)
       }
       try {
-        return require('@asl-gokart/someip-node-win32-ia32-msvc')
+        const binding = require('@asl-gokart/someip-node-win32-ia32-msvc')
+        const bindingPackageVersion = require('@asl-gokart/someip-node-win32-ia32-msvc/package.json').version
+        if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
+          throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
+        }
+        return binding
       } catch (e) {
         loadErrors.push(e)
       }
@@ -126,7 +146,12 @@ function requireNative() {
         loadErrors.push(e)
       }
       try {
-        return require('@asl-gokart/someip-node-win32-arm64-msvc')
+        const binding = require('@asl-gokart/someip-node-win32-arm64-msvc')
+        const bindingPackageVersion = require('@asl-gokart/someip-node-win32-arm64-msvc/package.json').version
+        if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
+          throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
+        }
+        return binding
       } catch (e) {
         loadErrors.push(e)
       }
@@ -140,7 +165,12 @@ function requireNative() {
       loadErrors.push(e)
     }
     try {
-      return require('@asl-gokart/someip-node-darwin-universal')
+      const binding = require('@asl-gokart/someip-node-darwin-universal')
+      const bindingPackageVersion = require('@asl-gokart/someip-node-darwin-universal/package.json').version
+      if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
+        throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
+      }
+      return binding
     } catch (e) {
       loadErrors.push(e)
     }
@@ -151,7 +181,12 @@ function requireNative() {
         loadErrors.push(e)
       }
       try {
-        return require('@asl-gokart/someip-node-darwin-x64')
+        const binding = require('@asl-gokart/someip-node-darwin-x64')
+        const bindingPackageVersion = require('@asl-gokart/someip-node-darwin-x64/package.json').version
+        if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
+          throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
+        }
+        return binding
       } catch (e) {
         loadErrors.push(e)
       }
@@ -162,7 +197,12 @@ function requireNative() {
         loadErrors.push(e)
       }
       try {
-        return require('@asl-gokart/someip-node-darwin-arm64')
+        const binding = require('@asl-gokart/someip-node-darwin-arm64')
+        const bindingPackageVersion = require('@asl-gokart/someip-node-darwin-arm64/package.json').version
+        if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
+          throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
+        }
+        return binding
       } catch (e) {
         loadErrors.push(e)
       }
@@ -177,7 +217,12 @@ function requireNative() {
         loadErrors.push(e)
       }
       try {
-        return require('@asl-gokart/someip-node-freebsd-x64')
+        const binding = require('@asl-gokart/someip-node-freebsd-x64')
+        const bindingPackageVersion = require('@asl-gokart/someip-node-freebsd-x64/package.json').version
+        if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
+          throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
+        }
+        return binding
       } catch (e) {
         loadErrors.push(e)
       }
@@ -188,7 +233,12 @@ function requireNative() {
         loadErrors.push(e)
       }
       try {
-        return require('@asl-gokart/someip-node-freebsd-arm64')
+        const binding = require('@asl-gokart/someip-node-freebsd-arm64')
+        const bindingPackageVersion = require('@asl-gokart/someip-node-freebsd-arm64/package.json').version
+        if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
+          throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
+        }
+        return binding
       } catch (e) {
         loadErrors.push(e)
       }
@@ -204,7 +254,12 @@ function requireNative() {
           loadErrors.push(e)
         }
         try {
-          return require('@asl-gokart/someip-node-linux-x64-musl')
+          const binding = require('@asl-gokart/someip-node-linux-x64-musl')
+          const bindingPackageVersion = require('@asl-gokart/someip-node-linux-x64-musl/package.json').version
+          if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
+            throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
+          }
+          return binding
         } catch (e) {
           loadErrors.push(e)
         }
@@ -215,7 +270,12 @@ function requireNative() {
           loadErrors.push(e)
         }
         try {
-          return require('@asl-gokart/someip-node-linux-x64-gnu')
+          const binding = require('@asl-gokart/someip-node-linux-x64-gnu')
+          const bindingPackageVersion = require('@asl-gokart/someip-node-linux-x64-gnu/package.json').version
+          if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
+            throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
+          }
+          return binding
         } catch (e) {
           loadErrors.push(e)
         }
@@ -228,7 +288,12 @@ function requireNative() {
           loadErrors.push(e)
         }
         try {
-          return require('@asl-gokart/someip-node-linux-arm64-musl')
+          const binding = require('@asl-gokart/someip-node-linux-arm64-musl')
+          const bindingPackageVersion = require('@asl-gokart/someip-node-linux-arm64-musl/package.json').version
+          if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
+            throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
+          }
+          return binding
         } catch (e) {
           loadErrors.push(e)
         }
@@ -239,7 +304,12 @@ function requireNative() {
           loadErrors.push(e)
         }
         try {
-          return require('@asl-gokart/someip-node-linux-arm64-gnu')
+          const binding = require('@asl-gokart/someip-node-linux-arm64-gnu')
+          const bindingPackageVersion = require('@asl-gokart/someip-node-linux-arm64-gnu/package.json').version
+          if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
+            throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
+          }
+          return binding
         } catch (e) {
           loadErrors.push(e)
         }
@@ -252,7 +322,12 @@ function requireNative() {
           loadErrors.push(e)
         }
         try {
-          return require('@asl-gokart/someip-node-linux-arm-musleabihf')
+          const binding = require('@asl-gokart/someip-node-linux-arm-musleabihf')
+          const bindingPackageVersion = require('@asl-gokart/someip-node-linux-arm-musleabihf/package.json').version
+          if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
+            throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
+          }
+          return binding
         } catch (e) {
           loadErrors.push(e)
         }
@@ -263,7 +338,12 @@ function requireNative() {
           loadErrors.push(e)
         }
         try {
-          return require('@asl-gokart/someip-node-linux-arm-gnueabihf')
+          const binding = require('@asl-gokart/someip-node-linux-arm-gnueabihf')
+          const bindingPackageVersion = require('@asl-gokart/someip-node-linux-arm-gnueabihf/package.json').version
+          if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
+            throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
+          }
+          return binding
         } catch (e) {
           loadErrors.push(e)
         }
@@ -276,7 +356,12 @@ function requireNative() {
           loadErrors.push(e)
         }
         try {
-          return require('@asl-gokart/someip-node-linux-riscv64-musl')
+          const binding = require('@asl-gokart/someip-node-linux-riscv64-musl')
+          const bindingPackageVersion = require('@asl-gokart/someip-node-linux-riscv64-musl/package.json').version
+          if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
+            throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
+          }
+          return binding
         } catch (e) {
           loadErrors.push(e)
         }
@@ -287,7 +372,12 @@ function requireNative() {
           loadErrors.push(e)
         }
         try {
-          return require('@asl-gokart/someip-node-linux-riscv64-gnu')
+          const binding = require('@asl-gokart/someip-node-linux-riscv64-gnu')
+          const bindingPackageVersion = require('@asl-gokart/someip-node-linux-riscv64-gnu/package.json').version
+          if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
+            throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
+          }
+          return binding
         } catch (e) {
           loadErrors.push(e)
         }
@@ -299,7 +389,12 @@ function requireNative() {
         loadErrors.push(e)
       }
       try {
-        return require('@asl-gokart/someip-node-linux-ppc64-gnu')
+        const binding = require('@asl-gokart/someip-node-linux-ppc64-gnu')
+        const bindingPackageVersion = require('@asl-gokart/someip-node-linux-ppc64-gnu/package.json').version
+        if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
+          throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
+        }
+        return binding
       } catch (e) {
         loadErrors.push(e)
       }
@@ -310,7 +405,12 @@ function requireNative() {
         loadErrors.push(e)
       }
       try {
-        return require('@asl-gokart/someip-node-linux-s390x-gnu')
+        const binding = require('@asl-gokart/someip-node-linux-s390x-gnu')
+        const bindingPackageVersion = require('@asl-gokart/someip-node-linux-s390x-gnu/package.json').version
+        if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
+          throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
+        }
+        return binding
       } catch (e) {
         loadErrors.push(e)
       }
@@ -320,34 +420,49 @@ function requireNative() {
   } else if (process.platform === 'openharmony') {
     if (process.arch === 'arm64') {
       try {
-        return require('./someip-node.linux-arm64-ohos.node')
+        return require('./someip-node.openharmony-arm64.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        return require('@asl-gokart/someip-node-linux-arm64-ohos')
+        const binding = require('@asl-gokart/someip-node-openharmony-arm64')
+        const bindingPackageVersion = require('@asl-gokart/someip-node-openharmony-arm64/package.json').version
+        if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
+          throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
+        }
+        return binding
       } catch (e) {
         loadErrors.push(e)
       }
     } else if (process.arch === 'x64') {
       try {
-        return require('./someip-node.linux-x64-ohos.node')
+        return require('./someip-node.openharmony-x64.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        return require('@asl-gokart/someip-node-linux-x64-ohos')
+        const binding = require('@asl-gokart/someip-node-openharmony-x64')
+        const bindingPackageVersion = require('@asl-gokart/someip-node-openharmony-x64/package.json').version
+        if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
+          throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
+        }
+        return binding
       } catch (e) {
         loadErrors.push(e)
       }
     } else if (process.arch === 'arm') {
       try {
-        return require('./someip-node.linux-arm-ohos.node')
+        return require('./someip-node.openharmony-arm.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        return require('@asl-gokart/someip-node-linux-arm-ohos')
+        const binding = require('@asl-gokart/someip-node-openharmony-arm')
+        const bindingPackageVersion = require('@asl-gokart/someip-node-openharmony-arm/package.json').version
+        if (bindingPackageVersion !== '1.0.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
+          throw new Error(`Native binding package version mismatch, expected 1.0.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
+        }
+        return binding
       } catch (e) {
         loadErrors.push(e)
       }
@@ -393,4 +508,5 @@ if (!nativeBinding) {
 }
 
 module.exports = nativeBinding
-module.exports.plus100 = nativeBinding.plus100
+module.exports.ServiceApplication = nativeBinding.ServiceApplication
+module.exports.ServiceApplicationJs = nativeBinding.ServiceApplicationJs
