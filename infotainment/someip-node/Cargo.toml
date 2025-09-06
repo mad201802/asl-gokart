@@ -9,8 +9,9 @@ version = "0.1.0"
 crate-type = ["cdylib"]
 
 [dependencies]
-napi = "3.0.0"
+napi = { version = "3.0.0", features = ["async", "tokio_rt", "serde-json"] }
 napi-derive = "3.0.0"
+protocol = { path = "../../../esp32-protocol/protocol" }
 
 [build-dependencies]
 napi-build = "2"
