@@ -20,9 +20,5 @@ export const createLightsSlice: StateCreator<
   hazardLights: false,
   setTurnSignalLeft: (value: boolean) => set(() => ({ turnSignalLeft: value })),
   setTurnSignalRight: (value: boolean) => set(() => ({ turnSignalRight: value })),
-  setHazardLights: (value: boolean) => set(() => ({
-    hazardLights: value,
-    turnSignalLeft: value ? true : get().turnSignalLeft,
-    turnSignalRight: value ? true : get().turnSignalRight
-  })),
+  setHazardLights: (value: boolean) => set(() => ({ hazardLights: value })),
   })
