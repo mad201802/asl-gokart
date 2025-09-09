@@ -53,7 +53,7 @@ export function startSomeipService(mainWindow: BrowserWindow) {
 function setupTurnSignalEventHandling(mainWindow: BrowserWindow) {
     console.log("Setting up turn signal event handling");
     someipApp?.subscribe(ZC_LIGHTS_SERVICE_ID, TURN_SIGNALS_EVENT_ID, (payload) => {
-        console.log(`Turn Signal Event received in the backend: ${payload.toString()}`)
+        // console.log(`Turn Signal Event received in the backend: ${payload.toString()}`)
         const incomingPacket: IncomingPacket = {
             zone: Zones.LIGHTS,
             command: LightsCommands.GET_TURN_SIGNAL_LIGHTS,

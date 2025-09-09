@@ -116,7 +116,7 @@ const DriveNormalPage = () => {
     window.someip.onLightsMessage((incomingPacket: string) => {
       console.log("Received incoming SOMEIP lights message in drive-normal.tsx");
       const parsed: IncomingPacket = JSON.parse(incomingPacket);
-      console.log(`Parsed lights message: ${JSON.stringify(parsed)}`);
+      // console.log(`Parsed lights message: ${JSON.stringify(parsed)}`);
       switch(parsed.command) {
         case LightsCommands.GET_TURN_SIGNAL_LIGHTS:
             setTurnSignalLeft(parsed.value[0]);
