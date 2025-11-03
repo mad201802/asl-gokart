@@ -5,6 +5,7 @@ env:
   MACOSX_DEPLOYMENT_TARGET: '10.13'
   CARGO_INCREMENTAL: '1'
   REGISTRY_URL: 'https://registry.leotm.de'
+  WORKING_DIRECTORY: 'infotainment/someip-node'
 'on':
   push:
     tags-ignore:
@@ -38,17 +39,22 @@ jobs:
         with:
           node-version: 22
           cache: yarn
+          cache-dependency-path: ${{ env.WORKING_DIRECTORY }}/yarn.lock
       - name: Install
         uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
       - name: Install dependencies
+        working-directory: ${{ env.WORKING_DIRECTORY }}
         run: yarn install
       - name: Oxlint
+        working-directory: ${{ env.WORKING_DIRECTORY }}
         run: yarn lint
       - name: Cargo fmt
+        working-directory: ${{ env.WORKING_DIRECTORY }}
         run: cargo fmt -- --check
       - name: Clippy
+        working-directory: ${{ env.WORKING_DIRECTORY }}
         run: cargo clippy
   build:
     strategy:
@@ -70,6 +76,7 @@ jobs:
         with:
           node-version: 22
           cache: yarn
+          cache-dependency-path: ${{ env.WORKING_DIRECTORY }}/yarn.lock
       - name: Install
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -84,7 +91,7 @@ jobs:
             ~/.cargo/git/db/
             ~/.napi-rs
             .cargo-cache
-            target/
+            ${{ env.WORKING_DIRECTORY }}/target/
           key: ${{ matrix.settings.target }}-cargo-${{ matrix.settings.host }}
       - uses: mlugg/setup-zig@v2
         if: ${{ contains(matrix.settings.target, 'musl') }}
@@ -98,12 +105,15 @@ jobs:
         with:
           tool: cargo-zigbuild
       - name: Setup toolchain
+        working-directory: ${{ env.WORKING_DIRECTORY }}
         run: ${{ matrix.settings.setup }}
         if: ${{ matrix.settings.setup }}
         shell: bash
       - name: Install dependencies
+        working-directory: ${{ env.WORKING_DIRECTORY }}
         run: yarn install
       - name: Build
+        working-directory: ${{ env.WORKING_DIRECTORY }}
         run: ${{ matrix.settings.build }}
         shell: bash
       - name: Upload artifact
@@ -111,8 +121,8 @@ jobs:
         with:
           name: bindings-${{ matrix.settings.target }}
           path: |
-            ${{ env.APP_NAME }}.*.node
-            ${{ env.APP_NAME }}.*.wasm
+            ${{ env.WORKING_DIRECTORY }}/${{ env.APP_NAME }}.*.node
+            ${{ env.WORKING_DIRECTORY }}/${{ env.APP_NAME }}.*.wasm
           if-no-files-found: error
   test-linux-binding:
     name: Test ${{ matrix.target }} - node@${{ matrix.node }}
@@ -138,6 +148,7 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: yarn
+          cache-dependency-path: ${{ env.WORKING_DIRECTORY }}/yarn.lock
       - name: Output docker params
         id: docker
         run: |
@@ -158,6 +169,7 @@ jobs:
             }
           " >> $GITHUB_OUTPUT
       - name: Install dependencies
+        working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |
           yarn config set --json supportedArchitectures.cpu '["current", "arm64", "x64", "arm"]'
           yarn config set --json supportedArchitectures.libc '["current", "musl", "gnu"]'
@@ -166,8 +178,9 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           name: bindings-${{ matrix.target }}
-          path: .
+          path: ${{ env.WORKING_DIRECTORY }}
       - name: List packages
+        working-directory: ${{ env.WORKING_DIRECTORY }}
         run: ls -R .
         shell: bash
       - name: Set up QEMU
@@ -181,7 +194,7 @@ jobs:
         uses: addnab/docker-run-action@v3
         with:
           image: ${{ steps.docker.outputs.IMAGE }}
-          options: '-v ${{ github.workspace }}:${{ github.workspace }} -w ${{ github.workspace }} --platform ${{ steps.docker.outputs.PLATFORM }}'
+          options: '-v ${{ github.workspace }}:${{ github.workspace }} -w ${{ github.workspace }}/${{ env.WORKING_DIRECTORY }} --platform ${{ steps.docker.outputs.PLATFORM }}'
           run: yarn test
   publish:
     name: Publish
@@ -199,20 +212,26 @@ jobs:
         with:
           node-version: 24
           cache: yarn
+          cache-dependency-path: ${{ env.WORKING_DIRECTORY }}/yarn.lock
       - name: Install dependencies
+        working-directory: ${{ env.WORKING_DIRECTORY }}
         run: yarn install
       - name: create npm dirs
+        working-directory: ${{ env.WORKING_DIRECTORY }}
         run: yarn napi create-npm-dirs
       - name: Download all artifacts
         uses: actions/download-artifact@v6
         with:
-          path: artifacts
+          path: ${{ env.WORKING_DIRECTORY }}/artifacts
       - name: Move artifacts
+        working-directory: ${{ env.WORKING_DIRECTORY }}
         run: yarn artifacts
       - name: List packages
+        working-directory: ${{ env.WORKING_DIRECTORY }}
         run: ls -R ./npm
         shell: bash
       - name: Publish
+        working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |
           npm config set provenance true
           if git log -1 --pretty=%B | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$";
