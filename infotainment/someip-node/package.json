@@ -1,6 +1,6 @@
 {
   "name": "@asl-gokart/someip-node",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "SOMEIP protocol implementation for Node.js using NAPI-RS",
   "main": "index.js",
   "types": "index.d.ts",
@@ -21,7 +21,8 @@
   "files": [
     "index.d.ts",
     "index.js",
-    "browser.js"
+    "browser.js",
+    "*.node"
   ],
   "napi": {
     "binaryName": "someip-node",

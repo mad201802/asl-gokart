@@ -1,8 +1,7 @@
-name: CI
+name: CI (someip-node)
 env:
   DEBUG: napi:*
   APP_NAME: someip-node
-  MACOSX_DEPLOYMENT_TARGET: '10.13'
   CARGO_INCREMENTAL: '1'
   REGISTRY_URL: 'https://registry.leotm.de'
   WORKING_DIRECTORY: 'infotainment/someip-node'
@@ -242,10 +241,8 @@ jobs:
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |
           npm config set provenance false
-          echo "//$REGISTRY_URL/:_authToken=$NPM_REGISTRY_AUTH_TOKEN" >> ~/.npmrc
           export NPM_REGISTRY_AUTH_TOKEN=${{ secrets.NPM_REGISTRY_AUTH_TOKEN }}
-          yarn npm publish --access public
+          yarn npm publish
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_REGISTRY_AUTH_TOKEN: ${{ secrets.NPM_REGISTRY_AUTH_TOKEN }}
