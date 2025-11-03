@@ -6,6 +6,7 @@ env:
   CARGO_INCREMENTAL: '1'
   REGISTRY_URL: 'https://registry.leotm.de'
   WORKING_DIRECTORY: 'infotainment/someip-node'
+  NPM_REGISTRY_AUTH_TOKEN: ${{ secrets.NPM_REGISTRY_AUTH_TOKEN }}
 'on':
   push:
     tags-ignore:
