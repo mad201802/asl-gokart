@@ -241,8 +241,9 @@ jobs:
       - name: Publish
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |
-          npm config set provenance true
+          npm config set provenance false
           echo "//$REGISTRY_URL/:_authToken=$NPM_REGISTRY_AUTH_TOKEN" >> ~/.npmrc
+          cat ~/.npmrc
           npm publish --access public
 
         env:
