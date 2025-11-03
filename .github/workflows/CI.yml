@@ -113,10 +113,11 @@ jobs:
       - name: Install dependencies
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: yarn install
-      - name: Clone esp32-protocol from GitHub
+      - name: Clone esp32-protocol develop from GitHub
         run: |
           cd ..
           git clone https://github.com/mad201802/esp32-protocol.git
+          git checkout develop
       - name: Build
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: ${{ matrix.settings.build }}
