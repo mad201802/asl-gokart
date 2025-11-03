@@ -242,17 +242,9 @@ jobs:
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |
           npm config set provenance true
-          if git log -1 --pretty=%B | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$";
-          then
-            echo "//$REGISTRY_URL/:_authToken=$NPM_TOKEN" >> ~/.npmrc
-            npm publish --access public
-          elif git log -1 --pretty=%B | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+";
-          then
-            echo "//$REGISTRY_URL/:_authToken=$NPM_TOKEN" >> ~/.npmrc
-            npm publish --tag next --access public
-          else
-            echo "Not a release, skipping publish"
-          fi
+          echo "//$REGISTRY_URL/:_authToken=$NPM_TOKEN" >> ~/.npmrc
+          npm publish --access public
+
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_REGISTRY_AUTH_TOKEN }}
