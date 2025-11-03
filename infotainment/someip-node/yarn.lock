@@ -17,6 +17,7 @@ __metadata:
     "@tybys/wasm-util": "npm:^0.10.0"
     "@types/node": "npm:^24.3.0"
     ava: "npm:^6.4.1"
+    cargo-cp-artifact: "npm:^0.1.9"
     chalk: "npm:^5.4.1"
     husky: "npm:^9.1.7"
     lint-staged: "npm:^16.1.2"
@@ -1630,6 +1631,15 @@ __metadata:
   version: 4.2.0
   resolution: "callsites@npm:4.2.0"
   checksum: 10c0/8f7e269ec09fc0946bb22d838a8bc7932e1909ab4a833b964749f4d0e8bdeaa1f253287c4f911f61781f09620b6925ccd19a5ea4897489c4e59442c660c312a3
+  languageName: node
+  linkType: hard
+
+"cargo-cp-artifact@npm:^0.1.9":
+  version: 0.1.9
+  resolution: "cargo-cp-artifact@npm:0.1.9"
+  bin:
+    cargo-cp-artifact: bin/cargo-cp-artifact.js
+  checksum: 10c0/60eb1845917cfb021920fcf600a72379890b385396f9c69107face3b16b347960b66cd3d82cc169c6ac8b1212cf0706584125bc36fbc08353b033310c17ca0a6
   languageName: node
   linkType: hard
 

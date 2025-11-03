@@ -1,6 +1,6 @@
 
 [package]
-authors = ["LongYinan <lynweklm@gmail.com>"]
+authors = ["AEROSPACE-LAB Team Gokart"]
 edition = "2021"
 name = "someip_node"
 version = "0.1.0"

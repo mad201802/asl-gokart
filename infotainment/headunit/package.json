@@ -8,7 +8,7 @@
         "start": "electron-forge start",
         "package": "electron-forge package",
         "make": "electron-forge make",
-        "make:pi4": "electron-forge make --arch=arm64",
+        "make:pi4": "DEBUG=electron-packager electron-forge make --arch=arm64",
         "make:odroid": "electron-forge make --arch=armv7l",
         "publish": "electron-forge publish",
         "prett": "prettier . --write",
@@ -59,7 +59,7 @@
         "vite": "^5.4.0"
     },
     "dependencies": {
-        "@asl-gokart/someip-node": "file:../someip-node",
+        "@asl-gokart/someip-node": "^1.0.0",
         "@mars3d/heatmap.js": "^2.0.7",
         "@radix-ui/react-dialog": "^1.1.1",
         "@radix-ui/react-label": "^2.1.0",

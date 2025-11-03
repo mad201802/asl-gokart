@@ -1,27 +1,23 @@
-# `@napi-rs/package-template`
+# `@asl-gokart/someip-node`
 
-![https://github.com/napi-rs/package-template/actions](https://github.com/napi-rs/package-template/workflows/CI/badge.svg)
+This package is based on `@napi-rs/package-template` [GitHub](https://github.com/napi-rs/package-template).
 
-> Template project for writing node packages with napi-rs.
 
 # Usage
 
-1. Click **Use this template**.
-2. **Clone** your project.
-3. Run `yarn install` to install dependencies.
-4. Run `yarn napi rename -n [@your-scope/package-name] -b [binary-name]` command under the project folder to rename your package.
+1. Run `yarn install` to install dependencies.
 
-## Install this test package
+## Install this package in your project
 
 ```bash
-yarn add @napi-rs/package-template
+npm install @asl-gokart/someip-node
 ```
 
 ## Ability
 
 ### Build
 
-After `yarn build/npm run build` command, you can see `package-template.[darwin|win32|linux].node` file in project root. This is the native addon built from [lib.rs](./src/lib.rs).
+After `yarn build` command, you can see `package-template.[darwin|win32|linux].node` file in project root. This is the native addon built from [lib.rs](./src/lib.rs).
 
 ### Test
 
@@ -68,7 +64,21 @@ $ ava --verbose
 ✨  Done in 1.12s.
 ```
 
-## Release package
+## Release package via CLI
+
+Make sure you set these two environment variables before releasing package via CLI.
+
+```bash
+export NPM_REGISTRY_AUTH_TOKEN=your_token
+```
+
+Then run:
+
+```bash
+yarn npm publish
+```
+
+## Release package via CI/CD
 
 Ensure you have set your **NPM_TOKEN** in the `GitHub` project setting.
 

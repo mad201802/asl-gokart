@@ -1,5 +1,6 @@
 import { SOMEIP_LIGHTS_MESSAGE_CHANNEL, SOMEIP_SEND_LIGHTS_CHANNEL } from './someip-channels';
 import { LightsCommands } from '@/data/zonecontrollers/zonecontrollers';
+require('@asl-gokart/someip-node');
 
 export function exposeSomeipContext() {
     const { contextBridge, ipcRenderer } = window.require('electron');
