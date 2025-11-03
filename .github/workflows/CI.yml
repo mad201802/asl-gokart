@@ -242,9 +242,9 @@ jobs:
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |
           npm config set provenance true
-          echo "//$REGISTRY_URL/:_authToken=$NPM_TOKEN" >> ~/.npmrc
+          echo "//$REGISTRY_URL/:_authToken=$NPM_REGISTRY_AUTH_TOKEN" >> ~/.npmrc
           npm publish --access public
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ env.NPM_REGISTRY_AUTH_TOKEN }}
+          NPM_REGISTRY_AUTH_TOKEN: ${{ secrets.NPM_REGISTRY_AUTH_TOKEN }}
