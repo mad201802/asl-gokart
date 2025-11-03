@@ -209,7 +209,8 @@ jobs:
     permissions:
       contents: write
       id-token: write
-#    needs:
+    needs:
+      - build
 #      - lint
 #      - test-linux-binding
     steps:
