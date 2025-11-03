@@ -117,6 +117,7 @@ jobs:
         run: |
           cd ..
           git clone https://github.com/mad201802/esp32-protocol.git
+          cd ./esp32-protocol
           git checkout develop
       - name: Build
         working-directory: ${{ env.WORKING_DIRECTORY }}
