@@ -20,12 +20,13 @@ import { HeaderBar } from "@/components/shared/header-bar";
 import { toast } from "sonner";
 import AvancedSettingsDialog from "@/components/shared/advanced-settings/advanced-settings-dialog";
 import AdminSettingsDialog from "@/components/admin-mode/admin-settings-dialog";
-import React from "react";
+import React, { useEffect } from "react";
+import PowerMenu from "@/components/power-menu/power-menu";
 
 const SettingsPage = () => {
 
-  const { driveMode, adminMode, speedLimit, minSettableSpeed, maxSettableSpeed } = useStore();
-  const { setDriveMode, setAdminMode, setAdminPin, setSpeedLimit } = useStore();
+  const { driveMode, adminMode, speedLimit, minSettableSpeed, maxSettableSpeed, appVersion, analyticsEnabled } = useStore();
+  const { setDriveMode, setAdminMode, setAdminPin, setSpeedLimit, setAppVersion, setAnalyticsEnabled } = useStore();
 
 //  const [speedLimitUiLabel, setSpeedLimitUiLabel] = React.useState(speedLimit);
 
@@ -35,17 +36,42 @@ const SettingsPage = () => {
     toast("Admin mode disabled!");
   }
 
+  useEffect(() => {
+    const fetchAppVersion = async () => {
+      try {
+        const version = await window.app.getVersion();
+        setAppVersion(version);
+      } catch (e) {
+      console.error(e);
+      }
+    };
+    fetchAppVersion();
+  }, []);
+
+  let handleToggleAnalytics = (enabled: boolean) => {
+    window.app.toggleAnalytics(enabled)
+      .then((result) => {
+        setAnalyticsEnabled(result);
+        toast(`Cloud Analytics ${result ? "enabled" : "disabled"}!`);
+      });
+  }
+
 
 
   return (
-    <div className="w-full flex flex-col">
+    <div className="w-full h-full flex flex-col">
       <HeaderBar />
 
       {/* ### "Tabelle" mit Rows ### */}
       <div className="flex flex-row justify-between items-start px-2 py-1 pt-10">
         {/* ### 1. Einstellungsblock ### */}
         <div className="flex flex-col items-left justify-center gap-y-2 pl-7">
-          <LabeledSwitch id="advanced-logging" label="Advanced Logging" defaultValue={false} />
+          <LabeledSwitch 
+            id="analytics-enabled" 
+            label="Cloud Analytics" 
+            defaultValue={analyticsEnabled} 
+            onChange={(v) => handleToggleAnalytics(v)}
+            />
           <LabeledSwitch id="airplane-mode" label="Airplane Mode" defaultValue={false} />
           <LabeledSwitch id="on-by-default" label="On by Default" defaultValue={true} />
         </div>
@@ -107,8 +133,17 @@ const SettingsPage = () => {
               max={maxSettableSpeed} 
               step={1} />                    
           </div> 
+          <div className="flex flex-row justify-between items-center space-x-4">
+              <Label htmlFor="power-menu" className="text-base mr-5">Power Menu</Label>
+              <PowerMenu />
+          </div>
+
         </div>   
    
+      </div>
+
+      <div className="flex flex-row mt-auto justify-center items-start px-2 py-1 pt-10">
+        Release {appVersion}
       </div>
 
     </div>

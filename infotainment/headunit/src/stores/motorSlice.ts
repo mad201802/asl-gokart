@@ -69,22 +69,32 @@ const sendPipeThroughRawThrottlePacket = (pipeThroughRawThrottle: boolean) => {
     window.websocket.send(newPacket, Zones.THROTTLE);
   }
 
+const sendResetDailyDistancePacket = () => {
+    const newPacket: OutgoingPacket = {
+      zone: Zones.THROTTLE,
+      command: ThrottleCommands.SET_DAILY_DISTANCE,
+      value: 0
+    };
+    console.log(JSON.stringify(newPacket));
+    window.websocket.send(newPacket, Zones.THROTTLE);
+  }
+
 export const createMotorSlice: StateCreator<
   MotorSlice,
   [],
   [],
   MotorSlice
   > = (set, get) => ({
-  gear: Gears.p,
-  driveMode: DriveModes.eco,
-  rawThrottle: 0.69,
+  gear: Gears.d,
+  driveMode: DriveModes.ludicrous,
+  rawThrottle: 0.45,
   throttle: 0.75,
   showRawThrottle: true,
   pipeThroughRawThrottle: false,
   rpm: 1250,
   rpmBoundaries: [0, 1500],
   wheelCircumference: 1.415,
-  speed: 0,
+  speed: 14,
   dailyDistance: 1234.5,
   speedLimit: 35,
   maxSettableSpeed: 35,

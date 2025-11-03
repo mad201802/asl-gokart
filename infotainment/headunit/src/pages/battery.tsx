@@ -65,8 +65,11 @@ const BatteryPage = () => {
                         <div className="flex flex-col mt-2">
                             <div className="flex flex-row justify-evenly">
                                 <ValueCard label="Voltage" value={voltage.toFixed(1)} unit="V"/>
-                                <ValueCard label="Current" value={batteryCurrent} unit="A"/>
-                                <ValueCard label="Power" value={batteryCurrent * voltage} unit="W"/>
+                                <ValueCard label="Current" value={batteryCurrent.toFixed(0)} unit="A"/>
+                                { ((batteryCurrent * voltage) < 1000) ?
+                                    <ValueCard label="Power" value={(batteryCurrent * voltage).toFixed(0)} unit="W"/> :
+                                    <ValueCard label="Power" value={(batteryCurrent * voltage / 1000).toFixed(1)} unit="kW"/>
+                                }
                             </div>
                         </div>
                     </TabsContent>
@@ -108,28 +111,6 @@ const BatteryPage = () => {
                                 {batteryCurrent > 3 ? "Discharging" : batteryCurrent < -3 ? "Charging" : "Idle"}
                                 </>
                             </div>
-                            <Button 
-                                onClick={function() {
-                                    const newPacket: OutgoingPacket = {
-                                        zone: Zones.THROTTLE,
-                                        command: ThrottleCommands.SET_LIMIT,
-                                        value: 1000
-                                    };
-                                    window.websocket.send(newPacket, Zones.THROTTLE);
-                                    }
-                                } 
-                            >[throttle ZC] set limit 1000</Button>
-                            <Button 
-                                    onClick={function() {
-                                        const newPacket: OutgoingPacket = {
-                                            zone: Zones.THROTTLE,
-                                            command: ThrottleCommands.SET_LIMIT,
-                                            value: 20000
-                                        };
-                                        window.websocket.send(newPacket, Zones.THROTTLE);
-                                        }
-                                    } 
-                            >[throttle ZC] set limit 20000</Button>
                         </div>
                     </TabsContent>
                 </div>

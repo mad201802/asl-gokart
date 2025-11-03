@@ -16,6 +16,9 @@ import { useState } from "react";
 import { useStore } from "@/stores/useStore";
 import React from "react";
 import LabeledSwitch from "../labeled-switch";
+import { OutgoingPacket } from "@/data/zonecontrollers/packets";
+import { ThrottleCommands, Zones } from "@/data/zonecontrollers/zonecontrollers";
+import ButtonMapperDialog from "./button-mapper-dialog";
 
 
 const AvancedSettingsDialog = () => {
@@ -55,6 +58,20 @@ const AvancedSettingsDialog = () => {
               {showBrightnessWarning && <p className="text-red-500">Brightness might be too low for driving in bright daylight!</p>}
 
               <LabeledSwitch id={""} label={"Show raw throttle"} onChange={(v) => setShowRawThrottle(v)} defaultValue={showRawThrottle} />
+
+              <Button
+                onClick={() => {
+                  const newPacket: OutgoingPacket = {
+                    zone: Zones.THROTTLE,
+                    command: ThrottleCommands.SET_RECONNECT_UART
+                  };
+                  console.log(JSON.stringify(newPacket));
+                  window.websocket.send(newPacket, Zones.THROTTLE);
+                }}
+              >
+                Reconnect Controller UART
+              </Button>
+              <ButtonMapperDialog />
             </div>
             </DialogDescription>
             <DialogFooter>

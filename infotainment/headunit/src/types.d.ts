@@ -2,7 +2,8 @@
 // plugin that tells the Electron app where to look for the Vite-bundled app code (depending on
 
 import { WebSocket } from "ws";
-import { IncomingPacket, OutgoingPacket, Zones } from "./data/zonecontrollers/packets";
+import { IncomingPacket, OutgoingPacket } from "./data/zonecontrollers/packets";
+import { LightsCommands, Zones } from "./data/zonecontrollers/zonecontrollers";
 
 // whether you're running in development or production).
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
@@ -26,19 +27,26 @@ interface WebSocketContext {
     send: (message: OutgoingPacket, zone: Zones) => void;
     onThrottleMessage: (callback: (throttleMessage: string) => void) => void;
     onBatteryMessage: (callback: (batteryMessage: string) => void) => void;
+    onButtonsMessage: (callback: (buttonsMessage: string) => void) => void;
+    onLightsMessage: (callback: (lightsMessage: string) => void) => void;
 }
 
+interface AppContext {
+    getVersion: () => Promise<string>;
+    toggleAnalytics: (enabled: boolean) => Promise<boolean>;
+}
+
+interface SomeipContext {
+    sendLightsCommand: (command: LightsCommands, value?: boolean | boolean[]) => void;
+    onLightsMessage: (callback: (lightsMessage: string) => void) => void;
+}
 
 declare global {
     interface Window {
         themeMode: ThemeModeContext;
         electronWindow: ElectronWindow;
         websocket: WebSocketContext;
+        someip: SomeipContext;
+        app: AppContext;
     }
 } 
-
-// declare interface Window {
-//     themeMode: ThemeModeContext;
-//     electronWindow: ElectronWindow;
-//     websocket: WebSocketContext;
-// }

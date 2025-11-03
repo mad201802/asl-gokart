@@ -1,0 +1,45 @@
+#include <Arduino.h>
+#include "esp_log.h"
+#include <ETH.h>
+#include <WebSocketsClient.h>
+#include <ArduinoJson.h>
+#include <Bounce2.h>
+
+
+
+// Button pins
+#define BUTTON_PIN_1 GPIO_NUM_14
+#define BUTTON_PIN_2 GPIO_NUM_15
+#define BUTTON_PIN_3 GPIO_NUM_32
+
+void initializeButtons();
+
+void setup() {
+    esp_log_level_set("*", ESP_LOG_VERBOSE);
+    Serial.begin(115200);
+
+    Serial.println("Setup complete");
+
+    // Initialize Buttons
+    initializeButtons();
+}
+
+void loop() {
+    // Update button states
+    Serial.println("Raw:");
+    Serial.print("|");
+    Serial.print(digitalRead(BUTTON_PIN_1));
+    Serial.print("|");
+    Serial.print(digitalRead(BUTTON_PIN_2));
+    Serial.print("|");
+    Serial.print(digitalRead(BUTTON_PIN_3));
+    Serial.println("|");
+    delay(250);
+}
+
+void initializeButtons() {
+    pinMode(BUTTON_PIN_1, INPUT);
+    pinMode(BUTTON_PIN_2, INPUT);
+    pinMode(BUTTON_PIN_3, INPUT);
+
+}
