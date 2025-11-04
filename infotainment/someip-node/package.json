@@ -1,6 +1,6 @@
 {
   "name": "@asl-gokart/someip-node",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "SOMEIP protocol implementation for Node.js using NAPI-RS",
   "main": "index.js",
   "types": "index.d.ts",
@@ -21,25 +21,16 @@
   "files": [
     "index.d.ts",
     "index.js",
-    "browser.js"
+    "browser.js",
+    "*.node"
   ],
   "napi": {
     "binaryName": "someip-node",
     "targets": [
-      "x86_64-pc-windows-msvc",
-      "x86_64-apple-darwin",
       "x86_64-unknown-linux-gnu",
       "x86_64-unknown-linux-musl",
       "aarch64-unknown-linux-gnu",
-      "i686-pc-windows-msvc",
-      "armv7-unknown-linux-gnueabihf",
-      "aarch64-apple-darwin",
-      "aarch64-linux-android",
-      "x86_64-unknown-freebsd",
-      "aarch64-unknown-linux-musl",
-      "aarch64-pc-windows-msvc",
-      "armv7-linux-androideabi",
-      "wasm32-wasip1-threads"
+      "aarch64-unknown-linux-musl"
     ]
   },
   "engines": {

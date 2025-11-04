@@ -5,3 +5,4 @@
 .pio
 zc/zc_battery/.vscode/c_cpp_properties.json
 zc/zc_battery/.vscode/launch.json
+infotainment/headunit/target/rust-analyzer
