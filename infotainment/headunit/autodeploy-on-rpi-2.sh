@@ -1,7 +1,7 @@
 #!/bin/bash
 
 GITHUB_API_BASE_URL="https://api.github.com"
-GITHUB_TOKEN="<INSERT-TOKEN-HERE>"
+GITHUB_PAT="<your_github_personal_access_token"
 org="mad201802"
 repo="asl-gokart"
 response_file="tmp/releases-latest.json"
@@ -17,7 +17,7 @@ read -p "Enter 1 or 2: " version_choice
 if [[ $version_choice == "1" ]]; then
     # Download latest release
     echo "Fetching the latest release..."
-    curl -sH "Authorization: Bearer ${GITHUB_TOKEN}" "${GITHUB_API_BASE_URL}/repos/${org}/${repo}/releases/latest" > ${response_file}
+    curl -sH "Authorization: Bearer ${GITHUB_PAT}" "${GITHUB_API_BASE_URL}/repos/${org}/${repo}/releases/latest" > ${response_file}
     
     # Extract asset details
     asset_id=$(jq -r '.assets[0].id // empty' ${response_file})
@@ -34,7 +34,7 @@ if [[ $version_choice == "1" ]]; then
 elif [[ $version_choice == "2" ]]; then
     # Fetch all available releases
     echo "Fetching all available releases..."
-    curl -sH "Authorization: Bearer ${GITHUB_TOKEN}" "${GITHUB_API_BASE_URL}/repos/${org}/${repo}/releases" > ${response_all_releases}
+    curl -sH "Authorization: Bearer ${GITHUB_PAT}" "${GITHUB_API_BASE_URL}/repos/${org}/${repo}/releases" > ${response_all_releases}
     
     # Check if there are releases
     release_count=$(jq '. | length' ${response_all_releases})
@@ -83,13 +83,13 @@ read -p "Enter 1 or 2: " download_or_install
 if [[ $download_or_install == "1" ]]; then
     # Download the selected asset
     echo "Downloading version $version_name..."
-    curl -L -H "Accept: application/octet-stream" -H "Authorization: Bearer ${GITHUB_TOKEN}" "${GITHUB_API_BASE_URL}/repos/${org}/${repo}/releases/assets/${asset_id}" -o "${asset_name}"
+    curl -L -H "Accept: application/octet-stream" -H "Authorization: Bearer ${GITHUB_PAT}" "${GITHUB_API_BASE_URL}/repos/${org}/${repo}/releases/assets/${asset_id}" -o "${asset_name}"
     echo "Download complete: ${asset_name}"
 
 elif [[ $download_or_install == "2" ]]; then
     # Download and install the selected asset
     echo "Downloading and installing version $version_name..."
-    curl -L -H "Accept: application/octet-stream" -H "Authorization: Bearer ${GITHUB_TOKEN}" "${GITHUB_API_BASE_URL}/repos/${org}/${repo}/releases/assets/${asset_id}" -o "tmp/${asset_name}.downloaded"
+    curl -L -H "Accept: application/octet-stream" -H "Authorization: Bearer ${GITHUB_PAT}" "${GITHUB_API_BASE_URL}/repos/${org}/${repo}/releases/assets/${asset_id}" -o "tmp/${asset_name}.downloaded"
     echo "Download complete: tmp/${asset_name}.downloaded"
 
     # Install the downloaded package (assuming it's a .deb package)
