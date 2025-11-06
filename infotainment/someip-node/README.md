@@ -3,11 +3,28 @@
 This package is based on `@napi-rs/package-template` [GitHub](https://github.com/napi-rs/package-template).
 
 
-# Usage
+## Usage
 
 1. Run `yarn install` to install dependencies.
 
 ## Install this package in your project
+
+### Configure custom registry in your package manager
+
+#### npm
+
+Create or edit the `.npmrc` file in your project :
+
+```bash
+registry=https://registry.npmjs.org/
+@asl-gokart:registry=https://registry.leotm.de/
+```
+
+#### yarn and others
+
+Please check the docs of your package manager to set a custom registry for the `@asl-gokart` scope.
+
+### Install the package
 
 ```bash
 npm install @asl-gokart/someip-node
@@ -39,6 +56,9 @@ In this package, we choose a better way to solve this problem. We release differ
 
 `NPM` will choose which native package should download from `registry` automatically. You can see [npm](./npm) dir for details. And you can also run `yarn add @napi-rs/package-template` to see how it works.
 
+**IMPORTANT:** For `@asl-gokart/someip-node` package, we only release `linux-x64` and `linux-arm64` packages in `npm` registry. If you want to use it in other platforms, you have to add these to the CI/CD workflow and release them by yourself.
+> **DO NOT** publish manually, only through the CI/CD workflow!
+
 ## Develop requirements
 
 - Install the latest `Rust`
@@ -64,7 +84,7 @@ $ ava --verbose
 ✨  Done in 1.12s.
 ```
 
-## Release package via CLI
+## Release package via CLI (DO NOT DO THIS!)
 
 Make sure you set these two environment variables before releasing package via CLI.
 
@@ -80,14 +100,14 @@ yarn npm publish
 
 ## Release package via CI/CD
 
-Ensure you have set your **NPM_TOKEN** in the `GitHub` project setting.
+Ensure you have set your **NPM_TOKEN** as a secret in the `GitHub` project settings.
 
 In `Settings -> Secrets`, add **NPM_TOKEN** into it.
 
 When you want to release the package:
 
 ```bash
-npm version [<newversion> | major | minor | patch | premajor | preminor | prepatch | prerelease [--preid=<prerelease-id>] | from-git]
+yarn npm version [<newversion> | major | minor | patch | premajor | preminor | prepatch | prerelease [--preid=<prerelease-id>] | from-git]
 
 git push
 ```
