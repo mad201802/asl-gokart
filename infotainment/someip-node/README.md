@@ -107,11 +107,11 @@ In `Settings -> Secrets`, add **NPM_TOKEN** into it.
 When you want to release the package:
 
 ```bash
-yarn npm version [<newversion> | major | minor | patch | premajor | preminor | prepatch | prerelease [--preid=<prerelease-id>] | from-git]
+yarn version [<newversion> | major | minor | patch | premajor | preminor | prepatch | prerelease [--preid=<prerelease-id>] | from-git]
 
 git push
 ```
 
 GitHub actions will do the rest job for you.
 
-> WARN: Don't run `npm publish` manually.
+> WARN: Don't run `(yarn) npm publish` manually.
