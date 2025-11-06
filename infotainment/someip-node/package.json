@@ -1,6 +1,6 @@
 {
   "name": "@asl-gokart/someip-node",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "This package works as a TypeScript Node.js wrapper around esp32-protocol, a simpler implementation of the SOME-IP ethernet communication protocol.",
   "main": "index.js",
   "types": "index.d.ts",
