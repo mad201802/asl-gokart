@@ -32,7 +32,7 @@ jobs:
               working-directory: ${{ env.WORKING_DIRECTORY }}
               run: npm run make:pi4
             - name: Upload artifact
-              uses: actions/upload-artifact@v3
+              uses: actions/upload-artifact@v5
               with:
                 path: ${{ env.WORKING_DIRECTORY }}/out/make/deb/arm64/*.deb
   
