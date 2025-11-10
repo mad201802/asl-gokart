@@ -4,16 +4,16 @@ env:
 'on':
     push:
         paths:
-            - 'headunit/**'
-            - '!headunit/**/*.md'
-            - '!headunit/LICENSE'
-            - '!headunit/**/*.gitignore'
+            - 'infotainment/headunit/**'
+            - '!infotainment/headunit/**/*.md'
+            - '!infotainment/headunit/LICENSE'
+            - '!infotainment/headunit/**/*.gitignore'
     pull_request:
         paths:
-            - 'headunit/**'
-            - '!headunit/**/*.md'
-            - '!headunit/LICENSE'
-            - '!headunit/**/*.gitignore'
+            - 'infotainment/headunit/**'
+            - '!infotainment/headunit/**/*.md'
+            - '!infotainment/headunit/LICENSE'
+            - '!infotainment/headunit/**/*.gitignore'
 jobs:
     build:
         runs-on: ubuntu-latest
