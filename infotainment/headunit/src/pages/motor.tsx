@@ -4,7 +4,7 @@ const MotorPage = () => {
 
     return (
         <div>
-            As you can see, you can see nothing :)
+            {"As you can see, you can see nothing :)"}
         </div>
     )
 }
