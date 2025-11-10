@@ -1,0 +1,38 @@
+name: CI (headunit)
+env:
+    WORKING_DIRECTORY: 'infotainment/headunit'
+'on':
+    push:
+        paths:
+            - 'headunit/**'
+            - '!headunit/**/*.md'
+            - '!headunit/LICENSE'
+            - '!headunit/**/*.gitignore'
+    pull_request:
+        paths:
+            - 'headunit/**'
+            - '!headunit/**/*.md'
+            - '!headunit/LICENSE'
+            - '!headunit/**/*.gitignore'
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+            - name: Setup node
+              uses: actions/setup-node@v4
+              with:
+                node-version: 22
+                cache: 'npm'
+                cache-dependency-path: headunit/package-lock.json
+            - name: Install dependencies
+              working-directory: ${{ env.WORKING_DIRECTORY }}
+              run: npm install
+            - name: Build (arm64)
+              working-directory: ${{ env.WORKING_DIRECTORY }}
+              run: npm run make:pi4
+            - name: Upload artifact
+              uses: actions/upload-artifact@v3
+              with:
+                path: ${{ env.WORKING_DIRECTORY }}/out/make/deb/arm64/*.deb
+  
