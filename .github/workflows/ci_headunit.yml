@@ -34,5 +34,6 @@ jobs:
             - name: Upload artifact
               uses: actions/upload-artifact@v5
               with:
+                name: headunit-deb-arm64
                 path: ${{ env.WORKING_DIRECTORY }}/out/make/deb/arm64/*.deb
   
