@@ -1,4 +1,14 @@
 import { StateCreator } from 'zustand'
+import { MotorSlice, FlowState } from './motorSlice'
+
+// Calculate flow state based on battery current, throttle, and rpm
+// Duplicated here to avoid circular dependency - must be kept in sync with motorSlice
+const calculateFlowState = (batteryCurrent: number, throttle: number, rpm: number): FlowState => {
+    if (Math.abs(batteryCurrent) < 5) {
+        return FlowState.IDLE;
+    }
+    return batteryCurrent > 0 ? FlowState.POWER : FlowState.REGEN;
+}
 
 export interface BatterySlice {
     batteryTemps: number[],
@@ -14,11 +24,11 @@ export interface BatterySlice {
   }
   
 export const createBatterySlice: StateCreator<
-    BatterySlice,
+    BatterySlice & MotorSlice,
     [],
     [],
     BatterySlice
-  > = (set) => ({
+  > = (set, get) => ({
     batteryTemps: [30, 35, 20, 25, 20, 20],
     avgBatteryTemp: 0,
     minTemp: 0,
@@ -45,5 +55,13 @@ export const createBatterySlice: StateCreator<
         voltage: voltage,
         batteryPercentage: batteryPercentage };
     }),
-    setBatteryCurrent: (current: number) => set(() => ({ batteryCurrent: current }))
+    setBatteryCurrent: (current: number) => {
+      const throttle = get().throttle;
+      const rpm = get().rpm;
+      const debugOverride = get().debugFlowStateOverride;
+      set(() => ({ 
+        batteryCurrent: current,
+        flowState: debugOverride ?? calculateFlowState(current, throttle, rpm)
+      }));
+    }
   })
