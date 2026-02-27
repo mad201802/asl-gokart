@@ -4,23 +4,23 @@
 ## Install
 
 ```
-npm install
+bun install
 ```
 
 ## Run
 
 ```
-npm run start
+bun run start
 ```
 
 ## Make `Pi4`/`ODROID` image
 
 ```
-npm run make:pi4
+bun run make:pi4
 ```
 
 ```
-npm run make:odroid
+bun run make:odroid
 ```
 
 ### Output 
