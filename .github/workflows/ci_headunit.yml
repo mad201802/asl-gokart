@@ -23,8 +23,6 @@ jobs:
               uses: actions/setup-node@v6.2.0
               with:
                 node-version: 22
-                cache: 'bun'
-                cache-dependency-path: ${{ env.WORKING_DIRECTORY }}/package-lock.json
             - uses: oven-sh/setup-bun@v2
               with:
                 registries: |
