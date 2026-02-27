@@ -2,6 +2,27 @@ import { Gears, DriveModes } from '@/data/controlling_models/drivetrain'
 import { OutgoingPacket } from '@/data/zonecontrollers/packets'
 import { Zones, ThrottleCommands } from '@/data/zonecontrollers/zonecontrollers'
 import { StateCreator } from 'zustand'
+import { BatterySlice } from './batterySlice'
+
+// Flow state enum for particle effects and motor visualization
+export enum FlowState {
+    POWER = 'power',
+    REGEN = 'regen',
+    IDLE = 'idle'
+}
+
+// Calculate flow state based on battery current, throttle, and rpm
+// Battery current > 0 means power consumption (discharge)
+// Battery current < 0 means regeneration (charge)
+const calculateFlowState = (batteryCurrent: number, throttle: number, rpm: number): FlowState => {
+    // If battery current magnitude is below threshold, consider idle
+    if (Math.abs(batteryCurrent) < 5) {
+        return FlowState.IDLE;
+    }
+    // Positive current = discharging = power mode
+    // Negative current = charging = regen mode
+    return batteryCurrent > 0 ? FlowState.POWER : FlowState.REGEN;
+}
 
 export interface MotorSlice {
     gear: Gears
@@ -19,6 +40,8 @@ export interface MotorSlice {
     maxSettableSpeed: number
     minSettableSpeed: number
     pedalMultiplier: number
+    flowState: FlowState
+    debugFlowStateOverride: FlowState | null
     setGear: (gear: Gears) => void
     setDriveMode: (driveMode: DriveModes) => void
     setRawThrottle: (rawThrottle: number) => void
@@ -33,6 +56,7 @@ export interface MotorSlice {
     setMaxSettableSpeed: (maxSettableSpeed: number) => void
     setMinSettableSpeed: (minSettableSpeed: number) => void
     setPedalMultiplier: (pedalMultiplier: number) => void
+    setDebugFlowStateOverride: (flowState: FlowState | null) => void
   }
 
 const sendThrottleLimitPacket = (limit: number, wheelCircumference: number) => {
@@ -80,7 +104,7 @@ const sendResetDailyDistancePacket = () => {
   }
 
 export const createMotorSlice: StateCreator<
-  MotorSlice,
+  MotorSlice & BatterySlice,
   [],
   [],
   MotorSlice
@@ -100,10 +124,20 @@ export const createMotorSlice: StateCreator<
   maxSettableSpeed: 35,
   minSettableSpeed: 7,
   pedalMultiplier: 100,
+  flowState: FlowState.IDLE,
+  debugFlowStateOverride: null,
   setGear: (gear: Gears) => set(() => ({ gear: gear })),
   setDriveMode: (driveMode: DriveModes) => set(() => ({ driveMode: driveMode })),
   setRawThrottle: (rawThrottle: number) => set(() => ({ rawThrottle: rawThrottle })),
-  setThrottle: (throttle: number) => set(() => ({ throttle: throttle })),
+  setThrottle: (throttle: number) => set(() => {
+    const batteryCurrent = get().batteryCurrent;
+    const rpm = get().rpm;
+    const debugOverride = get().debugFlowStateOverride;
+    return { 
+      throttle: throttle,
+      flowState: debugOverride ?? calculateFlowState(batteryCurrent, throttle, rpm)
+    };
+  }),
   setShowRawThrottle: (showRawThrottle: boolean) => set(() => ({ showRawThrottle: showRawThrottle })),
   setPipeThroughRawThrottle: (pipeThroughRawThrottle: boolean) => {
     set(() => ({ pipeThroughRawThrottle: pipeThroughRawThrottle }));
@@ -111,9 +145,13 @@ export const createMotorSlice: StateCreator<
   },
   setRpm: (rpm: number) => {
     const wheelCircumference = get().wheelCircumference;
+    const batteryCurrent = get().batteryCurrent;
+    const throttle = get().throttle;
+    const debugOverride = get().debugFlowStateOverride;
     set(() => ({ 
       rpm: rpm,
-      speed: (rpm / 60) * wheelCircumference * 3.6 
+      speed: (rpm / 60) * wheelCircumference * 3.6,
+      flowState: debugOverride ?? calculateFlowState(batteryCurrent, throttle, rpm)
     }));
   },
   setWheelCircumference: (wheelCircumference: number) => set(() => ({ wheelCircumference: wheelCircumference })),
@@ -128,5 +166,14 @@ export const createMotorSlice: StateCreator<
   setPedalMultiplier: (pedalMultiplier: number) => {
     set(() => ({ pedalMultiplier: pedalMultiplier }));
     sendPedalMultiplierPacket(pedalMultiplier);
+  },
+  setDebugFlowStateOverride: (flowState: FlowState | null) => {
+    const batteryCurrent = get().batteryCurrent;
+    const throttle = get().throttle;
+    const rpm = get().rpm;
+    set(() => ({ 
+      debugFlowStateOverride: flowState,
+      flowState: flowState ?? calculateFlowState(batteryCurrent, throttle, rpm)
+    }));
   },
   })

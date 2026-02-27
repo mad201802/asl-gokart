@@ -16,7 +16,8 @@
         },
         "outDir": "dist",
         "moduleResolution": "node",
-        "resolveJsonModule": true
+        "resolveJsonModule": true,
+        "types": ["vite/client"],
     },
     "include": ["src"]
 }
