@@ -1,7 +1,16 @@
 "use client"
 
-import { TrendingUp } from "lucide-react"
-import { Bar, BarChart, CartesianGrid, XAxis } from "recharts"
+import { Bar } from "react-chartjs-2"
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Tooltip,
+  Legend,
+  type ChartData,
+  type ChartOptions,
+} from "chart.js"
 
 import {
   Card,
@@ -11,30 +20,34 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart"
-import type { ChartConfig } from "@/components/ui/chart"
+import { TrendingUp } from "lucide-react"
 
-export const description = "A bar chart"
+ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend)
 
-const chartData = [
-  { month: "January", desktop: 186 },
-  { month: "February", desktop: 305 },
-  { month: "March", desktop: 237 },
-  { month: "April", desktop: 73 },
-  { month: "May", desktop: 209 },
-  { month: "June", desktop: 214 },
-]
+const chartData: ChartData<"bar"> = {
+  labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+  datasets: [
+    {
+      label: "Charging Cycles",
+      data: [186, 305, 237, 73, 209, 214],
+      backgroundColor: "hsl(221 83% 53% / 0.8)",
+      borderRadius: 8,
+    },
+  ],
+}
 
-const chartConfig = {
-  desktop: {
-    label: "Desktop",
-    color: "var(--chart-1)",
+const options: ChartOptions<"bar"> = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { display: false },
+    tooltip: { mode: "index", intersect: false },
   },
-} satisfies ChartConfig
+  scales: {
+    x: { grid: { display: false } },
+    y: { grid: { color: "hsl(0 0% 80% / 0.3)" } },
+  },
+}
 
 export function ChargingCyclesChart() {
   return (
@@ -44,23 +57,9 @@ export function ChargingCyclesChart() {
         <CardDescription>January - June 2025</CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig}>
-          <BarChart accessibilityLayer data={chartData}>
-            <CartesianGrid vertical={false} />
-            <XAxis
-              dataKey="month"
-              tickLine={false}
-              tickMargin={10}
-              axisLine={false}
-              tickFormatter={(value) => value.slice(0, 3)}
-            />
-            <ChartTooltip
-              cursor={false}
-              content={<ChartTooltipContent hideLabel />}
-            />
-            <Bar dataKey="desktop" fill="var(--color-desktop)" radius={8} />
-          </BarChart>
-        </ChartContainer>
+        <div className="h-[250px] w-full">
+          <Bar data={chartData} options={options} />
+        </div>
       </CardContent>
       <CardFooter className="flex-col items-start gap-2 text-sm">
         <div className="flex gap-2 leading-none font-medium">
