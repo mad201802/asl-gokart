@@ -27,7 +27,7 @@ jobs:
               with:
                 registries: |
                   https://registry.npmjs.org/
-                  @asl-gokart:registry=https://registry.leotm.de/
+                  @asl-gokart:https://registry.leotm.de/
             - name: Install dependencies
               working-directory: ${{ env.WORKING_DIRECTORY }}
               run: bun install
