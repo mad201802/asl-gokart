@@ -20,17 +20,20 @@ jobs:
         steps:
             - uses: actions/checkout@v5
             - name: Setup node
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v6.2.0
               with:
                 node-version: 22
-                cache: 'npm'
-                cache-dependency-path: ${{ env.WORKING_DIRECTORY }}/package-lock.json
+            - uses: oven-sh/setup-bun@v2
+              with:
+                registries: |
+                  https://registry.npmjs.org/
+                  @asl-gokart:https://registry.leotm.de/
             - name: Install dependencies
               working-directory: ${{ env.WORKING_DIRECTORY }}
-              run: npm install
+              run: bun install
             - name: Build (arm64)
               working-directory: ${{ env.WORKING_DIRECTORY }}
-              run: npm run make:pi4
+              run: bun run make:pi4
             - name: Upload artifact
               uses: actions/upload-artifact@v5
               with:
