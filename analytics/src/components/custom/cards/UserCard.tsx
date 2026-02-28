@@ -26,10 +26,10 @@ export default async function UserCard() {
                     <Label htmlFor="email">Email</Label>
                     <Tooltip>
                     <TooltipTrigger>
-                        <Input type="email" id="email" placeholder="Email" value={session?.user.email || ""} disabled />
+                        <Input type="email" id="email" placeholder="Email" value={session?.user.email ?? ""} disabled />
                     </TooltipTrigger>
                     <TooltipContent>
-                        <p>The Email is fetched from your GitHub account. You can't change this here.</p>
+                        <p>The Email is fetched from your GitHub account. You can&apos;t change this here.</p>
                     </TooltipContent>
                     </Tooltip>
                 </div>

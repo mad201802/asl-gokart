@@ -36,15 +36,16 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, 
 export function BatteryChartArea() {
   const [timeRange, setTimeRange] = React.useState("7d")
 
-  const startDate = React.useMemo(() => {
+  const { startDate, endDate } = React.useMemo(() => {
     const now = new Date()
     let daysToSubtract = 7
     if (timeRange === "30d") daysToSubtract = 30
     else if (timeRange === "90d") daysToSubtract = 90
-    return new Date(now.getTime() - daysToSubtract * 24 * 60 * 60 * 1000).toISOString()
+    return {
+      startDate: new Date(now.getTime() - daysToSubtract * 24 * 60 * 60 * 1000).toISOString(),
+      endDate: now.toISOString(),
+    }
   }, [timeRange])
-
-  const endDate = React.useMemo(() => new Date().toISOString(), [timeRange])
 
   const batteryVoltageQuery = api.sensorData.getDataForTime.useQuery({
     start: new Date(startDate),
@@ -57,8 +58,8 @@ export function BatteryChartArea() {
       return { labels: [], datasets: [] }
     }
 
-    const sorted = batteryVoltageQuery.data.data
-      .map((item: any) => ({
+    const sorted = (batteryVoltageQuery.data.data as { time: string | number | Date; batteryVoltage: string }[])
+      .map((item) => ({
         date: new Date(item.time),
         bms: parseFloat(item.batteryVoltage) || 0,
         raw: parseFloat(item.batteryVoltage)

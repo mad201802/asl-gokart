@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { LatestPost } from "@/app/_components/post";
@@ -17,7 +18,7 @@ export default async function Home() {
     <HydrateClient>
       <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#027ab0] to-[#0c1a2f] text-white">
         <div className="container flex flex-col items-center justify-center gap-8 px-4 py-16">
-          <img src={"/asl-moon-white.png"} />
+          <Image src="/asl-moon-white.png" alt="ASL Gokart logo" width={96} height={96} />
           <h1 className="text-5xl font-extrabold tracking-tight sm:text-[5rem]">
             asl-gokart<span className="text-[#42aaff] font-mono ml-1">/analytics</span>
           </h1>
