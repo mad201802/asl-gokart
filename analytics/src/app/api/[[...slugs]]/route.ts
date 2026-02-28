@@ -1,10 +1,10 @@
 // app/api/[[...slugs]]/route.ts
 import { Elysia, t } from 'elysia';
 import { PrismaClient } from '@prisma/client'
-import { InfluxDBClient, Point } from '@influxdata/influxdb3-client';
+import { InfluxDBClient } from '@influxdata/influxdb3-client';
 
-const host = process.env.INFLUX_HOST || 'http://localhost';
-const port = process.env.INFLUX_PORT || '8181';
+const host = process.env.INFLUX_HOST ?? 'http://localhost';
+const port = process.env.INFLUX_PORT ?? '8181';
 const influxUrl = `${host}:${port}`;
 const token = process.env.INFLUX_TOKEN;
 const database = process.env.INFLUX_DATABASE;
@@ -20,7 +20,7 @@ const app = new Elysia({ prefix: '/api' })
             name: t.String()
         })
     })
-    .post('/gokart', async ({ body, error }) => {
+    .post('/gokart', async ({ body, set }) => {
         try {
             // Write data to Prisma
             const sensorData = await prisma.sensorData.create({
@@ -45,7 +45,8 @@ const app = new Elysia({ prefix: '/api' })
         }
         catch (err) {
             console.error('Error saving sensor data:', err);
-            return error(500, 'Failed to save sensor data')
+            set.status = 500;
+            return 'Failed to save sensor data'
         }
     }, {
         body: t.Object({
@@ -55,7 +56,7 @@ const app = new Elysia({ prefix: '/api' })
             timestamp: t.String()
         })
     })
-    .post('/gokart/generate', async ( { body, error}) => {
+    .post('/gokart/generate', async ({ set }) => {
         try  {
             // Generate 250 random sensor data entries for "batteryVoltage" in the influxDB
             // They should all be in the last 24 hours from now and hold values between 51.2 and 67.2 V
@@ -73,10 +74,11 @@ const app = new Elysia({ prefix: '/api' })
             
         } catch (err) {
             console.error('Error generating sensor data:', err);
-            return error(500, 'Failed to generate sensor data')
+            set.status = 500;
+            return 'Failed to generate sensor data'
         }
     })
-    .get('/gokart', async ({ error }) => {
+    .get('/gokart', async ({ set }) => {
         try {
             // Fetch data from InfluxDB
             const query = `
@@ -84,7 +86,7 @@ const app = new Elysia({ prefix: '/api' })
                 ORDER BY time DESC
                 LIMIT 100
             `
-            const result = await influxDB.query(query);
+            const result = influxDB.query(query);
             
             // Resolve the AsyncGenerator to an array
             const resultArray = [];
@@ -99,17 +101,18 @@ const app = new Elysia({ prefix: '/api' })
         } catch (err) {
             console.error('Error fetching sensor data:', err);
             // If table doesn't exist yet, return empty array
-            if (err instanceof Error && err.message && err.message.includes('not found')) {
+            if (err instanceof Error && err.message?.includes('not found')) {
                 return {
                     success: true,
                     data: []
                 }
             }
-            return error(500, 'Failed to fetch sensor data')
+            set.status = 500;
+            return 'Failed to fetch sensor data'
         }
     })
     .onStop(() => {
-        influxDB.close();
+        void influxDB.close();
     })
 
 export const GET = app.handle 
