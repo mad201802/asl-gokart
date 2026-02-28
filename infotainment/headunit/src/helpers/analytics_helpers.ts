@@ -4,7 +4,7 @@ import { BatteryCommands, ThrottleCommands, Zones } from "@/data/zonecontrollers
 import { stringify } from "querystring";
 
 
-const ANALYTICS_BACKEND_URL = "http://localhost:3000/api/gokart"; // Replace with actual URL
+let analyticsBackendUrl = "http://localhost:3000/api/gokart";
 const COMMAND_RATE_LIMITS: Record<string, number> = {
     [ThrottleCommands.GET_THROTTLE]: 100,
     [ThrottleCommands.GET_RPM]: 100,
@@ -13,6 +13,29 @@ const COMMAND_RATE_LIMITS: Record<string, number> = {
 
 let analyticsEnabled = false;
 const lastSentTimestamps: Record<string, number> = {};
+
+export function setAnalyticsBackendUrl(url: string): void {
+    analyticsBackendUrl = url;
+}
+
+export function getAnalyticsBackendUrl(): string {
+    return analyticsBackendUrl;
+}
+
+export async function checkAnalyticsConnection(url: string): Promise<boolean> {
+    try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
+        const response = await fetch(url, {
+            method: 'GET',
+            signal: controller.signal,
+        });
+        clearTimeout(timeout);
+        return response.ok;
+    } catch {
+        return false;
+    }
+}
 
 export function toggleAnalytics(enabled: boolean): boolean {
     analyticsEnabled = enabled;
@@ -73,7 +96,7 @@ export function processAnalytics(message: string): void {
     lastSentTimestamps[parsedMessage.command] = now;
 
     // Send POST request to analytics backend
-    fetch(`${ANALYTICS_BACKEND_URL}`, {
+    fetch(`${analyticsBackendUrl}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'

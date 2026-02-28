@@ -34,6 +34,9 @@ interface WebSocketContext {
 interface AppContext {
     getVersion: () => Promise<string>;
     toggleAnalytics: (enabled: boolean) => Promise<boolean>;
+    getAnalyticsUrl: () => Promise<string>;
+    setAnalyticsUrl: (url: string) => Promise<string>;
+    checkAnalyticsConnection: (url: string) => Promise<boolean>;
 }
 
 interface SomeipContext {
