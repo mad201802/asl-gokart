@@ -22,11 +22,20 @@ const app = new Elysia({ prefix: '/api' })
     })
     .post('/gokart', async ({ body, set }) => {
         try {
+            console.log('POST /api/gokart received:', body);
+
+            // Ensure value is a number (ESP32 zone controllers may send strings)
+            const numericValue = Number(body.value);
+            if (isNaN(numericValue)) {
+                set.status = 400;
+                return `Invalid value: ${body.value} is not a number`;
+            }
+
             // Write data to Prisma
             const sensorData = await prisma.sensorData.create({
                 data: {
                 name: body.name,
-                value: body.value,
+                value: numericValue,
                 unit: body.unit,
                 timestamp: new Date(body.timestamp)
                 }
@@ -34,8 +43,10 @@ const app = new Elysia({ prefix: '/api' })
             
             // Write data to InfluxDB
             const timestampNanos = new Date(body.timestamp).getTime() * 1000000; // Convert to nanoseconds
-            const line = `sensor_data,name=${body.name},unit=${body.unit} ${body.name}=${body.value} ${timestampNanos}`;
-            await influxDB.write(line);
+            const line = `sensor_data,name=${body.name},unit=${body.unit} ${body.name}=${numericValue} ${timestampNanos}`;
+            console.log('Writing to InfluxDB:', line);
+            await influxDB.write(line, database);
+            console.log('InfluxDB write successful');
             
             
             return {
@@ -51,7 +62,7 @@ const app = new Elysia({ prefix: '/api' })
     }, {
         body: t.Object({
             name: t.String(),
-            value: t.Number(),
+            value: t.Union([t.Number(), t.String()]),
             unit: t.String(),
             timestamp: t.String()
         })
