@@ -9,6 +9,10 @@ const COMMAND_RATE_LIMITS: Record<string, number> = {
     [ThrottleCommands.GET_THROTTLE]: 100,
     [ThrottleCommands.GET_RPM]: 100,
     [BatteryCommands.GET_VOLTAGE]: 100,
+    [BatteryCommands.GET_CURRENT]: 100,
+    [BatteryCommands.GET_TEMP]: 100,
+    [BatteryCommands.GET_CHARGE]: 100,
+    [BatteryCommands.GET_POWER]: 100,
 };
 
 let analyticsEnabled = false;
@@ -60,7 +64,7 @@ export function processAnalytics(message: string): void {
         case ThrottleCommands.GET_THROTTLE:
             sensorData = {
                 name: "rawThrottle",
-                value: parsedMessage.value[0],
+                value: Number(Array.isArray(parsedMessage.value) ? parsedMessage.value[0] : parsedMessage.value),
                 unit: "%",
                 timestamp: new Date().toISOString()
             };
@@ -68,7 +72,7 @@ export function processAnalytics(message: string): void {
         case ThrottleCommands.GET_RPM:
             sensorData = {
                 name: "rpm",
-                value: parsedMessage.value,
+                value: Number(parsedMessage.value),
                 unit: "RPM",
                 timestamp: new Date().toISOString()
             };
@@ -76,14 +80,50 @@ export function processAnalytics(message: string): void {
         case BatteryCommands.GET_VOLTAGE:
             sensorData = {
                 name: "batteryVoltage",
-                value: parsedMessage.value,
+                value: Number(parsedMessage.value),
                 unit: "V",
                 timestamp: new Date().toISOString()
             };
             break;
+        case BatteryCommands.GET_CURRENT:
+            sensorData = {
+                name: "batteryCurrent",
+                value: Number(parsedMessage.value),
+                unit: "A",
+                timestamp: new Date().toISOString()
+            };
+            break;
+        case BatteryCommands.GET_TEMP:
+            sensorData = {
+                name: "batteryTemp",
+                value: Number(parsedMessage.value),
+                unit: "°C",
+                timestamp: new Date().toISOString()
+            };
+            break;
+        case BatteryCommands.GET_CHARGE:
+            sensorData = {
+                name: "batteryCharge",
+                value: Number(parsedMessage.value),
+                unit: "%",
+                timestamp: new Date().toISOString()
+            };
+            break;
+        case BatteryCommands.GET_POWER:
+            sensorData = {
+                name: "batteryPower",
+                value: Number(parsedMessage.value),
+                unit: "W",
+                timestamp: new Date().toISOString()
+            };
+            break;
         default:
-            console.error(`Unsupported zone for analytics: ${parsedMessage.zone}`);
             return;
+    }
+
+    if (isNaN(sensorData.value)) {
+        console.error(`Invalid numeric value for ${sensorData.name}:`, parsedMessage.value);
+        return;
     }
 
     const now = Date.now();
@@ -110,7 +150,12 @@ export function processAnalytics(message: string): void {
         return response.json();
     })
     .then(data => {
-        console.log("Analytics data sent successfully:", data);
+        // Detect if the POST was misrouted to the GET handler
+        if (Array.isArray(data?.data)) {
+            console.error("Analytics POST was handled as GET — data was NOT written. Response:", data);
+        } else {
+            console.log("Analytics data sent successfully:", data);
+        }
     })
     .catch(error => {
         console.error("Error sending analytics data:", error);
