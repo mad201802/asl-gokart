@@ -37,6 +37,8 @@ interface AppContext {
     getAnalyticsUrl: () => Promise<string>;
     setAnalyticsUrl: (url: string) => Promise<string>;
     checkAnalyticsConnection: (url: string) => Promise<boolean>;
+    setLogLevel: (level: string) => Promise<string>;
+    getLogLevel: () => Promise<string>;
 }
 
 interface SomeipContext {

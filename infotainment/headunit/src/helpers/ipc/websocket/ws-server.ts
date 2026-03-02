@@ -1,4 +1,5 @@
 import { BrowserWindow } from 'electron';
+import log from 'electron-log/main';
 import { BatteryContoller, ThrottleController, ZoneController, Zones } from '@/data/zonecontrollers/zonecontrollers';
 import { WEBSOCKET_BATTERY_MESSAGE_CHANNEL, WEBSOCKET_THROTTLE_MESSAGE_CHANNEL, WEBSOCKET_BUTTONS_MESSAGE_CHANNEL, WEBSOCKET_LIGHTS_MESSAGE_CHANNEL } from './ws-channels';
 import * as http from 'http';
@@ -19,15 +20,15 @@ export function startWebSocketServer(mainWindow: BrowserWindow) {
     if (WebSocket.isWebSocket(req)) {
       const ws = new WebSocket(req, socket, head);
 
-      console.log('WebSocket client connected');
+      log.info('WebSocket client connected');
 
-      ws.on('message', (event) => {
+      ws.on('message', (event: any) => {
         // TODO: add zod message validation
         const message = event.data;
         const receivedMsg = JSON.parse(message.toString());
 
         if (receivedMsg.zone && !receivedMsg.command) {
-          console.log(`Received register packet for zone [${receivedMsg.zone}]`);
+          log.info(`Received register packet for zone [${receivedMsg.zone}]`);
 
           if (Object.values(Zones).includes(receivedMsg.zone)) {
             // if (!connected_zonecontrollers.has(receivedMsg.zone)) {
@@ -45,20 +46,20 @@ export function startWebSocketServer(mainWindow: BrowserWindow) {
                   connected_zonecontrollers.set(receivedMsg.zone, new ZoneController(ws));
                   break;
                 default:
-                  console.error("Couldn't register new zone controller: Invalid zone!");
+                  log.error("Couldn't register new zone controller: Invalid zone!");
               }
 
-              console.log(`New zone controller connected: ${receivedMsg.zone}`);
-              console.log(`Total zone controllers connected: ${connected_zonecontrollers.size}`);
-              console.log(Array.from(connected_zonecontrollers.keys()));
+              log.info(`New zone controller connected: ${receivedMsg.zone}`);
+              log.info(`Total zone controllers connected: ${connected_zonecontrollers.size}`);
+              log.info(Array.from(connected_zonecontrollers.keys()));
             // } else {
             //   console.error(`This zone has already been registered!`);
             // }
           } else {
-            console.error(`This zone does not exist!`);
+            log.error(`This zone does not exist!`);
           }
         } else {
-          console.log("Received data message from zone controller");
+          log.debug("Received data message from zone controller");
 
           // Find the zone controller that received the message
           connected_zonecontrollers.forEach((zc: ZoneController, zone: Zones) => {
@@ -68,32 +69,32 @@ export function startWebSocketServer(mainWindow: BrowserWindow) {
               // console.log(`Found zone controller ${zone}`);
               switch (zone) {
                 case Zones.THROTTLE:
-                  console.log("Forwarding message to ipcRenderer's ThrottleListener:");
-                  console.log(message.toString());
+                  log.debug("Forwarding message to ipcRenderer's ThrottleListener:");
+                  log.debug(message.toString());
                   mainWindow.webContents.send(WEBSOCKET_THROTTLE_MESSAGE_CHANNEL, message.toString());
                   processAnalytics(message.toString());
                   break;
                 case Zones.BATTERY:
-                  console.log("Forwarding message to ipcRenderer's BatteryListener:");
-                  console.log(message.toString());
+                  log.debug("Forwarding message to ipcRenderer's BatteryListener:");
+                  log.debug(message.toString());
                   mainWindow.webContents.send(WEBSOCKET_BATTERY_MESSAGE_CHANNEL, message.toString());
                   processAnalytics(message.toString());
                   break;
                 case Zones.BUTTONS:
-                  console.log("Forwarding message to ipcRenderer's ButtonsListener:");
-                  console.log(message.toString());
+                  log.debug("Forwarding message to ipcRenderer's ButtonsListener:");
+                  log.debug(message.toString());
                   // mainWindow.webContents.send(WEBSOCKET_BUTTONS_MESSAGE_CHANNEL, message.toString());
 
                   // Send the message to the ButtonHandler
                   buttonHandler.handleIncomingButtonMessage(JSON.parse(message.toString()));
                   break;
                 case Zones.LIGHTS:
-                  console.log("Forwarding message to ipcRenderer's LightsListener:");
-                  console.log(message.toString());
+                  log.debug("Forwarding message to ipcRenderer's LightsListener:");
+                  log.debug(message.toString());
                   mainWindow.webContents.send(WEBSOCKET_LIGHTS_MESSAGE_CHANNEL, message.toString());
                   break;
                 default:
-                  console.error("Couldn't send message to ipcRenderer: No zc registered for this message yet!");
+                  log.error("Couldn't send message to ipcRenderer: No zc registered for this message yet!");
               }
             }
           });
@@ -101,35 +102,35 @@ export function startWebSocketServer(mainWindow: BrowserWindow) {
       });
 
       ws.on('close', () => {
-        console.log(`WebSocket client disconnected. Code: ${ws.code} | Reason: ${ws.reason}`);
+        log.info(`WebSocket client disconnected. Code: ${ws.code} | Reason: ${ws.reason}`);
 
         // Remove the zone controller from the map
         connected_zonecontrollers.forEach((zc, key) => {
           if (zc.webSocket === ws) {
             connected_zonecontrollers.delete(key);
-            console.log(`Zone controller ${key} disconnected`);
-            console.log(`Total zone controllers connected: ${connected_zonecontrollers.size}`);
-            console.log(Array.from(connected_zonecontrollers.keys()));
+            log.info(`Zone controller ${key} disconnected`);
+            log.info(`Total zone controllers connected: ${connected_zonecontrollers.size}`);
+            log.info(Array.from(connected_zonecontrollers.keys()));
           }
         });
 
         ws.close();
       });
 
-      ws.on('error', (err) => {
-        console.error(`WebSocket client error: ${err.name} | ${err.message} | ${err.stack}`);
+      ws.on('error', (err: any) => {
+        log.error(`WebSocket client error: ${err.name} | ${err.message} | ${err.stack}`);
       });
     }
   });
 
   server.listen(WSS_PORT, '0.0.0.0', () => {
-    console.log('WebSocket server is running on ws://0.0.0.0:' + WSS_PORT);
+    log.info('WebSocket server is running on ws://0.0.0.0:' + WSS_PORT);
   });
 
   server.on('error', (err) => {
-    console.error(`WebSocket server error name: ${err.name}`);
-    console.error(`WebSocket server error: ${err.message}`);
-    console.error(`WebSocket server error stack: ${err.stack}`);
-    console.error(`WebSocket server error cause: ${err.cause}`);
+    log.error(`WebSocket server error name: ${err.name}`);
+    log.error(`WebSocket server error: ${err.message}`);
+    log.error(`WebSocket server error stack: ${err.stack}`);
+    log.error(`WebSocket server error cause: ${err.cause}`);
   });
 }

@@ -24,6 +24,7 @@
         "@vitejs/plugin-react": "^5.1.4",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
+        "electron-log": "^5.4.3",
         "electron-squirrel-startup": "^1.0.1",
         "faye-websocket": "^0.11.4",
         "i18next": "^25.8.13",
@@ -1181,6 +1182,8 @@
     "electron-installer-debian": ["electron-installer-debian@3.2.0", "", { "dependencies": { "@malept/cross-spawn-promise": "^1.0.0", "debug": "^4.1.1", "electron-installer-common": "^0.10.2", "fs-extra": "^9.0.0", "get-folder-size": "^2.0.1", "lodash": "^4.17.4", "word-wrap": "^1.2.3", "yargs": "^16.0.2" }, "os": [ "linux", "darwin", ], "bin": "src/cli.js" }, "sha512-58ZrlJ1HQY80VucsEIG9tQ//HrTlG6sfofA3nRGr6TmkX661uJyu4cMPPh6kXW+aHdq/7+q25KyQhDrXvRL7jw=="],
 
     "electron-installer-redhat": ["electron-installer-redhat@3.4.0", "", { "dependencies": { "@malept/cross-spawn-promise": "^1.0.0", "debug": "^4.1.1", "electron-installer-common": "^0.10.2", "fs-extra": "^9.0.0", "lodash": "^4.17.15", "word-wrap": "^1.2.3", "yargs": "^16.0.2" }, "os": [ "linux", "darwin", ], "bin": "src/cli.js" }, "sha512-gEISr3U32Sgtj+fjxUAlSDo3wyGGq6OBx7rF5UdpIgbnpUvMN4W5uYb0ThpnAZ42VEJh/3aODQXHbFS4f5J3Iw=="],
+
+    "electron-log": ["electron-log@5.4.3", "", {}, "sha512-sOUsM3LjZdugatazSQ/XTyNcw8dfvH1SYhXWiJyfYodAAKOZdHs0txPiLDXFzOZbhXgAgshQkshH2ccq0feyLQ=="],
 
     "electron-playwright-helpers": ["electron-playwright-helpers@2.1.0", "", { "dependencies": { "@electron/asar": "^3.2.4" } }, "sha512-aQOefS1irz/Ou6IYuTE34ZLmIKVHKoTGUwkVuwu2P5iguuMTLtsg6CFImsWu0cabRPVZ1NgEpcGPumFZNDdrqA=="],
 

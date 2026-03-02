@@ -3,6 +3,7 @@ import { OutgoingPacket } from '@/data/zonecontrollers/packets'
 import { Zones, ThrottleCommands } from '@/data/zonecontrollers/zonecontrollers'
 import { StateCreator } from 'zustand'
 import { BatterySlice } from './batterySlice'
+import log from '@/lib/logger'
 
 // Flow state enum for particle effects and motor visualization
 export enum FlowState {
@@ -69,7 +70,7 @@ const sendThrottleLimitPacket = (limit: number, wheelCircumference: number) => {
       command: ThrottleCommands.SET_LIMIT,
       value: Math.round(rpm)
     };
-    console.log(JSON.stringify(newPacket));
+    log.info(JSON.stringify(newPacket));
     window.websocket.send(newPacket, Zones.THROTTLE);
   }
 
@@ -79,7 +80,7 @@ const sendPedalMultiplierPacket = (multiplier: number) => {
       command: ThrottleCommands.SET_PEDAL_MULTIPLIER,
       value: Math.round(multiplier)
     };
-    console.log(JSON.stringify(newPacket));
+    log.info(JSON.stringify(newPacket));
     window.websocket.send(newPacket, Zones.THROTTLE);
   }
   
@@ -89,7 +90,7 @@ const sendPipeThroughRawThrottlePacket = (pipeThroughRawThrottle: boolean) => {
       command: ThrottleCommands.SET_PIPE_THROUGH_RAW_THROTTLE,
       value: pipeThroughRawThrottle
     };
-    console.log(JSON.stringify(newPacket));
+    log.info(JSON.stringify(newPacket));
     window.websocket.send(newPacket, Zones.THROTTLE);
   }
 
@@ -99,7 +100,7 @@ const sendResetDailyDistancePacket = () => {
       command: ThrottleCommands.SET_DAILY_DISTANCE,
       value: 0
     };
-    console.log(JSON.stringify(newPacket));
+    log.info(JSON.stringify(newPacket));
     window.websocket.send(newPacket, Zones.THROTTLE);
   }
 

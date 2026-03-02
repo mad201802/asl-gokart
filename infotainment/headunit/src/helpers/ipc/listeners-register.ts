@@ -1,4 +1,5 @@
 import { app, BrowserWindow, ipcMain } from "electron";
+import log from "electron-log/main";
 import { addThemeEventListeners } from "./theme/theme-listeners";
 import { addWindowEventListeners } from "./window/window-listeners";
 import { WEBSOCKET_SEND_CHANNEL, WEBSOCKET_THROTTLE_MESSAGE_CHANNEL } from "./websocket/ws-channels";
@@ -23,12 +24,12 @@ export default function registerListeners(mainWindow: BrowserWindow) {
                 if (z === zoneToSendTo) {
                     if (zc.webSocket && zc.webSocket.readyState === 1) {  // Ready state 1 means OPEN
                         zc.webSocket.send(JSON.stringify(message));
-                        console.log(`[WEBSOCKET_SEND_CHANNEL] Sent message to [${z}] zone controller: ${JSON.stringify(message)}`);
+                        log.info(`[WEBSOCKET_SEND_CHANNEL] Sent message to [${z}] zone controller: ${JSON.stringify(message)}`);
                     } else {
-                        console.error(`[WEBSOCKET_SEND_CHANNEL] Couldn't send message to [${z}] zone controller: WebSocket is not open!`);
+                        log.error(`[WEBSOCKET_SEND_CHANNEL] Couldn't send message to [${z}] zone controller: WebSocket is not open!`);
                         // Remove the zone controller from the map
                         connected_zonecontrollers.delete(z);
-                        console.log(`[WEBSOCKET_SEND_CHANNEL] Removed zone controller from connected_zonecontrollers: ${z}`);
+                        log.info(`[WEBSOCKET_SEND_CHANNEL] Removed zone controller from connected_zonecontrollers: ${z}`);
                     }
                 }
             });

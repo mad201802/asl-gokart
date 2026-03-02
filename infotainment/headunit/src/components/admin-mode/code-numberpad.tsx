@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button"
 import { useStore } from "@/stores/useStore";
 import { Delete } from "lucide-react";
+import log from "@/lib/logger";
+import React from "react";
 
 
 export const CodeNumberpad = () => {
@@ -12,13 +14,13 @@ export const CodeNumberpad = () => {
           if(adminPin.length > 0) {
             setAdminPin(value);
           } else {
-            console.error("Admin Pin is already empty!");
+            log.error("Admin Pin is already empty!");
           }
         } else {
           if(adminPin.length < 5) {
             setAdminPin(value);
           } else {
-            console.error("Admin Pin is already 5 digits long!");
+            log.error("Admin Pin is already 5 digits long!");
           }
         }
       }

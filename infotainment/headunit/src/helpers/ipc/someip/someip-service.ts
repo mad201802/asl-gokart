@@ -1,4 +1,5 @@
 import { BrowserWindow, ipcMain, ipcRenderer } from 'electron';
+import log from 'electron-log/main';
 import { SOMEIP_LIGHTS_MESSAGE_CHANNEL, SOMEIP_SEND_LIGHTS_CHANNEL } from './someip-channels';
 import { LightsCommands, Zones } from '@/data/zonecontrollers/zonecontrollers';
 import { IncomingPacket } from '@/data/zonecontrollers/packets';
@@ -25,14 +26,14 @@ let someipApp: ServiceApplication | null = null;
 
 export function startSomeipService(mainWindow: BrowserWindow) {
     try {
-        console.log("Starting SOMEIP service...");
+        log.info("Starting SOMEIP service...");
         
         // Create a new SomeIP application for the headunit
         someipApp = new ServiceApplication(HEADUNIT_SERVICE_ID);
         // Initialize the application
         someipApp.init();
         
-        console.log("SOMEIP service initialized");
+        log.info("SOMEIP service initialized");
         
         // Subscribe to the turn signals event to get status updates
         // This is a one-way notification from the lights controller to the headunit
@@ -40,18 +41,18 @@ export function startSomeipService(mainWindow: BrowserWindow) {
         
         // Start the application
         someipApp.start(false);
-        console.log("SOMEIP service started");
+        log.info("SOMEIP service started");
         
         // Setup listeners for turn signal events
         setupTurnSignalEventHandling(mainWindow);
     } catch (error) {
-        console.error("Failed to start SOMEIP service:", error);
+        log.error("Failed to start SOMEIP service:", error);
     }
 }
 
 // Function to handle turn signal events and forward them to the renderer
 function setupTurnSignalEventHandling(mainWindow: BrowserWindow) {
-    console.log("Setting up turn signal event handling");
+    log.info("Setting up turn signal event handling");
     someipApp?.subscribe(ZC_LIGHTS_SERVICE_ID, TURN_SIGNALS_EVENT_ID, (payload) => {
         // console.log(`Turn Signal Event received in the backend: ${payload.toString()}`)
         const incomingPacket: IncomingPacket = {

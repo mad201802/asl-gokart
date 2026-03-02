@@ -1,18 +1,18 @@
 import { SensorData } from "@/data/analytics/sensor-data";
 import { IncomingPacket } from "@/data/zonecontrollers/packets";
 import { BatteryCommands, ThrottleCommands, Zones } from "@/data/zonecontrollers/zonecontrollers";
-import { stringify } from "querystring";
+import log from "electron-log/main";
 
 
 let analyticsBackendUrl = "http://localhost:3000/api/gokart";
 const COMMAND_RATE_LIMITS: Record<string, number> = {
-    [ThrottleCommands.GET_THROTTLE]: 100,
-    [ThrottleCommands.GET_RPM]: 100,
-    [BatteryCommands.GET_VOLTAGE]: 100,
-    [BatteryCommands.GET_CURRENT]: 100,
-    [BatteryCommands.GET_TEMP]: 100,
-    [BatteryCommands.GET_CHARGE]: 100,
-    [BatteryCommands.GET_POWER]: 100,
+    [ThrottleCommands.GET_THROTTLE]: 1000,
+    [ThrottleCommands.GET_RPM]: 1000,
+    [BatteryCommands.GET_VOLTAGE]: 1000,
+    [BatteryCommands.GET_CURRENT]: 1000,
+    [BatteryCommands.GET_TEMP]: 1000,
+    [BatteryCommands.GET_CHARGE]: 1000,
+    [BatteryCommands.GET_POWER]: 1000,
 };
 
 let analyticsEnabled = false;
@@ -52,7 +52,7 @@ export function isAnalyticsEnabled(): boolean {
 
 export function processAnalytics(message: string): void {
     if (!analyticsEnabled) {
-        console.log("Analytics is disabled, skipping processing.");
+        log.debug("Analytics is disabled, skipping processing.");
         return;
     }
 
@@ -122,7 +122,7 @@ export function processAnalytics(message: string): void {
     }
 
     if (isNaN(sensorData.value)) {
-        console.error(`Invalid numeric value for ${sensorData.name}:`, parsedMessage.value);
+        log.error(`Invalid numeric value for ${sensorData.name}:`, parsedMessage.value);
         return;
     }
 
@@ -152,13 +152,13 @@ export function processAnalytics(message: string): void {
     .then(data => {
         // Detect if the POST was misrouted to the GET handler
         if (Array.isArray(data?.data)) {
-            console.error("Analytics POST was handled as GET — data was NOT written. Response:", data);
+            log.error("Analytics POST was handled as GET — data was NOT written. Check if you switched http with https and remove trailing slashes from the URL in settings.");
         } else {
-            console.log("Analytics data sent successfully:", data);
+            // console.log("Analytics data sent successfully:", data);
         }
     })
     .catch(error => {
-        console.error("Error sending analytics data:", error);
+        log.error("Error sending analytics data:", error);
     });
 }
 

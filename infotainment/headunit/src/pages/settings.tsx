@@ -12,6 +12,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { useStore } from "@/stores/useStore";
 import { DriveModes, tabsSelectorStates } from "@/data/controlling_models/drivetrain";
@@ -24,11 +25,12 @@ import AdminSettingsDialog from "@/components/admin-mode/admin-settings-dialog";
 import React, { useEffect } from "react";
 import { Loader2, Check, X } from "lucide-react";
 import PowerMenu from "@/components/power-menu/power-menu";
+import log, { setRendererLogLevel, type LogLevel } from "@/lib/logger";
 
 const SettingsPage = () => {
 
-  const { driveMode, adminMode, speedLimit, minSettableSpeed, maxSettableSpeed, appVersion, analyticsEnabled, analyticsBackendUrl } = useStore();
-  const { setDriveMode, setAdminMode, setAdminPin, setSpeedLimit, setAppVersion, setAnalyticsEnabled, setAnalyticsBackendUrl } = useStore();
+  const { driveMode, adminMode, speedLimit, minSettableSpeed, maxSettableSpeed, appVersion, analyticsEnabled, analyticsBackendUrl, logLevel } = useStore();
+  const { setDriveMode, setAdminMode, setAdminPin, setSpeedLimit, setAppVersion, setAnalyticsEnabled, setAnalyticsBackendUrl, setLogLevel } = useStore();
 
   const [urlInput, setUrlInput] = React.useState(analyticsBackendUrl);
   const [connectionStatus, setConnectionStatus] = React.useState<"idle" | "checking" | "success" | "error">("idle");
@@ -48,7 +50,7 @@ const SettingsPage = () => {
         const version = await window.app.getVersion();
         setAppVersion(version);
       } catch (e) {
-      console.error(e);
+      log.error(e);
       }
     };
     const fetchAnalyticsUrl = async () => {
@@ -57,11 +59,21 @@ const SettingsPage = () => {
         setAnalyticsBackendUrl(url);
         setUrlInput(url);
       } catch (e) {
-        console.error(e);
+        log.error(e);
+      }
+    };
+    const fetchLogLevel = async () => {
+      try {
+        const level = await window.app.getLogLevel() as LogLevel;
+        setLogLevel(level);
+        setRendererLogLevel(level);
+      } catch (e) {
+        log.error(e);
       }
     };
     fetchAppVersion();
     fetchAnalyticsUrl();
+    fetchLogLevel();
   }, []);
 
   let handleToggleAnalytics = (enabled: boolean) => {
@@ -75,7 +87,9 @@ const SettingsPage = () => {
   let handleCheckConnection = async () => {
     setConnectionStatus("checking");
     try {
-      const ok = await window.app.checkAnalyticsConnection(urlInput);
+      // backend URL stripped of any API path, for connection testing (universal stripping, not just /api/gokart)
+      const urlToTest = urlInput.replace(/\/api\/.*$/, "");
+      const ok = await window.app.checkAnalyticsConnection(urlToTest);
       setConnectionStatus(ok ? "success" : "error");
     } catch {
       setConnectionStatus("error");
@@ -95,6 +109,14 @@ const SettingsPage = () => {
       setUrlInput(analyticsBackendUrl);
       setConnectionStatus("idle");
     }
+  }
+
+  let handleLogLevelChange = async (level: LogLevel) => {
+    setLogLevel(level);
+    setRendererLogLevel(level);
+    await window.app.setLogLevel(level);
+    toast(`Log level set to ${level}`);
+    log.info(`Log level changed to: ${level}`);
   }
 
 
@@ -157,6 +179,17 @@ const SettingsPage = () => {
                   </div>
                 </DialogContent>
               </Dialog>
+          </div>
+          <div className="flex flex-row justify-between items-center space-x-4">
+            <Label htmlFor="log-level" className="text-base mr-5">Log Level</Label>
+            <Tabs value={logLevel} onValueChange={(v) => handleLogLevelChange(v as LogLevel)}>
+              <TabsList>
+                <TabsTrigger value="error">Error</TabsTrigger>
+                <TabsTrigger value="warn">Warn</TabsTrigger>
+                <TabsTrigger value="info">Info</TabsTrigger>
+                <TabsTrigger value="debug">Debug</TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
         </div>
         {/* ### 2. Einstellungsblock ### */}

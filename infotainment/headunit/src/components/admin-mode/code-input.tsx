@@ -6,6 +6,8 @@ import {
 import { useStore } from "@/stores/useStore";
 import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { toast } from "sonner"
+import log from "@/lib/logger";
+import React from "react";
 
 
 export const CodeInput = () => {
@@ -19,7 +21,7 @@ export const CodeInput = () => {
             setAdminMode(true);
             toast("Admin mode enabled!");
         } else {
-            console.error("Wrong PIN!");
+            log.error("Wrong PIN!");
             toast("Wrong PIN!");
         }
     }

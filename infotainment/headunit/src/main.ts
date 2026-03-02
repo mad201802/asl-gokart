@@ -1,6 +1,12 @@
 import { app, BrowserWindow } from "electron";
+import log from "electron-log/main";
 import registerListeners from "./helpers/ipc/listeners-register";
 import path from "path";
+
+// Initialize electron-log before anything else
+log.initialize();
+log.transports.console.level = "info";
+log.transports.file.level = "info";
 
 const inDevelopment = process.env.NODE_ENV === "development";
 
