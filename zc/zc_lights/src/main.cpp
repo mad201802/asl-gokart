@@ -3,13 +3,10 @@
 #include <ETH.h>
 #include <sero.hpp>
 #include <udp_transport_esp32.hpp>
+#include <blinker_controller.hpp>
 #include <lights_service.hpp>
 
 const char* FIRMWARE_VERSION = "0.1.0";
-
-// LED pins
-#define LED_PIN_1 GPIO_NUM_14
-#define LED_PIN_2 GPIO_NUM_15
 
 // --- Type Aliases -----------------------------------------------
 
@@ -22,24 +19,11 @@ using Addr    = sero::Address<Esp32Config>;
 static esp32_app::UdpTransportEsp32 transport;
 static Runtime* runtime_ptr = nullptr;
 
-enum BLINKER_STATE {
-    LEFT,
-    RIGHT,
-    HAZARD,
-    OFF,
-};
-
-struct AppState {
-    bool lights_found = false;
-    BLINKER_STATE blinker_state = BLINKER_STATE::OFF;
-};
-
-static AppState app;
+static BlinkerController blinker;
 
 // --- Function Declarations ----------------------------------------------
 void WiFiEvent(WiFiEvent_t event);
 void connect_ethernet();
-void initializeLEDs();
 
 // ------------------------------------------------------------------------
 
@@ -104,7 +88,7 @@ void connect_ethernet() {
 
 void setup() {
     connect_ethernet();
-    initializeLEDs();
+    blinker.begin(); // initialises GPIO pins and starts blink task
 
     // ── Transport ───────────────────────────────────────────────
     if (!transport.init(Esp32ServiceConfig::ESP32_UNICAST_PORT)) {
@@ -119,7 +103,7 @@ void setup() {
     
     uint32_t now = millis();
 
-    static LightsService lights_svc;
+    static LightsService lights_svc(blinker);
 
     rt.register_service(Esp32ServiceConfig::ZC_LIGHTS_ID, lights_svc,
                         1, 0,
@@ -136,8 +120,3 @@ void loop() {
     rt.process(now);
 }
 
-void initializeLEDs() {
-    // pinMode(LED_PIN_LEFT, OUTPUT);
-    // pinMode(LED_PIN_RIGHT, OUTPUT);
-    // pinMode(LED_PIN_HAZARD, OUTPUT);
-}
