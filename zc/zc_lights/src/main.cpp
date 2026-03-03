@@ -1,69 +1,66 @@
 #include <Arduino.h>
 #include "esp_log.h"
 #include <ETH.h>
-#include <WebSocketsClient.h>
-#include <ArduinoJson.h>
+#include <sero.hpp>
+#include <udp_transport_esp32.hpp>
+#include <lights_service.hpp>
 
+const char* FIRMWARE_VERSION = "0.1.0";
 
-const char* FIRMWARE_VERSION = "0.0.1";
-
-#define NUMBER_OF_LED 2
-// Button pins
+// LED pins
 #define LED_PIN_1 GPIO_NUM_14
 #define LED_PIN_2 GPIO_NUM_15
 
-// Turn signal blink interval in ms
-#define TURN_SIGNAL_BLINK_INTERVAL 500
-// Debounce time for incoming button data in ms
-#define DEBOUNCE_TIME 500
+// --- Type Aliases -----------------------------------------------
 
-// Olimex IP-Adresse unten im Code anpassen!
-// WICHITG: IP-Adresse und Port des WebSocket-Servers (headunit) hier anpassen:
-WebSocketsClient webSocket;             // WebSocket client instance
+using Runtime = sero::Runtime<esp32_app::UdpTransportEsp32, Esp32Config>;
+using Addr    = sero::Address<Esp32Config>;
 
-const char* serverUrl = "192.168.1.100";    // WebSocket server / "headunit" IPv4 address
-const int serverPort = 6969;                // WebSocket server / "headunit" port
-int MESSAGE_INTERVAL_LEDS = 50;           // Send button data every X ms
+// --- Global Objects ---------------------------------------------
 
-long lastTimeLEDsSent = 0;
+// Transport
+static esp32_app::UdpTransportEsp32 transport;
+static Runtime* runtime_ptr = nullptr;
 
-// Global runtime variables
-bool isTurnSignalLeftActive = false;
-bool isTurnSignalRightActive = false;
-bool isHazardLightsActive = false;
-long lastBlinkLeft = 0;
-long lastBlinkRight = 0;
-long lastBlinkHazard = 0;
-long lastStateUpdateLeft = 0;
-long lastStateUpdateRight = 0;
+enum BLINKER_STATE {
+    LEFT,
+    RIGHT,
+    HAZARD,
+    OFF,
+};
 
-void sendRegister();
-void initializeLEDs();
-void handleWebsocketInput(String input);
-void blinkLoop();
-void sendTurnSignaLightsStatusToBackend();
-boolean* getLEDStates();
-void onWebSocketEvent(WStype_t type, uint8_t *payload, size_t length);
+struct AppState {
+    bool lights_found = false;
+    BLINKER_STATE blinker_state = BLINKER_STATE::OFF;
+};
+
+static AppState app;
+
+// --- Function Declarations ----------------------------------------------
 void WiFiEvent(WiFiEvent_t event);
+void connect_ethernet();
+void initializeLEDs();
+
+// ------------------------------------------------------------------------
 
 void WiFiEvent(WiFiEvent_t event) {
   switch (event) {
-    case SYSTEM_EVENT_ETH_START:
+    case ARDUINO_EVENT_ETH_START:
       Serial.println("ETH Started");
       // Set the hostname for the ESP32
-      ETH.setHostname("esp32-poe");
+      ETH.setHostname("zc-lights");
       break;
-    case SYSTEM_EVENT_ETH_CONNECTED:
+    case ARDUINO_EVENT_ETH_CONNECTED:
       Serial.println("ETH Connected");
       break;
-    case SYSTEM_EVENT_ETH_GOT_IP:
+    case ARDUINO_EVENT_ETH_GOT_IP:
       Serial.print("ETH IP Address: ");
       Serial.println(ETH.localIP());
       break;
-    case SYSTEM_EVENT_ETH_DISCONNECTED:
+    case ARDUINO_EVENT_ETH_DISCONNECTED:
       Serial.println("ETH Disconnected");
       break;
-    case SYSTEM_EVENT_ETH_STOP:
+    case ARDUINO_EVENT_ETH_STOP:
       Serial.println("ETH Stopped");
       break;
     default:
@@ -71,36 +68,8 @@ void WiFiEvent(WiFiEvent_t event) {
   }
 }
 
-void onWebSocketEvent(WStype_t type, uint8_t *payload, size_t length) {
-    switch (type) {
-        case WStype_DISCONNECTED:
-            Serial.printf("Disconnected!\n");
-            break;
-        case WStype_CONNECTED:
-            Serial.printf("Connected to URL: %s\n", payload);
-            sendRegister();
-            break;
-        case WStype_TEXT:
-            Serial.printf("Received text: %s\n", payload);
-            handleWebsocketInput((char*)payload);
-            break;
-        case WStype_BIN:
-            Serial.printf("Received binary data.\n");
-            break;
-        case WStype_PING:
-            Serial.printf("Received ping.\n");
-            break;
-        case WStype_PONG:
-            Serial.printf("Received pong.\n");
-            break;
-        case WStype_ERROR:
-            Serial.printf("Error: %s\n", payload);
-            break;
-    }
-}
-
-void setup() {
-    esp_log_level_set("*", ESP_LOG_VERBOSE);
+void connect_ethernet() {
+  esp_log_level_set("*", ESP_LOG_VERBOSE);
     Serial.begin(115200);
     delay(1000);
     Serial.println("####################################");
@@ -110,10 +79,9 @@ void setup() {
     Serial.println("####################################");
     // Initialize Ethernet
     WiFi.onEvent(WiFiEvent);
-    webSocket.onEvent(onWebSocketEvent);
     ETH.begin();
     /* -------------------- HIER DIE IP-Adressen vom ESP und Gateway konfigurieren -------------------- */
-    ETH.config(IPAddress(192, 168, 1, 6), IPAddress(192, 168, 1, 1), IPAddress(255, 255, 255, 0));
+    ETH.config(IPAddress(192, 168, 1, 4), IPAddress(192, 168, 1, 1), IPAddress(255, 255, 255, 0));
     /* -------------------------------------------------------------------------------------------------*/
     // Wait for Ethernet to connect
     Serial.print("Connecting to Ethernet");
@@ -130,148 +98,46 @@ void setup() {
     Serial.print("Subnet: ");
     Serial.println(ETH.subnetMask());
 
-    // Connect to WebSocket server
-    webSocket.begin(serverUrl, serverPort, "/");
     delay(50);
-    webSocket.loop();
     Serial.println("Setup complete");
+}
 
-    // Initialize Buttons
+void setup() {
+    connect_ethernet();
     initializeLEDs();
+
+    // ── Transport ───────────────────────────────────────────────
+    if (!transport.init(Esp32ServiceConfig::ESP32_UNICAST_PORT)) {
+        Serial.println("[ERROR] Transport init failed!");
+        while (true) delay(1000);
+    }
+
+    // ── Runtime ─────────────────────────────────────────────────
+    static Runtime rt(transport, Esp32ServiceConfig::ESP32_UNICAST_PORT);
+    runtime_ptr = &rt;
+    rt.set_local_address(transport.local_addr());
+    
+    uint32_t now = millis();
+
+    static LightsService lights_svc;
+
+    rt.register_service(Esp32ServiceConfig::ZC_LIGHTS_ID, lights_svc,
+                        1, 0,
+                        /*auth_required=*/false);
+    rt.offer_service(Esp32ServiceConfig::ZC_LIGHTS_ID, /*ttl=*/30, now);
+    std::printf("[server] LightsService 0x%04X offered\n", Esp32ServiceConfig::ZC_LIGHTS_ID);
 }
 
 void loop() {
-    // Maintain WebSocket connection
-    webSocket.loop();
-    delay(1);
-    // Blink loop
-    blinkLoop();
-    // Send button data to WebSocket server
-    sendTurnSignaLightsStatusToBackend();
-}
+    Runtime& rt = *runtime_ptr;
+    uint32_t now = millis();
 
-void sendRegister() {
-  webSocket.sendTXT("{ \"zone\": \"lights\" }");
-  Serial.println("Register package sent");
-}
-
-void handleWebsocketInput(String input) {
-    Serial.println("Received: " + input);
-    DynamicJsonDocument doc(1024);
-    deserializeJson(doc, input);
-    String zone = doc["zone"];
-    if (zone == "lights") {
-        String command = doc["command"];
-        long currentTime = millis();
-        if(command == "setToggleTurnSignalLeft") {
-            if (currentTime - lastStateUpdateLeft > DEBOUNCE_TIME) {
-                isTurnSignalLeftActive = !isTurnSignalLeftActive;
-                lastStateUpdateLeft = currentTime;
-                if (!isTurnSignalLeftActive) {
-                    digitalWrite(LED_PIN_1, LOW); // Turn off the right turn signal LED if the signal is turned off
-                }
-            }
-        }
-        if(command == "setToggleTurnSignalRight") {
-            if (currentTime - lastStateUpdateRight > DEBOUNCE_TIME) {
-                isTurnSignalRightActive = !isTurnSignalRightActive;
-                lastStateUpdateRight = currentTime;
-                if (!isTurnSignalRightActive) {
-                    digitalWrite(LED_PIN_2, LOW); // Turn off the right turn signal LED if the signal is turned off
-                }
-            }
-        }
-        if(command == "setToggleHazardLights") {
-            isHazardLightsActive = !isHazardLightsActive;
-        }
-    }
+    // ── Process protocol (poll transport, dispatch, housekeeping) ──
+    rt.process(now);
 }
 
 void initializeLEDs() {
-    pinMode(LED_PIN_1, OUTPUT);
-    pinMode(LED_PIN_2, OUTPUT);
-    digitalWrite(LED_PIN_1, HIGH);
-    digitalWrite(LED_PIN_2, HIGH);
-    delay(100);
-    digitalWrite(LED_PIN_1, LOW);
-    digitalWrite(LED_PIN_2, LOW);
-    delay(100);
-    digitalWrite(LED_PIN_1, HIGH);
-    digitalWrite(LED_PIN_2, HIGH);
-    delay(100);
-    digitalWrite(LED_PIN_1, LOW);
-    digitalWrite(LED_PIN_2, LOW);
-}
-
-void blinkLoop() {
-    if(isTurnSignalLeftActive) {
-        if(millis() - lastBlinkLeft > TURN_SIGNAL_BLINK_INTERVAL) {
-            lastBlinkLeft = millis();
-            digitalWrite(LED_PIN_1, !digitalRead(LED_PIN_1));
-        }
-    }
-    if(isTurnSignalRightActive) {
-        if(millis() - lastBlinkRight > TURN_SIGNAL_BLINK_INTERVAL) {
-            lastBlinkRight = millis();
-            digitalWrite(LED_PIN_2, !digitalRead(LED_PIN_2));
-        }
-    }
-}
-
-void sendTurnSignaLightsStatusToBackend() {
-    if (millis() - lastTimeLEDsSent < MESSAGE_INTERVAL_LEDS) {
-        return;
-    }
-
-
-    /* ############### WARNING - THIS CAUSES THE HEADUNIT TO SEND A FAULTY PONG FRAME AND THUS RESULTS IN A DISCONNECT OF THE OLIMEX WS CLIENT */
-    // webSocket.sendPing();
-    /* ############### WARNING - THIS CAUSES THE HEADUNIT TO SEND A FAULTY PONG FRAME AND THUS RESULTS IN A DISCONNECT OF THE OLIMEX WS CLIENT */
-
-
-    // Get temperature data from sensors
-    Serial.println("LEDs array before sending: ");
-    boolean* leds = getLEDStates();
-    // Send temperature data to WebSocket server
-    /*
-    Format of the JSON message:
-    {
-        "zone": "battery",
-        "command": "getTemp",
-        "value": [20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0, 55.0]
-    }
-    */
-    char output[256];
-    StaticJsonDocument<256> doc;
-    doc["zone"] = "lights";
-    doc["command"] = "getTurnSignalLights";
-    JsonArray value = doc["value"].to<JsonArray>();
-    for (int i = 0; i < NUMBER_OF_LED; i++) {
-        value.add(leds[i]);
-    }
-
-    // Optional: Reduce memory footprint
-    // doc.shrinkToFit();
-
-    // Serialize JSON to buffer
-    size_t n = serializeJson(doc, output, sizeof(output));
-    if (n == sizeof(output)) {
-        Serial.println(F("Error: JSON message truncated"));
-    } else {
-        if(webSocket.sendTXT(output)) {
-            Serial.println(F("LEDs data sent"));
-            Serial.println(output);
-            lastTimeLEDsSent = millis();
-        } else {
-            Serial.println(F("Failed to send LEDs data"));
-            lastTimeLEDsSent = millis();
-        }
-    }
-}
-
-boolean* getLEDStates() {
-    static boolean ledStates[NUMBER_OF_LED];
-    ledStates[0] = digitalRead(LED_PIN_1);
-    ledStates[1] = digitalRead(LED_PIN_2);
-    return ledStates;
+    // pinMode(LED_PIN_LEFT, OUTPUT);
+    // pinMode(LED_PIN_RIGHT, OUTPUT);
+    // pinMode(LED_PIN_HAZARD, OUTPUT);
 }
