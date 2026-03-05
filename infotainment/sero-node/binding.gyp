@@ -5,7 +5,7 @@
       "sources": [ "src/sero-node.cpp" ],
       "include_dirs": [
         "<!@(node -p \"require('node-addon-api').include\")",
-        "/home/leo/Documents/Programming/sero/include"
+        "../sero/include"
       ],
       "dependencies": [
         "<!(node -p \"require('node-addon-api').gyp\")"
