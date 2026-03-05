@@ -1,0 +1,114 @@
+name: CI (sero-node)
+env:
+  APP_NAME: sero-node
+  REGISTRY_URL: 'https://registry.leotm.de'
+  WORKING_DIRECTORY: 'infotainment/sero-node'
+  NPM_REGISTRY_AUTH_TOKEN: ${{ secrets.NPM_REGISTRY_AUTH_TOKEN }}
+'on':
+  push:
+    tags-ignore:
+      - '**'
+    paths:
+      - 'infotainment/sero-node/**'
+      - '!infotainment/sero-node/**/*.md'
+      - '!infotainment/sero-node/LICENSE'
+      - '!infotainment/sero-node/**/*.gitignore'
+      - '!infotainment/sero-node/.editorconfig'
+      - '!infotainment/sero-node/docs/**'
+  pull_request:
+    paths:
+      - 'infotainment/sero-node/**'
+      - '!infotainment/sero-node/**/*.md'
+      - '!infotainment/sero-node/LICENSE'
+      - '!infotainment/sero-node/**/*.gitignore'
+      - '!infotainment/sero-node/.editorconfig'
+      - '!infotainment/sero-node/docs/**'
+  workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        settings:
+          - host: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            build: bun run build
+          - host: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            build: bun run build
+    name: stable - ${{ matrix.settings.target }} - node@22
+    runs-on: ${{ matrix.settings.host }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+        with:
+            registries: |
+                https://registry.npmjs.org/
+                @asl-gokart:${{ env.REGISTRY_URL }}
+      - name: Clone sero from GitHub
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: |
+          cd ..
+          git clone https://github.com/mad201802/sero.git
+          cd ./sero
+      - name: Install dependencies
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: bun install
+      - name: Build
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: ${{ matrix.settings.build }}
+        shell: bash
+      - name: Rename artifact
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: |
+          mv ./build/Release/${{ env.APP_NAME }}.node ./${{ env.APP_NAME }}-${{ matrix.settings.target }}.node
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sero-node-${{ matrix.settings.target }}
+          path: |
+            ${{ env.WORKING_DIRECTORY }}/${{ env.APP_NAME }}-*.node
+          if-no-files-found: error
+  publish:
+    name: Publish to Artifacts
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    permissions:
+      contents: write
+      id-token: write
+    needs:
+      - build
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+        with:
+            registries: |
+                https://registry.npmjs.org/
+                @asl-gokart:${{ env.REGISTRY_URL }}
+      - name: Install dependencies
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: bun install
+      - name: Download all artifacts
+        uses: actions/download-artifact@v6
+        with:
+          path: ${{ env.WORKING_DIRECTORY }}/artifacts
+      - name: Move artifacts
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        # 'bun artifacts' does not exist. Use standard bash commands to move the files.
+        run: |
+          mkdir -p ./npm
+          mv ./artifacts/* ./npm/
+      - name: List packages
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: ls -R ./npm
+        shell: bash
+      - name: Publish
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        # bun publish respects NPM_CONFIG_TOKEN for CI/CD environments.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_TOKEN: ${{ secrets.NPM_REGISTRY_AUTH_TOKEN }}
+        run: bun publish
