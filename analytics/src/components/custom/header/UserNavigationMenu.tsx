@@ -4,8 +4,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { auth } from "@/server/auth";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export async function UserNavigationMenu() {
@@ -20,11 +21,11 @@ export async function UserNavigationMenu() {
         </Avatar>
       </PopoverTrigger>
       <PopoverContent className="w-32">
-        <a href="/api/auth/signout">
+        <Link href="/api/auth/signout/">
         <Button variant="destructive">
             Log Out
         </Button>
-        </a>
+        </Link>
       </PopoverContent>
     </Popover>
   )

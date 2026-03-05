@@ -1,4 +1,5 @@
 import { IncomingPacket } from "@/data/zonecontrollers/packets";
+import log from "electron-log/main";
 
 export enum ZCButtons {
     Tony = "tony",
@@ -19,7 +20,7 @@ export class ButtonHandler {
     private mapping: ButtonMappings; 
 
     constructor(mapping: ButtonMappings) {
-        console.log("ButtonHandler created");
+        log.info("ButtonHandler created");
         this.mapping = mapping;
     }
 
@@ -29,13 +30,13 @@ export class ButtonHandler {
     }
     
     private handleButtonEvent(event: ButtonEvent) {
-        console.log("Button event received: ", event);
+        log.info("Button event received: ", event);
 
         // Check if the button is mapped
         if (this.mapping.has(event.identifier)) {
             const buttonMapping = this.mapping.get(event.identifier);
             if(!buttonMapping) {
-                console.error(`Button mapping for ${event.identifier}[${event.button}] is empty!`);
+                log.error(`Button mapping for ${event.identifier}[${event.button}] is empty!`);
                 return;
             }
             // Check if the button has an action
@@ -44,10 +45,10 @@ export class ButtonHandler {
             if (action) {
                 action(event.newValue);
             } else {
-                console.error(`Button ${event.identifier}[${event.button}] has no action for value ${event.newValue}`);
+                log.error(`Button ${event.identifier}[${event.button}] has no action for value ${event.newValue}`);
             }
         } else {
-            console.error(`Button ${event.identifier}[${event.button}] is not mapped!`);
+            log.error(`Button ${event.identifier}[${event.button}] is not mapped!`);
         }
     }
 }

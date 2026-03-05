@@ -14,7 +14,7 @@ export const HeaderBar = () => {
 
     useEffect(() => {
         window.websocket.onBatteryMessage((incomingPacket: string) => {
-          // console.log("Received incoming battery message header_bar .tsx");
+          // console.debug("Received incoming battery message header_bar .tsx");
           const parsed: IncomingPacket = JSON.parse(incomingPacket);
           switch(parsed.command) {
             case BatteryCommands.GET_VOLTAGE:

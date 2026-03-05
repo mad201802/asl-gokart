@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "@/server/api/trpc";
+import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
 import { InfluxDBClient } from "@influxdata/influxdb3-client";
 
-const host = process.env.INFLUX_HOST || "http://localhost";
-const port = process.env.INFLUX_PORT || "8181";
+const host = process.env.INFLUX_HOST ?? "http://localhost";
+const port = process.env.INFLUX_PORT ?? "8181";
 const influxUrl = `${host}:${port}`;
 const token = process.env.INFLUX_TOKEN;
 const database = process.env.INFLUX_DATABASE;
@@ -33,7 +33,7 @@ export const sensorRouter = createTRPCRouter({
                     `
                 }
 
-                const result = await influxDB.query(query);
+                const result = influxDB.query(query);
                 const resultArray = [];
 
                 for await (const row of result) {
@@ -80,7 +80,7 @@ export const sensorRouter = createTRPCRouter({
 
                 console.log(`Executing query: ${query}`);
                 
-                const result = await influxDB.query(query);
+                const result = influxDB.query(query);
                 const resultArray = [];
 
                 // Process all available data
@@ -95,7 +95,7 @@ export const sensorRouter = createTRPCRouter({
                     }
                 }
 
-                console.log(`Successfully fetched ${resultArray.length} records for sensor: ${input.sensorName || 'all'} from ${input.start} to ${input.end}`);
+                console.log(`Successfully fetched ${resultArray.length} records for sensor: ${input.sensorName ?? 'all'} from ${input.start.toISOString()} to ${input.end.toISOString()}`);
 
                 return {
                     success: true,

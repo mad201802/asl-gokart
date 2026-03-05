@@ -11,16 +11,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { set } from "zod";
 import { Button } from "@/components/ui/button";
 import { SaveIcon } from "lucide-react";
 
 
 export default function NicknameInput() {
 
-    const utils = api.useUtils();
-
-    const [nickname, setNickname] = useState(api.get.userNickname.useSuspenseQuery()[0] || "");
+    const [nickname, setNickname] = useState(api.get.userNickname.useSuspenseQuery()[0] ?? "");
 
     const updateNickname = api.update.updateNickname.useMutation({
         onSuccess: async () => {
@@ -50,7 +47,7 @@ export default function NicknameInput() {
                     />
                 </TooltipTrigger>
                 <TooltipContent>
-                    <p>Your personal nickname you're using to interact with other users on this platform.</p>
+                    <p>Your personal nickname you&apos;re using to interact with other users on this platform.</p>
                 </TooltipContent>
                 </Tooltip>
             </div>

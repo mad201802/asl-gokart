@@ -13,6 +13,7 @@ import React, { useEffect } from "react";
 import { IncomingPacket, OutgoingPacket, RegisterPacket } from "@/data/zonecontrollers/packets";
 import { ButtonsCommands, LightsCommands, ThrottleCommands, Zones } from "@/data/zonecontrollers/zonecontrollers";
 import { OctagonAlert, SquareArrowLeft, SquareArrowRight, TriangleAlert } from "lucide-react";
+import log from "@/lib/logger";
 
 interface Segment {
   value: number;
@@ -94,7 +95,7 @@ const DriveNormalPage = () => {
 
   useEffect(() => {
     window.websocket.onThrottleMessage((incomingPacket: string) => {
-      console.log("Received incoming throttle message in drive-normal.tsx");
+      log.debug("Received incoming throttle message in drive-normal.tsx");
       const parsed: IncomingPacket = JSON.parse(incomingPacket);
       switch(parsed.command) {
         case ThrottleCommands.GET_THROTTLE:
@@ -108,13 +109,13 @@ const DriveNormalPage = () => {
             setGear(parsed.value === 1 ? Gears.r : Gears.d);
             break;
         default:
-            console.error("Invalid command (data type) received in throttle message!");
+            log.error("Invalid command (data type) received in throttle message!");
       }
     });
 
     // Using SOMEIP for lights messages instead of WebSocket
     window.someip.onLightsMessage((incomingPacket: string) => {
-      console.log("Received incoming SOMEIP lights message in drive-normal.tsx");
+      log.debug("Received incoming SOMEIP lights message in drive-normal.tsx");
       const parsed: IncomingPacket = JSON.parse(incomingPacket);
       // console.log(`Parsed lights message: ${JSON.stringify(parsed)}`);
       switch(parsed.command) {
@@ -124,7 +125,7 @@ const DriveNormalPage = () => {
             setTurnSignalRight(parsed.value[2]);
             break;
         default:
-            console.error("Invalid command (data type) received in lights message!");
+            log.error("Invalid command (data type) received in lights message!");
       }
     });
 

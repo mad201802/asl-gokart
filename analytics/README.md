@@ -7,9 +7,9 @@ This is the analytics dashboard for the `asl-gokart` project, built with the [T3
 To set up the development environment, follow these steps:
 
 1. Clone the repo
-2. Install the dependencies using `npm install`
+2. Install the dependencies using `bun install`
 3. Create a `.env` file in the root directory and set the required environment variables. You can use the `.env.example` file as a reference.
-4. Initialize the database by running `npx prisma db push` to create the tables.
+4. Initialize the database by running `bunx prisma db push` to create the tables.
 5. Setup influxDB v3 Core and grafana as docker containers by running the following command:
    ```bash
    sudo docker compose up -d
@@ -44,7 +44,7 @@ To set up the development environment, follow these steps:
     sudo docker compose up -d
    ```
 13. Open up a terminal in the root directory of this project.
-14.  Run the development server with `npm run dev`
+14.  Run the development server with `bun run dev`
 15. (TODO: Add script to seed the database with initial data)
 
 ## 🎨 Color Palette (WIP)

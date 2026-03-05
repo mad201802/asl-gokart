@@ -19,6 +19,7 @@ import LabeledSwitch from "../labeled-switch";
 import { OutgoingPacket } from "@/data/zonecontrollers/packets";
 import { ThrottleCommands, Zones } from "@/data/zonecontrollers/zonecontrollers";
 import ButtonMapperDialog from "./button-mapper-dialog";
+import log from "@/lib/logger";
 
 
 const AvancedSettingsDialog = () => {
@@ -65,7 +66,7 @@ const AvancedSettingsDialog = () => {
                     zone: Zones.THROTTLE,
                     command: ThrottleCommands.SET_RECONNECT_UART
                   };
-                  console.log(JSON.stringify(newPacket));
+                  log.info(JSON.stringify(newPacket));
                   window.websocket.send(newPacket, Zones.THROTTLE);
                 }}
               >

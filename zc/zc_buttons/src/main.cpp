@@ -1,65 +1,99 @@
 #include <Arduino.h>
 #include "esp_log.h"
 #include <ETH.h>
-#include <WebSocketsClient.h>
-#include <ArduinoJson.h>
 #include <Bounce2.h>
+#include <sero.hpp>
+#include <udp_transport_esp32.hpp>
 
+const char* FIRMWARE_VERSION = "0.1.0";
 
-const char* FIRMWARE_VERSION = "0.0.2";
-const char* ZC_BUTTON_IDENTIFIER = "tony";
-
-#define NUMBER_OF_BUTTONS 3
 // Button pins
 #define BUTTON_PIN_1 GPIO_NUM_14
 #define BUTTON_PIN_2 GPIO_NUM_15
 #define BUTTON_PIN_3 GPIO_NUM_32
 
-unsigned long startTime;
-unsigned long duration;
+// --- Type Aliases -----------------------------------------------
 
-// Olimex IP-Adresse unten im Code anpassen!
-// WICHITG: IP-Adresse und Port des WebSocket-Servers (headunit) hier anpassen:
-WebSocketsClient webSocket;             // WebSocket client instance
+using Runtime = sero::Runtime<esp32_app::UdpTransportEsp32, Esp32Config>;
+using Addr    = sero::Address<Esp32Config>;
+
+// --- Global Objects ---------------------------------------------
+
+// Transport
+static esp32_app::UdpTransportEsp32 transport;
+static Runtime* runtime_ptr = nullptr;
 
 // Bounce2 Button instances
 Bounce2::Button button1 = Bounce2::Button();
 Bounce2::Button button2 = Bounce2::Button();
 Bounce2::Button button3 = Bounce2::Button();
 
+struct AppState {
+    bool lights_found = false;
+};
 
-const char* serverUrl = "192.168.1.100";    // WebSocket server / "headunit" IPv4 address
-const int serverPort = 6969;                // WebSocket server / "headunit" port
-int MESSAGE_INTERVAL_BUTTONS = 50;           // Send button data every X ms
+static AppState app;
 
-long lastTimeButtonsSent = 0;
+// ─── Request Callbacks ─────────────────────────────────────────
 
-void sendRegister();
-void sendButtonsMsg();
+static void on_lights_response(sero::ReturnCode rc,
+                               const uint8_t* /*payload*/, std::size_t /*len*/,
+                               void* /*ctx*/) {
+    if (rc == sero::ReturnCode::E_OK) {
+        Serial.println("[lights] Request acknowledged");
+    } else {
+        Serial.printf("[lights] Request failed: rc=%u\n", static_cast<unsigned>(rc));
+    }
+}
+
+// ─── SD Callbacks ───────────────────────────────────────────────
+
+static void on_service_found(uint16_t sid, const Addr& addr, void* /*ctx*/) {
+    std::printf("[sd] Service 0x%04X found at %u.%u.%u.%u:%u\n",
+                sid, addr[0], addr[1], addr[2], addr[3],
+                unsigned((addr[4] << 8) | addr[5]));
+    if (sid == Esp32ServiceConfig::ZC_LIGHTS_ID) app.lights_found = true;
+}
+
+static void on_service_lost(uint16_t sid, void* /*ctx*/) {
+    std::printf("[sd] Service 0x%04X lost\n", sid);
+    if (sid == Esp32ServiceConfig::ZC_LIGHTS_ID) {
+        app.lights_found = false;
+    }
+}
+
+static void on_subscription_ack(uint16_t sid, uint16_t eid,
+                                 sero::ReturnCode rc, uint16_t ttl,
+                                 void* /*ctx*/) {
+    std::printf("[sd] Subscription ACK: 0x%04X/0x%04X rc=%u ttl=%u\n",
+                sid, eid, static_cast<unsigned>(rc), ttl);
+}
+
+// --- Function Declarations ----------------------------------------------
+void connect_ethernet();
 void initializeButtons();
 void updateButtonStates();
-boolean* getButtonStates();
-void onWebSocketEvent(WStype_t type, uint8_t *payload, size_t length);
-void WiFiEvent(WiFiEvent_t event);
+
+// ------------------------------------------------------------------------
 
 void WiFiEvent(WiFiEvent_t event) {
   switch (event) {
-    case SYSTEM_EVENT_ETH_START:
+    case ARDUINO_EVENT_ETH_START:
       Serial.println("ETH Started");
       // Set the hostname for the ESP32
-      ETH.setHostname("esp32-poe");
+      ETH.setHostname("zc-buttons");
       break;
-    case SYSTEM_EVENT_ETH_CONNECTED:
+    case ARDUINO_EVENT_ETH_CONNECTED:
       Serial.println("ETH Connected");
       break;
-    case SYSTEM_EVENT_ETH_GOT_IP:
+    case ARDUINO_EVENT_ETH_GOT_IP:
       Serial.print("ETH IP Address: ");
       Serial.println(ETH.localIP());
       break;
-    case SYSTEM_EVENT_ETH_DISCONNECTED:
+    case ARDUINO_EVENT_ETH_DISCONNECTED:
       Serial.println("ETH Disconnected");
       break;
-    case SYSTEM_EVENT_ETH_STOP:
+    case ARDUINO_EVENT_ETH_STOP:
       Serial.println("ETH Stopped");
       break;
     default:
@@ -67,46 +101,17 @@ void WiFiEvent(WiFiEvent_t event) {
   }
 }
 
-void onWebSocketEvent(WStype_t type, uint8_t *payload, size_t length) {
-    switch (type) {
-        case WStype_DISCONNECTED:
-            Serial.printf("Disconnected!\n");
-            break;
-        case WStype_CONNECTED:
-            Serial.printf("Connected to URL: %s\n", payload);
-            sendRegister();
-            break;
-        case WStype_TEXT:
-            Serial.printf("Received text: %s\n", payload);
-            break;
-        case WStype_BIN:
-            Serial.printf("Received binary data.\n");
-            break;
-        case WStype_PING:
-            Serial.printf("Received ping.\n");
-            break;
-        case WStype_PONG:
-            Serial.printf("Received pong.\n");
-            break;
-        case WStype_ERROR:
-            Serial.printf("Error: %s\n", payload);
-            break;
-    }
-}
-
-void setup() {
-    esp_log_level_set("*", ESP_LOG_VERBOSE);
+void connect_ethernet() {
+  esp_log_level_set("*", ESP_LOG_VERBOSE);
     Serial.begin(115200);
     delay(1000);
     Serial.println("####################################");
     Serial.println("ZC_BUTTONS Fw. v." + String(FIRMWARE_VERSION));
-    Serial.println("Identifier: " + String(ZC_BUTTON_IDENTIFIER));
     Serial.println("");
     Serial.println("Authors: AEROSPACE-LAB Team Gokart");
     Serial.println("####################################");
     // Initialize Ethernet
     WiFi.onEvent(WiFiEvent);
-    webSocket.onEvent(onWebSocketEvent);
     ETH.begin();
     /* -------------------- HIER DIE IP-Adressen vom ESP und Gateway konfigurieren -------------------- */
     ETH.config(IPAddress(192, 168, 1, 5), IPAddress(192, 168, 1, 1), IPAddress(255, 255, 255, 0));
@@ -126,112 +131,72 @@ void setup() {
     Serial.print("Subnet: ");
     Serial.println(ETH.subnetMask());
 
-    // Connect to WebSocket server
-    webSocket.begin(serverUrl, serverPort, "/");
     delay(50);
-    webSocket.loop();
     Serial.println("Setup complete");
+}
 
+void setup() {
+    connect_ethernet();
     // Initialize Buttons
     initializeButtons();
+
+    // ── Transport ───────────────────────────────────────────────
+    if (!transport.init(Esp32ServiceConfig::ESP32_UNICAST_PORT)) {
+        Serial.println("[ERROR] Transport init failed!");
+        while (true) delay(1000);
+    }
+
+    // ── Runtime ─────────────────────────────────────────────────
+    static Runtime rt(transport, Esp32ServiceConfig::ESP32_UNICAST_PORT);
+    runtime_ptr = &rt;
+    rt.set_local_address(transport.local_addr());
+    
+    // ── Consumer: SD callbacks ──────────────────────────────────
+    auto& sd = rt.sd_callbacks();
+    sd.on_service_found    = on_service_found;
+    sd.service_found_ctx   = nullptr;
+    sd.on_service_lost     = on_service_lost;
+    sd.service_lost_ctx    = nullptr;
+    sd.on_subscription_ack = on_subscription_ack;
+    sd.subscription_ack_ctx = nullptr;
+    
+    uint32_t now = millis();
+    rt.find_service(Esp32ServiceConfig::ZC_LIGHTS_ID, 1, now);
 }
 
 void loop() {
-    // Maintain WebSocket connection
-    webSocket.loop();
-    delay(1);
-    // Update button states
+    Runtime& rt = *runtime_ptr;
+    uint32_t now = millis();
+
+    // ── Process protocol (poll transport, dispatch, housekeeping) ──
+    rt.process(now);
+
     updateButtonStates();
-    // Send messages to WebSocket server
-    sendButtonsMsg();
-}
 
-
-void sendRegister() {
-    /*
-    Format of the JSON message:
-    {
-        "zone": "buttons"
-    }
-    */
-    char output[256];
-    StaticJsonDocument<256> registerMsg;
-    registerMsg["zone"] = "buttons";
-
-    // Serialize JSON to buffer
-    size_t n = serializeJson(registerMsg, output, sizeof(output));
-    if (n == sizeof(output)) {
-        Serial.println(F("Error: JSON message truncated"));
-    } else {
-        if(webSocket.sendTXT(output)) {
-            Serial.println(F("Register msg sent"));
-            Serial.println(output);
-        } else {
-            Serial.println(F("Failed to send register msg"));
+    // Call method for button presses on ZC_LIGHTS_ID service
+    if (app.lights_found) {
+        if (button1.pressed()) {
+            uint8_t payload[1] = {0x01};
+            rt.request(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_LEFT_ID,
+                       payload, sizeof(payload), on_lights_response, nullptr, 2000, now);
+            Serial.println("Button 1 pressed - method call sent");
         }
-    }
-
-
-  Serial.println("Register package sent");
-}
-
-void sendButtonsMsg() {
-    if (millis() - lastTimeButtonsSent < MESSAGE_INTERVAL_BUTTONS) {
-        return;
-    }
-
-
-    /* ############### WARNING - THIS CAUSES THE HEADUNIT TO SEND A FAULTY PONG FRAME AND THUS RESULTS IN A DISCONNECT OF THE OLIMEX WS CLIENT */
-    // webSocket.sendPing();
-    /* ############### WARNING - THIS CAUSES THE HEADUNIT TO SEND A FAULTY PONG FRAME AND THUS RESULTS IN A DISCONNECT OF THE OLIMEX WS CLIENT */
-
-    Serial.println("Buttons array before sending: ");
-    boolean* buttons = getButtonStates();
-    for (int i = 0; i < NUMBER_OF_BUTTONS; i++) {
-        Serial.print(buttons[i]);
-        Serial.print(" ");
-    }
-    Serial.println();
-
-    // Send temperature data to WebSocket server
-    /*
-    Format of the JSON message:
-    {
-        "zone": "buttons",
-        "identifier": "tony",
-        "command": "getNewValue",
-        "value": true
-    }
-    */
-    char output[256];
-    StaticJsonDocument<256> doc;
-    doc["zone"] = "buttons";
-    doc["identifier"] = ZC_BUTTON_IDENTIFIER;
-    doc["command"] = "getNewValue";
-    // JsonArray value = doc["value"].to<JsonArray>();
-    // for (int i = 0; i < NUMBER_OF_BUTTONS; i++) {
-    //     value.add(buttons[i]);
-    // }
-    doc["value"] = buttons[0];
-
-    // Optional: Reduce memory footprint
-    // doc.shrinkToFit();
-
-    // Serialize JSON to buffer
-    size_t n = serializeJson(doc, output, sizeof(output));
-    if (n == sizeof(output)) {
-        Serial.println(F("Error: JSON message truncated"));
-    } else {
-        if(webSocket.sendTXT(output)) {
-            Serial.println(F("Buttons data sent"));
-            Serial.println(output);
-            lastTimeButtonsSent = millis();
-        } else {
-            Serial.println(F("Failed to send buttons data"));
-            lastTimeButtonsSent = millis();
+        if (button2.pressed()) {
+            uint8_t payload[1] = {0x02};
+            rt.request(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_RIGHT_ID,
+                       payload, sizeof(payload), on_lights_response, nullptr, 2000, now);
+            Serial.println("Button 2 pressed - method call sent");
+        }
+        if (button3.pressed()) {
+            uint8_t payload[1] = {0x03};
+            rt.request(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_HAZARD_ID,
+                       payload, sizeof(payload), on_lights_response, nullptr, 2000, now);
+            Serial.println("Button 3 pressed - method call sent");
         }
     }
 }
+
+// --- Button functions --------------------------------------------------
 
 void initializeButtons() {
     button1.attach(BUTTON_PIN_1, INPUT_PULLDOWN);
@@ -251,10 +216,4 @@ void updateButtonStates() {
     button3.update();
 }
 
-boolean* getButtonStates() {
-    static boolean buttons[NUMBER_OF_BUTTONS] = {false, false, false}; 
-    buttons[0] = button1.isPressed();
-    buttons[1] = button2.isPressed();
-    buttons[2] = button3.isPressed();
-    return buttons;
-}
+// -----------------------------------------------------------------------

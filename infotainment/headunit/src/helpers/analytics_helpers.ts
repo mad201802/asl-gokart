@@ -1,18 +1,45 @@
 import { SensorData } from "@/data/analytics/sensor-data";
 import { IncomingPacket } from "@/data/zonecontrollers/packets";
 import { BatteryCommands, ThrottleCommands, Zones } from "@/data/zonecontrollers/zonecontrollers";
-import { stringify } from "querystring";
+import log from "electron-log/main";
 
 
-const ANALYTICS_BACKEND_URL = "http://localhost:3000/api/gokart"; // Replace with actual URL
+let analyticsBackendUrl = "http://localhost:3000/api/gokart";
 const COMMAND_RATE_LIMITS: Record<string, number> = {
-    [ThrottleCommands.GET_THROTTLE]: 100,
-    [ThrottleCommands.GET_RPM]: 100,
-    [BatteryCommands.GET_VOLTAGE]: 100,
+    [ThrottleCommands.GET_THROTTLE]: 1000,
+    [ThrottleCommands.GET_RPM]: 1000,
+    [BatteryCommands.GET_VOLTAGE]: 1000,
+    [BatteryCommands.GET_CURRENT]: 1000,
+    [BatteryCommands.GET_TEMP]: 1000,
+    [BatteryCommands.GET_CHARGE]: 1000,
+    [BatteryCommands.GET_POWER]: 1000,
 };
 
 let analyticsEnabled = false;
 const lastSentTimestamps: Record<string, number> = {};
+
+export function setAnalyticsBackendUrl(url: string): void {
+    analyticsBackendUrl = url;
+}
+
+export function getAnalyticsBackendUrl(): string {
+    return analyticsBackendUrl;
+}
+
+export async function checkAnalyticsConnection(url: string): Promise<boolean> {
+    try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
+        const response = await fetch(url, {
+            method: 'GET',
+            signal: controller.signal,
+        });
+        clearTimeout(timeout);
+        return response.ok;
+    } catch {
+        return false;
+    }
+}
 
 export function toggleAnalytics(enabled: boolean): boolean {
     analyticsEnabled = enabled;
@@ -25,7 +52,7 @@ export function isAnalyticsEnabled(): boolean {
 
 export function processAnalytics(message: string): void {
     if (!analyticsEnabled) {
-        console.log("Analytics is disabled, skipping processing.");
+        log.debug("Analytics is disabled, skipping processing.");
         return;
     }
 
@@ -37,7 +64,7 @@ export function processAnalytics(message: string): void {
         case ThrottleCommands.GET_THROTTLE:
             sensorData = {
                 name: "rawThrottle",
-                value: parsedMessage.value[0],
+                value: Number(Array.isArray(parsedMessage.value) ? parsedMessage.value[0] : parsedMessage.value),
                 unit: "%",
                 timestamp: new Date().toISOString()
             };
@@ -45,7 +72,7 @@ export function processAnalytics(message: string): void {
         case ThrottleCommands.GET_RPM:
             sensorData = {
                 name: "rpm",
-                value: parsedMessage.value,
+                value: Number(parsedMessage.value),
                 unit: "RPM",
                 timestamp: new Date().toISOString()
             };
@@ -53,14 +80,50 @@ export function processAnalytics(message: string): void {
         case BatteryCommands.GET_VOLTAGE:
             sensorData = {
                 name: "batteryVoltage",
-                value: parsedMessage.value,
+                value: Number(parsedMessage.value),
                 unit: "V",
                 timestamp: new Date().toISOString()
             };
             break;
+        case BatteryCommands.GET_CURRENT:
+            sensorData = {
+                name: "batteryCurrent",
+                value: Number(parsedMessage.value),
+                unit: "A",
+                timestamp: new Date().toISOString()
+            };
+            break;
+        case BatteryCommands.GET_TEMP:
+            sensorData = {
+                name: "batteryTemp",
+                value: Number(parsedMessage.value),
+                unit: "°C",
+                timestamp: new Date().toISOString()
+            };
+            break;
+        case BatteryCommands.GET_CHARGE:
+            sensorData = {
+                name: "batteryCharge",
+                value: Number(parsedMessage.value),
+                unit: "%",
+                timestamp: new Date().toISOString()
+            };
+            break;
+        case BatteryCommands.GET_POWER:
+            sensorData = {
+                name: "batteryPower",
+                value: Number(parsedMessage.value),
+                unit: "W",
+                timestamp: new Date().toISOString()
+            };
+            break;
         default:
-            console.error(`Unsupported zone for analytics: ${parsedMessage.zone}`);
             return;
+    }
+
+    if (isNaN(sensorData.value)) {
+        log.error(`Invalid numeric value for ${sensorData.name}:`, parsedMessage.value);
+        return;
     }
 
     const now = Date.now();
@@ -73,7 +136,7 @@ export function processAnalytics(message: string): void {
     lastSentTimestamps[parsedMessage.command] = now;
 
     // Send POST request to analytics backend
-    fetch(`${ANALYTICS_BACKEND_URL}`, {
+    fetch(`${analyticsBackendUrl}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -87,10 +150,15 @@ export function processAnalytics(message: string): void {
         return response.json();
     })
     .then(data => {
-        console.log("Analytics data sent successfully:", data);
+        // Detect if the POST was misrouted to the GET handler
+        if (Array.isArray(data?.data)) {
+            log.error("Analytics POST was handled as GET — data was NOT written. Check if you switched http with https and remove trailing slashes from the URL in settings.");
+        } else {
+            // console.log("Analytics data sent successfully:", data);
+        }
     })
     .catch(error => {
-        console.error("Error sending analytics data:", error);
+        log.error("Error sending analytics data:", error);
     });
 }
 

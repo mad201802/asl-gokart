@@ -8,6 +8,7 @@ import React, { useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import ValueCard from "@/components/shared/value-card";
 import { Label } from "@/components/ui/label";
+import log from "@/lib/logger";
 
 
 const BatteryPage = () => {
@@ -17,7 +18,7 @@ const BatteryPage = () => {
 
     useEffect(() => {
         window.websocket.onBatteryMessage((incomingPacket: string) => {
-          console.log("Received incoming battery message in battery.tsx");
+          log.debug("Received incoming battery message in battery.tsx");
           const parsed: IncomingPacket = JSON.parse(incomingPacket);
           switch(parsed.command) {
             case BatteryCommands.GET_TEMP:
@@ -30,7 +31,7 @@ const BatteryPage = () => {
                 setBatteryCurrent(parsed.value);
                 break;
             default:
-                console.error("Invalid command (data type) received in battery message!");
+                log.error("Invalid command (data type) received in battery message!");
           }
         });
     // Cleanup listener on component unmount

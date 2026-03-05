@@ -7,7 +7,7 @@ const BatteryIndicator = (props: BatteryIndicatorProps) => {
     <div className="flex flex-row gap-2 items-center justify-center">
       <p>{props.batteryLevel.toFixed(0)}%</p>
       {props.batteryLevel > 85 && <BatteryFull />}
-      {props.batteryLevel <= 85 && <BatteryMedium />}
+      {props.batteryLevel <= 85 && props.batteryLevel > 25 && <BatteryMedium />}
       {props.batteryLevel <= 25 && <BatteryLow />}
     </div>
   );
