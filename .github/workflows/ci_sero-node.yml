@@ -97,16 +97,18 @@ jobs:
           path: ${{ env.WORKING_DIRECTORY }}/artifacts
       - name: Move artifacts
         working-directory: ${{ env.WORKING_DIRECTORY }}
-        run: bun artifacts
+        # 'bun artifacts' does not exist. Use standard bash commands to move the files.
+        run: |
+          mkdir -p ./npm
+          mv ./artifacts/* ./npm/
       - name: List packages
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: ls -R ./npm
         shell: bash
       - name: Publish
         working-directory: ${{ env.WORKING_DIRECTORY }}
-        run: |
-          export NPM_REGISTRY_AUTH_TOKEN=${{ secrets.NPM_REGISTRY_AUTH_TOKEN }}
-          bun publish
-
+        # bun publish respects NPM_CONFIG_TOKEN for CI/CD environments.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_TOKEN: ${{ secrets.NPM_REGISTRY_AUTH_TOKEN }}
+        run: bun publish
