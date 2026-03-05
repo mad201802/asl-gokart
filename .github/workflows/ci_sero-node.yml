@@ -70,7 +70,7 @@ jobs:
         with:
           name: sero-node-${{ matrix.settings.target }}
           path: |
-            ${{ env.WORKING_DIRECTORY }}/${{ env.APP_NAME }}.*.node
+            ${{ env.WORKING_DIRECTORY }}/${{ env.APP_NAME }}-*.node
           if-no-files-found: error
   publish:
     name: Publish to Artifacts
