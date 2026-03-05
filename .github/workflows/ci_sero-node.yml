@@ -61,13 +61,16 @@ jobs:
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: ${{ matrix.settings.build }}
         shell: bash
+      - name: Rename artifact
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: |
+          mv ./build/Release/${{ env.APP_NAME }}.node ./${{ env.APP_NAME }}-${{ matrix.settings.target }}.node
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: bindings-${{ matrix.settings.target }}
+          name: sero-node-${{ matrix.settings.target }}
           path: |
             ${{ env.WORKING_DIRECTORY }}/${{ env.APP_NAME }}.*.node
-            ${{ env.WORKING_DIRECTORY }}/${{ env.APP_NAME }}.*.wasm
           if-no-files-found: error
   publish:
     name: Publish to Artifacts
