@@ -48,14 +48,14 @@ jobs:
             registries: |
                 https://registry.npmjs.org/
                 @asl-gokart:${{ env.REGISTRY_URL }}
-      - name: Install dependencies
-        working-directory: ${{ env.WORKING_DIRECTORY }}
-        run: bun install
       - name: Clone sero from GitHub
         run: |
           cd ..
           git clone https://github.com/mad201802/sero.git
           cd ./sero
+      - name: Install dependencies
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: bun install
       - name: Build
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: ${{ matrix.settings.build }}
