@@ -1,0 +1,251 @@
+name: CI
+
+on:
+    pull_request:
+    push:
+        tags:
+            - 'v*'
+
+jobs:
+    # ──────────────────────────────────────────────────────────────────────────
+    # HEADUNIT
+    # ──────────────────────────────────────────────────────────────────────────
+
+    headunit-test:
+        name: Headunit — Unit Tests
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: infotainment/headunit
+        steps:
+            - uses: actions/checkout@v5
+
+            - uses: actions/setup-node@v6.2.0
+              with:
+                  node-version: 22
+
+            - uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: latest
+                  cache: true
+                  registries: |
+                      https://registry.npmjs.org/
+                      @asl-gokart:https://registry.leotm.de/
+
+            - name: Install dependencies
+              run: bun install
+
+            - name: Run unit tests
+              run: bun run test:unit
+
+    # Runs only on PRs — builds a native x86_64 .deb for quick smoke-check
+    headunit-build-x86:
+        name: Headunit — Build (x86_64)
+        runs-on: ubuntu-latest
+        needs: headunit-test
+        if: github.event_name == 'pull_request'
+        defaults:
+            run:
+                working-directory: infotainment/headunit
+        steps:
+            - uses: actions/checkout@v5
+
+            - uses: actions/setup-node@v6.2.0
+              with:
+                  node-version: 22
+
+            - uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: latest
+                  cache: true
+                  registries: |
+                      https://registry.npmjs.org/
+                      @asl-gokart:https://registry.leotm.de/
+
+            - name: Install dependencies
+              run: bun install
+
+            - name: Build (x86_64)
+              run: bun run make
+
+            - name: Upload artifact
+              uses: actions/upload-artifact@v5
+              with:
+                  name: headunit-deb-x86
+                  path: infotainment/headunit/out/make/deb/**/*.deb
+                  retention-days: 7
+
+    # Runs only on tags — cross-compiles ARM64 .deb for Raspberry Pi 4
+    headunit-build-arm64:
+        name: Headunit — Build (arm64)
+        runs-on: ubuntu-latest
+        needs: headunit-test
+        if: startsWith(github.ref, 'refs/tags/')
+        defaults:
+            run:
+                working-directory: infotainment/headunit
+        steps:
+            - uses: actions/checkout@v5
+
+            - uses: actions/setup-node@v6.2.0
+              with:
+                  node-version: 22
+
+            - uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: latest
+                  cache: true
+                  registries: |
+                      https://registry.npmjs.org/
+                      @asl-gokart:https://registry.leotm.de/
+
+            - name: Install dependencies
+              run: bun install
+
+            - name: Build (arm64)
+              run: bun run make:pi4
+
+            - name: Upload artifact
+              uses: actions/upload-artifact@v5
+              with:
+                  name: headunit-deb-arm64
+                  path: infotainment/headunit/out/make/deb/arm64/*.deb
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # ZONE CONTROLLERS
+    # ──────────────────────────────────────────────────────────────────────────
+
+    zc-build:
+        name: Zone Controllers — Build
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+
+            - uses: actions/setup-python@v5
+              with:
+                  python-version: '3.x'
+
+            # Cache the full PlatformIO home directory (toolchains, libs, etc.)
+            # Key includes a hash of all platformio.ini files so the cache is
+            # invalidated whenever any ZC project changes its dependencies.
+            - name: Cache PlatformIO
+              uses: actions/cache@v4
+              with:
+                  path: ~/.platformio
+                  key: platformio-${{ hashFiles('zc/**/platformio.ini') }}
+                  restore-keys: platformio-
+
+            - name: Install PlatformIO
+              run: pip install platformio
+
+            # Recursively discovers all zc_* directories and builds them,
+            # excluding zc_throttle (not yet ported to PlatformIO) and
+            # zc_simulator (Python, no PlatformIO project).
+            - name: Build all zone controllers
+              run: |
+                  find zc -maxdepth 1 -mindepth 1 -type d -name 'zc_*' \
+                    | grep -Ev 'zc_throttle|zc_simulator' \
+                    | sort \
+                    | while read dir; do
+                        echo "::group::Building $dir"
+                        pio run -d "$dir"
+                        echo "::endgroup::"
+                      done
+
+            # Collect firmware binaries and rename to avoid collisions
+            - name: Collect firmware binaries
+              if: startsWith(github.ref, 'refs/tags/')
+              run: |
+                  mkdir -p firmware-artifacts
+                  find zc -maxdepth 4 -path '*/.pio/build/*/firmware.bin' \
+                    | while read bin; do
+                        project=$(basename $(dirname $(dirname $(dirname "$bin"))))
+                        cp "$bin" "firmware-artifacts/firmware_${project}.bin"
+                      done
+
+            - name: Upload firmware artifacts
+              if: startsWith(github.ref, 'refs/tags/')
+              uses: actions/upload-artifact@v5
+              with:
+                  name: zc-firmware
+                  path: firmware-artifacts/*.bin
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # ANALYTICS
+    # ──────────────────────────────────────────────────────────────────────────
+
+    analytics:
+        name: Analytics — Build & Check
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: analytics
+        steps:
+            - uses: actions/checkout@v5
+
+            - uses: actions/setup-node@v6.2.0
+              with:
+                  node-version: 22
+
+            # Cache node_modules — keyed by package.json since there is no lockfile
+            - name: Cache node_modules
+              uses: actions/cache@v4
+              with:
+                  path: analytics/node_modules
+                  key: analytics-node-modules-${{ hashFiles('analytics/package.json') }}
+                  restore-keys: analytics-node-modules-
+
+            - name: Install dependencies
+              run: npm install
+
+            # SKIP_ENV_VALIDATION bypasses t3-oss/env-nextjs runtime validation
+            # so the build does not require live secrets (InfluxDB, Auth, etc.)
+            - name: Build
+              run: npm run build
+              env:
+                  SKIP_ENV_VALIDATION: '1'
+
+            - name: Lint & typecheck
+              run: npm run check
+              env:
+                  SKIP_ENV_VALIDATION: '1'
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # RELEASE  (tags only — runs after all jobs succeed)
+    # ──────────────────────────────────────────────────────────────────────────
+
+    release:
+        name: Create GitHub Release
+        runs-on: ubuntu-latest
+        needs:
+            - headunit-build-arm64
+            - headunit-build-armv7l
+            - zc-build
+            - analytics
+        if: startsWith(github.ref, 'refs/tags/')
+        permissions:
+            contents: write
+        steps:
+            - name: Download headunit arm64 artifact
+              uses: actions/download-artifact@v4
+              with:
+                  name: headunit-deb-arm64
+                  path: release-assets/
+
+            - name: Download headunit armv7l artifact
+              uses: actions/download-artifact@v4
+              with:
+                  name: headunit-deb-armv7l
+                  path: release-assets/
+
+            - name: Download ZC firmware artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  name: zc-firmware
+                  path: release-assets/
+
+            - name: Create GitHub Release
+              uses: softprops/action-gh-release@v2
+              with:
+                  files: release-assets/**
+                  generate_release_notes: true
