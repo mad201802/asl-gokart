@@ -38,12 +38,12 @@ jobs:
             - name: Run unit tests
               run: bun run test:unit
 
-    # Runs only on PRs — builds a native x86_64 .deb for quick smoke-check
+    # Runs on PRs (smoke-check) and on tags (included in release)
     headunit-build-x86:
         name: Headunit — Build (x86_64)
         runs-on: ubuntu-latest
         needs: headunit-test
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' || startsWith(github.ref, 'refs/tags/')
         defaults:
             run:
                 working-directory: infotainment/headunit
@@ -219,6 +219,7 @@ jobs:
         runs-on: ubuntu-latest
         needs:
             - headunit-build-arm64
+            - headunit-build-x86
             - zc-build
             # - analytics
         if: startsWith(github.ref, 'refs/tags/')
@@ -229,6 +230,12 @@ jobs:
               uses: actions/download-artifact@v4
               with:
                   name: headunit-deb-arm64
+                  path: release-assets/
+
+            - name: Download headunit x86_64 artifact
+              uses: actions/download-artifact@v4
+              with:
+                  name: headunit-deb-x86
                   path: release-assets/
 
             - name: Download ZC firmware artifacts
