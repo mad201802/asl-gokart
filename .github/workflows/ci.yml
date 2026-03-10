@@ -174,41 +174,41 @@ jobs:
     # ANALYTICS
     # ──────────────────────────────────────────────────────────────────────────
 
-    analytics:
-        name: Analytics — Build & Check
-        runs-on: ubuntu-latest
-        defaults:
-            run:
-                working-directory: analytics
-        steps:
-            - uses: actions/checkout@v5
+    # analytics:
+    #     name: Analytics — Build & Check
+    #     runs-on: ubuntu-latest
+    #     defaults:
+    #         run:
+    #             working-directory: analytics
+    #     steps:
+    #         - uses: actions/checkout@v5
 
-            - uses: actions/setup-node@v6.2.0
-              with:
-                  node-version: 22
+    #         - uses: actions/setup-node@v6.2.0
+    #           with:
+    #               node-version: 22
 
-            # Cache node_modules — keyed by package.json since there is no lockfile
-            - name: Cache node_modules
-              uses: actions/cache@v4
-              with:
-                  path: analytics/node_modules
-                  key: analytics-node-modules-${{ hashFiles('analytics/package.json') }}
-                  restore-keys: analytics-node-modules-
+    #         # Cache node_modules — keyed by package.json since there is no lockfile
+    #         - name: Cache node_modules
+    #           uses: actions/cache@v4
+    #           with:
+    #               path: analytics/node_modules
+    #               key: analytics-node-modules-${{ hashFiles('analytics/package.json') }}
+    #               restore-keys: analytics-node-modules-
 
-            - name: Install dependencies
-              run: npm install
+    #         - name: Install dependencies
+    #           run: npm install
 
-            # SKIP_ENV_VALIDATION bypasses t3-oss/env-nextjs runtime validation
-            # so the build does not require live secrets (InfluxDB, Auth, etc.)
-            - name: Build
-              run: npm run build
-              env:
-                  SKIP_ENV_VALIDATION: '1'
+    #         # SKIP_ENV_VALIDATION bypasses t3-oss/env-nextjs runtime validation
+    #         # so the build does not require live secrets (InfluxDB, Auth, etc.)
+    #         - name: Build
+    #           run: npm run build
+    #           env:
+    #               SKIP_ENV_VALIDATION: '1'
 
-            - name: Lint & typecheck
-              run: npm run check
-              env:
-                  SKIP_ENV_VALIDATION: '1'
+    #         - name: Lint & typecheck
+    #           run: npm run check
+    #           env:
+    #               SKIP_ENV_VALIDATION: '1'
 
     # ──────────────────────────────────────────────────────────────────────────
     # RELEASE  (tags only — runs after all jobs succeed)
@@ -219,9 +219,8 @@ jobs:
         runs-on: ubuntu-latest
         needs:
             - headunit-build-arm64
-            - headunit-build-armv7l
             - zc-build
-            - analytics
+            # - analytics
         if: startsWith(github.ref, 'refs/tags/')
         permissions:
             contents: write
@@ -230,12 +229,6 @@ jobs:
               uses: actions/download-artifact@v4
               with:
                   name: headunit-deb-arm64
-                  path: release-assets/
-
-            - name: Download headunit armv7l artifact
-              uses: actions/download-artifact@v4
-              with:
-                  name: headunit-deb-armv7l
                   path: release-assets/
 
             - name: Download ZC firmware artifacts
