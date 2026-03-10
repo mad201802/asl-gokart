@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <sero/core/log.hpp>
 
 struct Esp32Config {
     static constexpr std::size_t MaxPayloadSize         = 512;
@@ -27,6 +28,7 @@ struct Esp32Config {
     static constexpr std::size_t MaxTrackedPeers         = 4;
     static constexpr std::size_t HmacKeySize             = 32;
     static constexpr std::size_t MaxDtcs                 = 8;
+    static constexpr sero::LogLevel MinLogLevel           = sero::LogLevel::Off;
 };
 
 struct Esp32ServiceConfig {
