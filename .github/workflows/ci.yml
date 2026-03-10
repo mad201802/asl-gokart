@@ -159,7 +159,7 @@ jobs:
                   mkdir -p firmware-artifacts
                   find zc -maxdepth 5 -path '*/.pio/build/*/firmware.bin' \
                     | while read bin; do
-                        project=$(basename $(dirname $(dirname $(dirname "$bin"))))
+                        project=$(basename $(dirname $(dirname $(dirname $(dirname "$bin")))))
                         cp "$bin" "firmware-artifacts/firmware_${project}.bin"
                       done
 
