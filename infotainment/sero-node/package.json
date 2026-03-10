@@ -1,0 +1,27 @@
+{
+  "name": "@asl-gokart/sero-node",
+  "version": "0.0.2",
+
+  "description": "sero Node.js bindings",
+  "main": "index.js",
+  "publishConfig": {
+    "registry": "https://registry.leotm.de/",
+    "access": "public"
+  },
+  "scripts": {
+    "build": "node-gyp rebuild && bun build ./index.ts --outdir . --target node --format cjs",
+    "build:ts": "bun build ./index.ts --outdir . --target node --format cjs",
+    "build:native": "node-gyp rebuild",
+    "electron-rebuild": "electron-rebuild -f -w sero-node"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "node-gyp": "^12.2.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "node-addon-api": "^8.6.0"
+  }
+}
