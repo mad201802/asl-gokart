@@ -41,11 +41,6 @@ interface AppContext {
     getLogLevel: () => Promise<string>;
 }
 
-interface SomeipContext {
-    sendLightsCommand: (command: LightsCommands, value?: boolean | boolean[]) => void;
-    onLightsMessage: (callback: (lightsMessage: string) => void) => void;
-}
-
 interface SeroContext {
     sendLightsCommand: (command: LightsCommands, value?: boolean | boolean[]) => void;
     onLightsMessage: (callback: (lightsMessage: string) => void) => void;
@@ -57,7 +52,6 @@ declare global {
         themeMode: ThemeModeContext;
         electronWindow: ElectronWindow;
         websocket: WebSocketContext;
-        someip: SomeipContext;
         sero: SeroContext;
         app: AppContext;
     }
