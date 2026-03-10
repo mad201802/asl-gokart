@@ -8,13 +8,16 @@ import { OutgoingPacket } from "@/data/zonecontrollers/packets";
 import { Zones } from "@/data/zonecontrollers/zonecontrollers";
 import { addAppEventListeners } from "./application/app-listeners";
 import { registerSomeipHandlers, startSomeipService } from "./someip/someip-service";
+import { registerSeroHandlers, startSeroService } from "./sero/sero-service";
 
 export default function registerListeners(mainWindow: BrowserWindow) {
     addWindowEventListeners(mainWindow);
     addThemeEventListeners();
     startWebSocketServer(mainWindow);
-    startSomeipService(mainWindow);
+    // startSomeipService(mainWindow);
     registerSomeipHandlers();
+    startSeroService(mainWindow);
+    registerSeroHandlers();
     addAppEventListeners();
 
     ipcMain.on(WEBSOCKET_SEND_CHANNEL, (event, message: OutgoingPacket, zoneToSendTo: Zones) => {

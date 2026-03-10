@@ -113,9 +113,9 @@ const DriveNormalPage = () => {
       }
     });
 
-    // Using SOMEIP for lights messages instead of WebSocket
-    window.someip.onLightsMessage((incomingPacket: string) => {
-      log.debug("Received incoming SOMEIP lights message in drive-normal.tsx");
+    // Using sero for lights messages instead of WebSocket
+    window.sero.onLightsMessage((incomingPacket: string) => {
+      log.info("Received incoming sero lights message in drive-normal.tsx");
       const parsed: IncomingPacket = JSON.parse(incomingPacket);
       // console.log(`Parsed lights message: ${JSON.stringify(parsed)}`);
       switch(parsed.command) {
@@ -132,7 +132,7 @@ const DriveNormalPage = () => {
     // Cleanup listeners on component unmount
     return () => {
       window.websocket.onThrottleMessage(() => {});
-      window.someip.onLightsMessage(() => {});
+      window.sero.onLightsMessage(() => {});
     };
 }, []);
 
@@ -161,9 +161,9 @@ const DriveNormalPage = () => {
       <div className="flex flex-col items-center justify-center gap-y-2 pt-10">
         <div className="flex flex-row items-center justify-center gap-x-2">
           { (hazardLights && turnSignalLeft && turnSignalRight) ?
-            <TriangleAlert size={36} className="text-green-400" onClick={() => window.someip.sendLightsCommand(LightsCommands.SET_TOGGLE_HAZARD_LIGHTS)} />
+            <TriangleAlert size={36} className="text-green-400" onClick={() => window.sero.sendLightsCommand(LightsCommands.SET_TOGGLE_HAZARD_LIGHTS)} />
             :
-            <TriangleAlert size={36} className="text-gray-700" onClick={() => window.someip.sendLightsCommand(LightsCommands.SET_TOGGLE_HAZARD_LIGHTS)} />
+            <TriangleAlert size={36} className="text-gray-700" onClick={() => window.sero.sendLightsCommand(LightsCommands.SET_TOGGLE_HAZARD_LIGHTS)} />
           }
         </div>
         <div className="grid grid-cols-3 w-full">
@@ -192,9 +192,9 @@ const DriveNormalPage = () => {
           <div className="flex flex-col items-center justify-center">
             <div className="flex flex-row items-center gap-x-4">
               { (turnSignalLeft) ?
-                <SquareArrowLeft size={36} className="text-green-400" onClick={() => window.someip.sendLightsCommand(LightsCommands.SET_TOGGLE_TURN_SIGNAL_LEFT)} />
+                <SquareArrowLeft size={36} className="text-green-400" onClick={() => window.sero.sendLightsCommand(LightsCommands.SET_TOGGLE_TURN_SIGNAL_LEFT)} />
                 :
-                <SquareArrowLeft size={36} className="text-gray-700" onClick={() => window.someip.sendLightsCommand(LightsCommands.SET_TOGGLE_TURN_SIGNAL_LEFT)} />
+                <SquareArrowLeft size={36} className="text-gray-700" onClick={() => window.sero.sendLightsCommand(LightsCommands.SET_TOGGLE_TURN_SIGNAL_LEFT)} />
               }
               <TabsSelector 
                 label="" 
@@ -204,9 +204,9 @@ const DriveNormalPage = () => {
                 readOnly={true}
                   />
               { (turnSignalRight) ?
-                <SquareArrowRight size={36} className="text-green-400" onClick={() => window.someip.sendLightsCommand(LightsCommands.SET_TOGGLE_TURN_SIGNAL_RIGHT)} />
+                <SquareArrowRight size={36} className="text-green-400" onClick={() => window.sero.sendLightsCommand(LightsCommands.SET_TOGGLE_TURN_SIGNAL_RIGHT)} />
                 :
-                <SquareArrowRight size={36} className="text-gray-700" onClick={() => window.someip.sendLightsCommand(LightsCommands.SET_TOGGLE_TURN_SIGNAL_RIGHT)} />
+                <SquareArrowRight size={36} className="text-gray-700" onClick={() => window.sero.sendLightsCommand(LightsCommands.SET_TOGGLE_TURN_SIGNAL_RIGHT)} />
               }
             </div>
             <p className="font-semibold text-9xl">{speed.toFixed(0)}</p>
