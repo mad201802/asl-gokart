@@ -61,7 +61,7 @@
         "vite": "^7.3.1"
     },
     "dependencies": {
-        "@asl-gokart/sero-node": "^0.1.1",
+        "@asl-gokart/sero-node": "^0.2.0",
         "@mars3d/heatmap.js": "^2.0.7",
         "@radix-ui/react-dialog": "^1.1.15",
         "@radix-ui/react-label": "^2.1.8",
