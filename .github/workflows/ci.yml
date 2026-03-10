@@ -157,7 +157,7 @@ jobs:
               if: startsWith(github.ref, 'refs/tags/')
               run: |
                   mkdir -p firmware-artifacts
-                  find zc -maxdepth 4 -path '*/.pio/build/*/firmware.bin' \
+                  find zc -maxdepth 5 -path '*/.pio/build/*/firmware.bin' \
                     | while read bin; do
                         project=$(basename $(dirname $(dirname $(dirname "$bin"))))
                         cp "$bin" "firmware-artifacts/firmware_${project}.bin"
