@@ -9,6 +9,17 @@ const config: ForgeConfig = {
         asar: {
             unpack: "**/*.node",
         },
+        // The Vite plugin's default ignore strips everything except .vite/,
+        // but main-process externals (sero-node, electron-log, faye-websocket
+        // and their transitive deps) must be present in node_modules at runtime.
+        ignore: (file: string) => {
+            if (!file) return false;
+            if (file.startsWith("/.vite")) return false;
+            if (file === "/package.json") return false;
+            if (file.startsWith("/node_modules")) return false;
+
+            return true;
+        },
     },
     rebuildConfig: {},
     makers: [
