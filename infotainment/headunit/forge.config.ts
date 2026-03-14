@@ -4,46 +4,20 @@ import { VitePlugin } from "@electron-forge/plugin-vite";
 import { FusesPlugin } from "@electron-forge/plugin-fuses";
 import { FuseV1Options, FuseVersion } from "@electron/fuses";
 
-// Modules used by the main/preload processes at runtime that Vite
-// externalises (i.e. leaves as bare `require()` calls).  These must
-// survive electron-packager's file-copy filter so they end up inside
-// the asar archive alongside the `.vite/` build output.
-const runtimeDeps = [
-    "@asl-gokart/sero-node",
-    "electron-log",
-    "electron-squirrel-startup",
-    "faye-websocket",
-];
-
-// Build a set of top-level directories that should be kept.
-// For scoped packages like @asl-gokart/sero-node the relevant
-// directory is "node_modules/@asl-gokart".
-const keepDirs = new Set<string>();
-for (const dep of runtimeDeps) {
-    const scope = dep.startsWith("@") ? dep.split("/")[0] : dep;
-    keepDirs.add(scope);
-}
-
 const config: ForgeConfig = {
     packagerConfig: {
         asar: {
             unpack: "**/*.node",
         },
-        // Override the Vite plugin's default ignore (which strips everything
-        // except .vite/).  We keep .vite/ *and* the node_modules trees that
-        // the main process needs at runtime.
+        // The Vite plugin's default ignore strips everything except .vite/,
+        // but main-process externals (sero-node, electron-log, faye-websocket
+        // and their transitive deps) must be present in node_modules at runtime.
         ignore: (file: string) => {
             if (!file) return false;
             if (file.startsWith("/.vite")) return false;
             if (file === "/package.json") return false;
-            if (file === "/node_modules") return false;
+            if (file.startsWith("/node_modules")) return false;
 
-            // Allow the specific runtime dependency directories through
-            for (const dir of keepDirs) {
-                if (file.startsWith(`/node_modules/${dir}`)) return false;
-            }
-
-            // Everything else is ignored (source, devDeps, etc.)
             return true;
         },
     },
