@@ -9,6 +9,10 @@ const config: ForgeConfig = {
         asar: {
             unpack: "**/*.node",
         },
+        // prune removes devDependencies from the packaged node_modules copy,
+        // which is what keeps the artifact size manageable when we include the
+        // full node_modules below.
+        prune: true,
         // The Vite plugin's default ignore strips everything except .vite/,
         // but main-process externals (sero-node, electron-log, faye-websocket
         // and their transitive deps) must be present in node_modules at runtime.
