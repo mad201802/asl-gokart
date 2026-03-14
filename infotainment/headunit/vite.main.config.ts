@@ -17,7 +17,7 @@ export default defineConfig((env) => {
                 formats: ["cjs"],
             },
             rollupOptions: {
-                external: [...external, "sero-node"],
+                external,
             },
         },
         plugins: [pluginHotRestart("restart")],
