@@ -103,6 +103,16 @@ void setup() {
     
     uint32_t now = millis();
 
+    rt.register_event(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_EVENT_STATE_ID);
+
+    blinker.set_led_callback([](uint8_t left, uint8_t right) {
+        if (!runtime_ptr) return;
+        uint8_t payload[2] = { left, right };
+        runtime_ptr->notify_event(Esp32ServiceConfig::ZC_LIGHTS_ID,
+                                  Esp32ServiceConfig::ZC_LIGHTS_EVENT_STATE_ID,
+                                  payload, 2);
+    });
+
     static LightsService lights_svc(blinker);
 
     rt.register_service(Esp32ServiceConfig::ZC_LIGHTS_ID, lights_svc,

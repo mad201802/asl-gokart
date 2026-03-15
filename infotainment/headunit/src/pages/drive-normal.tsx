@@ -115,14 +115,13 @@ const DriveNormalPage = () => {
 
     // Using sero for lights messages instead of WebSocket
     window.sero.onLightsMessage((incomingPacket: string) => {
-      log.info("Received incoming sero lights message in drive-normal.tsx");
+      log.debug("Received incoming lights message in drive-normal.tsx");
       const parsed: IncomingPacket = JSON.parse(incomingPacket);
-      // console.log(`Parsed lights message: ${JSON.stringify(parsed)}`);
       switch(parsed.command) {
         case LightsCommands.GET_TURN_SIGNAL_LIGHTS:
             setTurnSignalLeft(parsed.value[0]);
-            setHazardLights(parsed.value[1]);
-            setTurnSignalRight(parsed.value[2]);
+            setHazardLights(parsed.value[0] === 1 && parsed.value[1] === 1);
+            setTurnSignalRight(parsed.value[1]);
             break;
         default:
             log.error("Invalid command (data type) received in lights message!");

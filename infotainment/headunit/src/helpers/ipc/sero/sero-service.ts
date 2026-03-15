@@ -4,8 +4,9 @@ import {
 } from '@asl-gokart/sero-node';
 import { BrowserWindow, ipcMain, ipcRenderer } from 'electron';
 import log from 'electron-log/main';
-import { SERO_SEND_LIGHTS_CHANNEL } from './sero-channels';
-import { LightsCommands } from '@/data/zonecontrollers/zonecontrollers';
+import { SERO_SEND_LIGHTS_CHANNEL, SERO_LIGHTS_MESSAGE_CHANNEL } from './sero-channels';
+import { LightsCommands, Zones } from '@/data/zonecontrollers/zonecontrollers';
+import { IncomingPacket } from '@/data/zonecontrollers/packets';
 
 const UNICAST_PORT = 30491;
 const CLIENT_ID = 0x0002;
@@ -26,8 +27,11 @@ export function startSeroService(mainWindow: BrowserWindow) {
     rt.onServiceFound((serviceId, address) => {
         log.info('Service found:', serviceId, 'at', address);
         if(serviceId == 0x0001) {
-            log.info('SERO zone controller found, sending initial status request...');
-            rt.fireAndForget(0x0001, 0x0002); // Example command to request initial status
+            // Subscribe to LED state change events (event ID 0x8001: [left, right])
+            rt.subscribeEvent(0x0001, 0x8001, (svcId, evtId, payload) => {
+                log.debug(`[SERO] LED state event: left=${payload[0]}, right=${payload[1]}`);
+                handleZcLightsEvent(mainWindow, payload);
+            });
         }
     });
     
@@ -58,11 +62,23 @@ function toggleTurnSignal(command: LightsCommands) {
     }
 }
 
+function handleZcLightsEvent(mainWindow: BrowserWindow, payload: Buffer<ArrayBufferLike>) {
+    const left = payload[0];
+    const right = payload[1];
+    const incomingPacket: IncomingPacket = {
+        zone: Zones.LIGHTS,
+        command: LightsCommands.GET_TURN_SIGNAL_LIGHTS,
+        value: [left, right],
+    };
+
+    mainWindow.webContents.send(SERO_LIGHTS_MESSAGE_CHANNEL, JSON.stringify(incomingPacket));
+}
+
 // Handles IPC messages from the renderer
 export function registerSeroHandlers() {
     // Listen for commands to control turn signals
     ipcMain.on(SERO_SEND_LIGHTS_CHANNEL, (_, args) => {
-        log.info(`[SERO_SEND_LIGHTS_CHANNEL] Received command: ${JSON.stringify(args)}`);
+        log.debug(`[SERO_SEND_LIGHTS_CHANNEL] Received command: ${JSON.stringify(args)}`);
         const { command } = args;
         toggleTurnSignal(command);
     })
