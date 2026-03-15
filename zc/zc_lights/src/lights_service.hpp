@@ -16,7 +16,7 @@ public:
         const uint8_t* /*payload*/, std::size_t /*payload_length*/,
         uint8_t*       /*response*/, std::size_t& response_length)
     {
-        response_length = 0; // all methods are fire-and-forget (no response payload)
+        response_length = 0;
         switch (method_id) {
             case Esp32ServiceConfig::ZC_LIGHTS_LEFT_ID:
                 blinker_.toggle_left();

@@ -20,6 +20,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 #include <freertos/task.h>
+#include <functional>
 #include <config.hpp>
 
 enum class BlinkerState : uint8_t {
@@ -35,11 +36,16 @@ public:
     static constexpr uint32_t BLINK_ON_MS  = 500;
     static constexpr uint32_t BLINK_OFF_MS = 500;
 
+    /// Callback fired whenever the physical LED state changes: (left_on, right_on).
+    using LedStateFn = std::function<void(uint8_t left, uint8_t right)>;
+
     BlinkerController()
         : state_(BlinkerState::OFF)
         , mutex_(xSemaphoreCreateMutex())
         , task_handle_(nullptr)
     {}
+
+    void set_led_callback(LedStateFn fn) { led_cb_ = std::move(fn); }
 
     /// Call once from setup() after Arduino GPIO is ready.
     void begin() {
@@ -98,32 +104,49 @@ public:
 
 private:
     BlinkerState      state_;
-    SemaphoreHandle_t mutex_;       // mutable so it can be taken in const getter
+    SemaphoreHandle_t mutex_;
     TaskHandle_t      task_handle_;
+    LedStateFn        led_cb_;
+    uint8_t           last_left_  = 0;
+    uint8_t           last_right_ = 0;
 
-    void all_off() const {
+    void all_off() {
         digitalWrite(Esp32HwConfig::LED_PIN_LEFT,  LOW);
         digitalWrite(Esp32HwConfig::LED_PIN_RIGHT, LOW);
+        maybe_emit(0, 0);
     }
 
-    void apply_leds(BlinkerState s, bool lit) const {
+    void apply_leds(BlinkerState s, bool lit) {
+        uint8_t l = 0, r = 0;
         switch (s) {
             case BlinkerState::LEFT:
+                l = lit ? 1 : 0;
                 digitalWrite(Esp32HwConfig::LED_PIN_LEFT,  lit ? HIGH : LOW);
                 digitalWrite(Esp32HwConfig::LED_PIN_RIGHT, LOW);
                 break;
             case BlinkerState::RIGHT:
+                r = lit ? 1 : 0;
                 digitalWrite(Esp32HwConfig::LED_PIN_LEFT,  LOW);
                 digitalWrite(Esp32HwConfig::LED_PIN_RIGHT, lit ? HIGH : LOW);
                 break;
             case BlinkerState::HAZARD:
+                l = r = lit ? 1 : 0;
                 digitalWrite(Esp32HwConfig::LED_PIN_LEFT,  lit ? HIGH : LOW);
                 digitalWrite(Esp32HwConfig::LED_PIN_RIGHT, lit ? HIGH : LOW);
                 break;
             case BlinkerState::OFF:
             default:
                 all_off();
-                break;
+                return; // all_off already calls maybe_emit
+        }
+        maybe_emit(l, r);
+    }
+
+    void maybe_emit(uint8_t left, uint8_t right) {
+        if (led_cb_ && (left != last_left_ || right != last_right_)) {
+            last_left_  = left;
+            last_right_ = right;
+            led_cb_(left, right);
         }
     }
 

@@ -37,6 +37,7 @@ struct Esp32ServiceConfig {
     static constexpr uint16_t ZC_LIGHTS_LEFT_ID      = 0x0002;
     static constexpr uint16_t ZC_LIGHTS_RIGHT_ID     = 0x0003;
     static constexpr uint16_t ZC_LIGHTS_HAZARD_ID    = 0x0004;
+    static constexpr uint16_t ZC_LIGHTS_EVENT_STATE_ID = 0x8001; // Event: blinker state changed [left, hazard, right] — bit 15 must be set for NOTIFICATION messages
 };
 
 struct Esp32HwConfig {
