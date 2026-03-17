@@ -9,9 +9,9 @@
 
 struct Esp32Config {
     static constexpr std::size_t MaxPayloadSize         = 512;
-    static constexpr std::size_t MaxServices            = 4;
-    static constexpr std::size_t MaxMethods             = 8;
-    static constexpr std::size_t MaxEvents              = 4;
+    static constexpr std::size_t MaxServices            = 1;
+    static constexpr std::size_t MaxMethods             = 4;
+    static constexpr std::size_t MaxEvents              = 2;
     static constexpr std::size_t MaxSubscribers          = 4;
     static constexpr std::size_t MaxPendingRequests      = 8;
     static constexpr std::size_t MaxKnownServices        = 8;
@@ -27,7 +27,7 @@ struct Esp32Config {
     static constexpr std::size_t MaxReceiveQueueSize     = 8;
     static constexpr std::size_t MaxTrackedPeers         = 4;
     static constexpr std::size_t HmacKeySize             = 32;
-    static constexpr std::size_t MaxDtcs                 = 8;
+    static constexpr std::size_t MaxDtcs                 = 4;
     static constexpr sero::LogLevel MinLogLevel           = sero::LogLevel::Off;
 };
 
