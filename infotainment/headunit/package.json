@@ -1,7 +1,7 @@
 {
     "name": "headunit",
     "productName": "headunit",
-    "version": "0.4.12",
+    "version": "0.4.13",
     "description": "ASL GoKart headunit package made with react, electron, electron-forge, shadcn-ui, vite and typescript",
     "main": ".vite/build/main.js",
     "scripts": {
@@ -61,7 +61,7 @@
         "vite": "^7.3.1"
     },
     "dependencies": {
-        "@asl-gokart/sero-node": "^0.2.1",
+        "@asl-gokart/sero-node": "^0.2.2",
         "@mars3d/heatmap.js": "^2.0.7",
         "@radix-ui/react-dialog": "^1.1.15",
         "@radix-ui/react-label": "^2.1.8",
