@@ -3,7 +3,7 @@
 
 import { WebSocket } from "ws";
 import { IncomingPacket, OutgoingPacket } from "./data/zonecontrollers/packets";
-import { LightsCommands, Zones } from "./data/zonecontrollers/zonecontrollers";
+import { BatteryCommands, LightsCommands, Zones } from "./data/zonecontrollers/zonecontrollers";
 
 // whether you're running in development or production).
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
@@ -26,9 +26,6 @@ interface ElectronWindow {
 interface WebSocketContext {
     send: (message: OutgoingPacket, zone: Zones) => void;
     onThrottleMessage: (callback: (throttleMessage: string) => void) => void;
-    onBatteryMessage: (callback: (batteryMessage: string) => void) => void;
-    onButtonsMessage: (callback: (buttonsMessage: string) => void) => void;
-    onLightsMessage: (callback: (lightsMessage: string) => void) => void;
 }
 
 interface AppContext {
@@ -42,8 +39,12 @@ interface AppContext {
 }
 
 interface SeroContext {
+    // zc_lights
     sendLightsCommand: (command: LightsCommands, value?: boolean | boolean[]) => void;
     onLightsMessage: (callback: (lightsMessage: string) => void) => void;
+    // zc_battery
+    sendBatteryMessage: (command: BatteryCommands, value?: boolean | boolean[]) => void;
+    onBatteryMessage: (callback: (batteryMessage: string) => void) => void;
 }
 
 

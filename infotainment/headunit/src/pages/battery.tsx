@@ -17,7 +17,7 @@ const BatteryPage = () => {
     const { setBatteryTemps, setBatteryVoltage, setBatteryCurrent } = useStore();
 
     useEffect(() => {
-        window.websocket.onBatteryMessage((incomingPacket: string) => {
+        window.sero.onBatteryMessage((incomingPacket: string) => {
           log.debug("Received incoming battery message in battery.tsx");
           const parsed: IncomingPacket = JSON.parse(incomingPacket);
           switch(parsed.command) {
@@ -36,7 +36,7 @@ const BatteryPage = () => {
         });
     // Cleanup listener on component unmount
     return () => {
-        window.websocket.onBatteryMessage(() => {});
+        window.sero.onBatteryMessage(() => {});
       };
   }, []);
 
@@ -66,10 +66,10 @@ const BatteryPage = () => {
                         <div className="flex flex-col mt-2">
                             <div className="flex flex-row justify-evenly">
                                 <ValueCard label="Voltage" value={voltage.toFixed(1)} unit="V"/>
-                                <ValueCard label="Current" value={batteryCurrent.toFixed(0)} unit="A"/>
+                                <ValueCard label="Current" value={batteryCurrent.toFixed(1)} unit="A"/>
                                 { ((batteryCurrent * voltage) < 1000) ?
-                                    <ValueCard label="Power" value={(batteryCurrent * voltage).toFixed(0)} unit="W"/> :
-                                    <ValueCard label="Power" value={(batteryCurrent * voltage / 1000).toFixed(1)} unit="kW"/>
+                                    <ValueCard label="Power" value={(batteryCurrent * voltage).toFixed(2)} unit="W"/> :
+                                    <ValueCard label="Power" value={(batteryCurrent * voltage / 1000).toFixed(2)} unit="kW"/>
                                 }
                             </div>
                         </div>

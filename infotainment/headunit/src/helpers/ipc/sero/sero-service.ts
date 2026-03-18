@@ -4,8 +4,8 @@ import {
 } from '@asl-gokart/sero-node';
 import { BrowserWindow, ipcMain, ipcRenderer } from 'electron';
 import log from 'electron-log/main';
-import { SERO_SEND_LIGHTS_CHANNEL, SERO_LIGHTS_MESSAGE_CHANNEL } from './sero-channels';
-import { LightsCommands, Zones } from '@/data/zonecontrollers/zonecontrollers';
+import { SERO_SEND_LIGHTS_CHANNEL, SERO_LIGHTS_MESSAGE_CHANNEL, SERO_BATTERY_MESSAGE_CHANNEL } from './sero-channels';
+import { BatteryCommands, LightsCommands, Zones } from '@/data/zonecontrollers/zonecontrollers';
 import { IncomingPacket } from '@/data/zonecontrollers/packets';
 
 const UNICAST_PORT = 30491;
@@ -33,6 +33,23 @@ export function startSeroService(mainWindow: BrowserWindow) {
                 handleZcLightsEvent(mainWindow, payload);
             });
         }
+        if(serviceId == 0x0003) {
+            // Subscribe to battery voltage events (event ID 0x8001: float voltage)
+            rt.subscribeEvent(0x0003, 0x8001, (svcId, evtId, payload) => {
+                log.debug(`[SERO] Battery voltage event: voltage=${payload.readFloatLE(0)}`);
+                handleZcBatteryVoltageEvent(mainWindow, payload);
+            });
+            rt.subscribeEvent(0x0003, 0x8002, (svcId, evtId, payload) => {
+                log.debug(`[SERO] Battery current event: current=${payload.readFloatLE(0)}`);
+                handleZcBatteryCurrentEvent(mainWindow, payload);
+            });
+            rt.subscribeEvent(0x0003, 0x8003, (svcId, evtId, payload) => {
+                const floatCount = Math.floor(payload.length / 4);
+                const tempValues = Array.from({ length: floatCount }, (_, i) => payload.readFloatLE(i * 4));
+                log.debug(`[SERO] Battery temperature event: temperatures=[${tempValues.join(', ')}]`);
+                handleZcBatteryTemperatureEvent(mainWindow, tempValues);
+            });
+        }
     });
     
     rt.onServiceLost((service) => {
@@ -44,9 +61,12 @@ export function startSeroService(mainWindow: BrowserWindow) {
     });
 
     rt.findService(0x0001);
+    rt.findService(0x0003);
 
     
 }
+
+// --- zc_lights ---------------------------------------------------------------------------
 
 function toggleTurnSignal(command: LightsCommands) {
     switch (command) {
@@ -73,6 +93,42 @@ function handleZcLightsEvent(mainWindow: BrowserWindow, payload: Buffer<ArrayBuf
 
     mainWindow.webContents.send(SERO_LIGHTS_MESSAGE_CHANNEL, JSON.stringify(incomingPacket));
 }
+
+// --- zc_battery ---------------------------------------------------------------------------
+
+function handleZcBatteryVoltageEvent(mainWindow: BrowserWindow, payload: any) {
+    const voltage = payload.readFloatLE(0);
+    const incomingPacket: IncomingPacket = {
+        zone: Zones.BATTERY,
+        command: BatteryCommands.GET_VOLTAGE, // Event ID for voltage change
+        value: voltage,
+    };
+
+    mainWindow.webContents.send(SERO_BATTERY_MESSAGE_CHANNEL, JSON.stringify(incomingPacket));
+}
+
+function handleZcBatteryCurrentEvent(mainWindow: BrowserWindow, payload: any) {
+    const current = payload.readFloatLE(0);
+    const incomingPacket: IncomingPacket = {
+        zone: Zones.BATTERY,
+        command: BatteryCommands.GET_CURRENT, // Event ID for current change
+        value: current,
+    };
+
+    mainWindow.webContents.send(SERO_BATTERY_MESSAGE_CHANNEL, JSON.stringify(incomingPacket));
+}
+
+function handleZcBatteryTemperatureEvent(mainWindow: BrowserWindow, temps: number[]) {
+    const incomingPacket: IncomingPacket = {
+        zone: Zones.BATTERY,
+        command: BatteryCommands.GET_TEMP,
+        value: temps,
+    };
+
+    mainWindow.webContents.send(SERO_BATTERY_MESSAGE_CHANNEL, JSON.stringify(incomingPacket));
+}
+
+// -----------------------------------------------------------------------------------------
 
 // Handles IPC messages from the renderer
 export function registerSeroHandlers() {

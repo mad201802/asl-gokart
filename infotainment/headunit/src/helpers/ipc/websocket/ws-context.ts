@@ -14,14 +14,5 @@ export function exposeWebSocketContext() {
         onThrottleMessage: (callback: (throttleMessage: string) => void) => {
             ipcRenderer.on(WEBSOCKET_THROTTLE_MESSAGE_CHANNEL, (_, message) => callback(message));
         },
-        onBatteryMessage: (callback: (batteryMessage: string) => void) => {
-            ipcRenderer.on(WEBSOCKET_BATTERY_MESSAGE_CHANNEL, (_, message) => callback(message));
-        },
-        onButtonsMessage: (callback: (buttonsMessage: string) => void) => {
-            ipcRenderer.on(WEBSOCKET_BUTTONS_MESSAGE_CHANNEL, (_, message) => callback(message));
-        },
-        onLightsMessage: (callback: (lightsMessage: string) => void) => {
-            ipcRenderer.on(WEBSOCKET_LIGHTS_MESSAGE_CHANNEL, (_, message) => callback(message));
-        },
     });
 }
