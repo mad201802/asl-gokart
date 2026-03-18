@@ -159,8 +159,10 @@ public:
     /**
      * @brief Initializes this driver
      * @details Configures the serial peripheral and pre-loads the transmit buffer with command-independent bytes
+     * @param rx_pin  RX GPIO pin (-1 = board default)
+     * @param tx_pin  TX GPIO pin (-1 = board default)
      */
-    bool Init();
+    bool Init(int rx_pin = -1, int tx_pin = -1);
 
     /**
      * @brief Updating the Data from the BMS

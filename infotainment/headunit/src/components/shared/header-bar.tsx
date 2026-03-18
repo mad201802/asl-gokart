@@ -6,6 +6,7 @@ import { useStore } from "@/stores/useStore";
 import React, { useEffect } from "react";
 import { IncomingPacket } from "@/data/zonecontrollers/packets";
 import { BatteryCommands } from "@/data/zonecontrollers/zonecontrollers";
+import log from "@/lib/logger";
 
 export const HeaderBar = () => {
 
@@ -13,8 +14,8 @@ export const HeaderBar = () => {
     const { setBatteryVoltage } = useStore();
 
     useEffect(() => {
-        window.websocket.onBatteryMessage((incomingPacket: string) => {
-          // console.debug("Received incoming battery message header_bar .tsx");
+        window.sero.onBatteryMessage((incomingPacket: string) => {
+          log.debug("Received incoming battery message header-bar.tsx");
           const parsed: IncomingPacket = JSON.parse(incomingPacket);
           switch(parsed.command) {
             case BatteryCommands.GET_VOLTAGE:
@@ -24,7 +25,7 @@ export const HeaderBar = () => {
         });
     // Cleanup listener on component unmount
     return () => {
-        window.websocket.onBatteryMessage(() => {});
+        window.sero.onBatteryMessage(() => {});
       };
     }, []);
 

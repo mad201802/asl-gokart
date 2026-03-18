@@ -15,6 +15,13 @@ if [[ -z "$GITHUB_PAT" ]]; then
     echo "Error: GITHUB_PAT is not set. Please set it to a valid GitHub Personal Access Token with repo access."
     exit 1
 fi
+
+# Check internet connectivity by pinging GitHub API
+if ! ping -c 1 api.github.com &> /dev/null; then
+    echo "Error: No internet connectivity. Please check your network connection and try again."
+    exit 1
+fi
+
 # Check if the GITHUB_PAT is valid by making a simple API request
 response=$(curl -sH "Authorization: Bearer ${GITHUB_PAT}" "${GITHUB_API_BASE_URL}/user")
 if [[ -z "$(echo "$response" | jq -r '.login // empty')" ]]; then
