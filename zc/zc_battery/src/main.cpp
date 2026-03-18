@@ -1,107 +1,73 @@
 #include <Arduino.h>
 #include "esp_log.h"
 #include <ETH.h>
-#include <WebSocketsClient.h>
-#include <ArduinoJson.h>
-#include "SensorManager.h"
+#include <sero.hpp>
+#include <udp_transport_esp32.hpp>
+#include "temp_sensor.hpp"
+#include "battery_service.hpp"
 #include "daly-bms-uart.h"
 
+const char* FIRMWARE_VERSION = "0.3.0";
 
-const char* FIRMWARE_VERSION = "0.2.1";
+// --- Type Aliases -----------------------------------------------
 
-// Pinout BMS Connector:
-// Yellow -> BMS RX
-// Green  -> BMS TX
+using Runtime = sero::Runtime<esp32_app::UdpTransportEsp32, Esp32Config>;
+using Addr    = sero::Address<Esp32Config>;
 
-// Wire Yellow to U1TXD (GPIO4) on the Olimex ESP32-POE-ISO
-// Wire Green to U1RXD (GPIO36) on the Olimex ESP32-POE-ISO
+// --- Global Objects ---------------------------------------------
 
-#define BMS_SERIAL Serial1 // Set the serial port for communication with the Daly BMS
-// Construct the BMS driver and passing in the Serial interface (which pins to use)
-Daly_BMS_UART bms(BMS_SERIAL);
+static esp32_app::UdpTransportEsp32 transport;
+static Runtime* runtime_ptr = nullptr;
 
-unsigned long startTime;
-unsigned long duration;
+static TempSensor temp_sensor;
 
-float biggestVoltage = 0;
-float biggestCurrent = 0;
-float biggestSOC = 0;
-long biggestDelay = 0;
+#define BMS_SERIAL Serial1
+static Daly_BMS_UART bms(BMS_SERIAL);
 
-// Olimex IP-Adresse unten im Code anpassen!
-// WICHITG: IP-Adresse und Port des WebSocket-Servers (headunit) hier anpassen:
-WebSocketsClient webSocket;             // WebSocket client instance
+// --- Timing -----------------------------------------------------
 
+static constexpr uint32_t BMS_POLL_INTERVAL_MS  = 1000;
+static constexpr uint32_t TEMP_POLL_INTERVAL_MS = 2000;
 
-const char* serverUrl = "192.168.1.100";    // WebSocket server / "headunit" IPv4 address
-const int serverPort = 6969;                // WebSocket server / "headunit" port
-bool SEND_TEMP = true;                      // Send temperature data YES/NO (true/false)    
-bool SEND_BMS = true;                       // Send BMS data YES/NO (true/false)
-int MESSAGE_INTERVAL_TEMP = 1000;           // Send temperature data every X ms
-int MESSAGE_INTERVAL_BMS = 5;              // Send BMS data every X ms
+static uint32_t last_bms_poll     = 0;
+static uint32_t last_temp_request = 0;
 
-long lastTimeTempSent = 0;
-long lastTimeBmsSent = 0;
+// Cached BMS values for change-detection
+static float last_voltage = 0.0f;
+static float last_current = 0.0f;
 
-void sendRegister();
-void sendSensorMsg();
-void sendBmsMsg();
-void onWebSocketEvent(WStype_t type, uint8_t *payload, size_t length);
+// --- Function Declarations --------------------------------------
+
 void WiFiEvent(WiFiEvent_t event);
+void connect_ethernet();
+
+// ----------------------------------------------------------------
 
 void WiFiEvent(WiFiEvent_t event) {
-  switch (event) {
-    case SYSTEM_EVENT_ETH_START:
-      Serial.println("ETH Started");
-      // Set the hostname for the ESP32
-      ETH.setHostname("esp32-poe");
-      break;
-    case SYSTEM_EVENT_ETH_CONNECTED:
-      Serial.println("ETH Connected");
-      break;
-    case SYSTEM_EVENT_ETH_GOT_IP:
-      Serial.print("ETH IP Address: ");
-      Serial.println(ETH.localIP());
-      break;
-    case SYSTEM_EVENT_ETH_DISCONNECTED:
-      Serial.println("ETH Disconnected");
-      break;
-    case SYSTEM_EVENT_ETH_STOP:
-      Serial.println("ETH Stopped");
-      break;
-    default:
-      break;
-  }
-}
-
-void onWebSocketEvent(WStype_t type, uint8_t *payload, size_t length) {
-    switch (type) {
-        case WStype_DISCONNECTED:
-            Serial.printf("Disconnected!\n");
+    switch (event) {
+        case ARDUINO_EVENT_ETH_START:
+            Serial.println("ETH Started");
+            ETH.setHostname("zc-battery");
             break;
-        case WStype_CONNECTED:
-            Serial.printf("Connected to URL: %s\n", payload);
-            sendRegister();
+        case ARDUINO_EVENT_ETH_CONNECTED:
+            Serial.println("ETH Connected");
             break;
-        case WStype_TEXT:
-            Serial.printf("Received text: %s\n", payload);
+        case ARDUINO_EVENT_ETH_GOT_IP:
+            Serial.print("ETH IP Address: ");
+            Serial.println(ETH.localIP());
             break;
-        case WStype_BIN:
-            Serial.printf("Received binary data.\n");
+        case ARDUINO_EVENT_ETH_DISCONNECTED:
+            Serial.println("ETH Disconnected");
             break;
-        case WStype_PING:
-            Serial.printf("Received ping.\n");
+        case ARDUINO_EVENT_ETH_STOP:
+            Serial.println("ETH Stopped");
             break;
-        case WStype_PONG:
-            Serial.printf("Received pong.\n");
-            break;
-        case WStype_ERROR:
-            Serial.printf("Error: %s\n", payload);
+        default:
             break;
     }
 }
 
-void setup() {
+void connect_ethernet() {
     esp_log_level_set("*", ESP_LOG_VERBOSE);
     Serial.begin(115200);
     delay(1000);
@@ -110,21 +76,17 @@ void setup() {
     Serial.println("");
     Serial.println("Authors: AEROSPACE-LAB Team Gokart");
     Serial.println("####################################");
-    // Initialize Ethernet
+
     WiFi.onEvent(WiFiEvent);
-    webSocket.onEvent(onWebSocketEvent);
     ETH.begin();
-    /* -------------------- HIER DIE IP-Adressen vom ESP und Gateway konfigurieren -------------------- */
-    ETH.config(IPAddress(192, 168, 1, 4), IPAddress(192, 168, 1, 1), IPAddress(255, 255, 255, 0));
-    /* -------------------------------------------------------------------------------------------------*/
-    // Wait for Ethernet to connect
+    ETH.config(IPAddress(192, 168, 1, 6), IPAddress(192, 168, 1, 1), IPAddress(255, 255, 255, 0));
+
     Serial.print("Connecting to Ethernet");
     while (!ETH.linkUp()) {
         delay(500);
         Serial.print(".");
     }
-    // Print Ethernet information
-    Serial.println("Connected to Ethernet");
+    Serial.println("\nConnected to Ethernet");
     Serial.print("IP address: ");
     Serial.println(ETH.localIP());
     Serial.print("Gateway: ");
@@ -132,160 +94,106 @@ void setup() {
     Serial.print("Subnet: ");
     Serial.println(ETH.subnetMask());
 
-    // Connect to WebSocket server
-    webSocket.begin(serverUrl, serverPort, "/");
     delay(50);
-    webSocket.loop();
     Serial.println("Setup complete");
-
-    if(SEND_TEMP) {
-        initializeSensors();     // Initialize temperature sensors
-    } else {
-        Serial.println("WARNING: Temperature data sending disabled in config options!");
-    }
-    if(SEND_BMS) {
-        bms.Init();              // This call sets up the bms driver
-    } else {
-        Serial.println("WARNING: BMS data sending disabled in config options!");
-    }
 }
+
+// ================================================================
+//  setup
+// ================================================================
+
+void setup() {
+    connect_ethernet();
+
+    // ── Peripherals ─────────────────────────────────────────────
+    bms.Init(Esp32HwConfig::BMS_UART_RX_PIN, Esp32HwConfig::BMS_UART_TX_PIN);
+    temp_sensor.begin();
+
+    // ── Transport ───────────────────────────────────────────────
+    if (!transport.init(Esp32ServiceConfig::ESP32_UNICAST_PORT)) {
+        Serial.println("[ERROR] Transport init failed!");
+        while (true) delay(1000);
+    }
+
+    // ── Runtime ─────────────────────────────────────────────────
+    static Runtime rt(transport, Esp32ServiceConfig::ESP32_UNICAST_PORT);
+    runtime_ptr = &rt;
+    rt.set_local_address(transport.local_addr());
+
+    uint32_t now = millis();
+
+    // ── Events ──────────────────────────────────────────────────
+    rt.register_event(Esp32ServiceConfig::ZC_BATTERY_ID, Esp32ServiceConfig::ZC_BATTERY_EVENT_VOLTAGE_ID);
+    rt.register_event(Esp32ServiceConfig::ZC_BATTERY_ID, Esp32ServiceConfig::ZC_BATTERY_EVENT_CURRENT_ID);
+    rt.register_event(Esp32ServiceConfig::ZC_BATTERY_ID, Esp32ServiceConfig::ZC_BATTERY_EVENT_TEMP_ID);
+
+    // ── Service ─────────────────────────────────────────────────
+    static BatteryService battery_svc;
+    rt.register_service(Esp32ServiceConfig::ZC_BATTERY_ID, battery_svc,
+                        1, 0,
+                        /*auth_required=*/false);
+    rt.offer_service(Esp32ServiceConfig::ZC_BATTERY_ID, /*ttl=*/30, now);
+    std::printf("[server] BatteryService 0x%04X offered\n", Esp32ServiceConfig::ZC_BATTERY_ID);
+
+    // ── Kick off first temperature conversion ───────────────────
+    temp_sensor.requestConversion();
+    last_temp_request = now;
+}
+
+// ================================================================
+//  loop
+// ================================================================
 
 void loop() {
-    // Maintain WebSocket connection
-    webSocket.loop();
-    delay(1);
-    // Send messages to WebSocket server
-    if(SEND_TEMP) {
-        sendSensorMsg();
-    }
-    if(SEND_BMS) {
-        sendBmsMsg();
-    }
-}
+    Runtime& rt = *runtime_ptr;
+    uint32_t now = millis();
 
+    // ── Process protocol (poll transport, dispatch, housekeeping)
+    rt.process(now);
 
-void sendRegister() {
-  webSocket.sendTXT("{ \"zone\": \"battery\" }");
-  Serial.println("Register package sent");
-}
+    // ── BMS polling ─────────────────────────────────────────────
+    if (now - last_bms_poll >= BMS_POLL_INTERVAL_MS) {
+        last_bms_poll = now;
 
-void sendSensorMsg() {
-    if (millis() - lastTimeTempSent < MESSAGE_INTERVAL_TEMP) {
-        return;
-    }
+        if (bms.getPackMeasurements()) {
+            float v = bms.get.packVoltage;
+            float c = bms.get.packCurrent;
 
-
-    /* ############### WARNING - THIS CAUSES THE HEADUNIT TO SEND A FAULTY PONG FRAME AND THUS RESULTS IN A DISCONNECT OF THE OLIMEX WS CLIENT */
-    // webSocket.sendPing();
-    /* ############### WARNING - THIS CAUSES THE HEADUNIT TO SEND A FAULTY PONG FRAME AND THUS RESULTS IN A DISCONNECT OF THE OLIMEX WS CLIENT */
-
-
-    // Get temperature data from sensors
-    std::vector<float> temperatures = sensorLoop();
-    Serial.println("Sensors array before sending: ");
-    for (float temp : temperatures) {
-        Serial.print(temp);
-        Serial.print(" ");
-    }
-    Serial.println();
-
-    // Send temperature data to WebSocket server
-    /*
-    Format of the JSON message:
-    {
-        "zone": "battery",
-        "command": "getTemp",
-        "value": [20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0, 55.0]
-    }
-    */
-    char output[256];
-    StaticJsonDocument<256> doc;
-    doc["zone"] = "battery";
-    doc["command"] = "getTemp";
-    JsonArray value = doc["value"].to<JsonArray>();
-    for (float temp : temperatures) {
-        value.add(temp);
-    }
-
-    // Optional: Reduce memory footprint
-    // doc.shrinkToFit();
-
-    // Serialize JSON to buffer
-    size_t n = serializeJson(doc, output, sizeof(output));
-    if (n == sizeof(output)) {
-        Serial.println(F("Error: JSON message truncated"));
-    } else {
-        if(webSocket.sendTXT(output)) {
-            Serial.println(F("Temperature data sent"));
-            Serial.println(output);
-            lastTimeTempSent = millis();
+            if (v != last_voltage) {
+                last_voltage = v;
+                Serial.printf("[bms] Voltage changed: %.2f V — firing event\n", v);
+                rt.notify_event(Esp32ServiceConfig::ZC_BATTERY_ID,
+                                Esp32ServiceConfig::ZC_BATTERY_EVENT_VOLTAGE_ID,
+                                reinterpret_cast<const uint8_t*>(&v), sizeof(v));
+            }
+            if (c != last_current) {
+                last_current = c;
+                Serial.printf("[bms] Current changed: %.2f A — firing event\n", c);
+                rt.notify_event(Esp32ServiceConfig::ZC_BATTERY_ID,
+                                Esp32ServiceConfig::ZC_BATTERY_EVENT_CURRENT_ID,
+                                reinterpret_cast<const uint8_t*>(&c), sizeof(c));
+            }
         } else {
-            Serial.println(F("Failed to send temperature data"));
-            lastTimeTempSent = millis();
-        }
-    }
-}
-
-void sendBmsMsg() {
-    if (millis() - lastTimeBmsSent < MESSAGE_INTERVAL_BMS) {
-        return;
-    }
-    bms.update();
-
-    // Send BMS voltage data to WebSocket server
-    /*
-    Format of the JSON message:
-    {
-        "zone": "battery",
-        "command": "getVoltage",
-        "value": 123.4
-    }
-    */
-    char output[256];
-    StaticJsonDocument<256> doc;
-    doc["zone"] = "battery";
-    doc["command"] = "getVoltage";
-    doc["value"] = bms.get.packVoltage;
-    // Serialize JSON to buffer
-    size_t n = serializeJson(doc, output, sizeof(output));
-    if (n == sizeof(output)) {
-        Serial.println(F("Error: JSON message truncated"));
-    } else {
-        if(webSocket.sendTXT(output)) {
-            Serial.println(F("Voltage data sent"));
-            Serial.println(output);
-            lastTimeBmsSent = millis();
-        } else {
-            Serial.println(F("Failed to send voltage data"));
-            lastTimeBmsSent = millis();
+            Serial.println("[bms] getPackMeasurements() failed — BMS not responding");
         }
     }
 
-        /*
-    Format of the JSON message:
-    {
-        "zone": "battery",
-        "command": "getCurrent",
-        "value": 95.0
-    }
-    */
-    char output2[256];
-    StaticJsonDocument<256> doc2;
-    doc["zone"] = "battery";
-    doc["command"] = "getCurrent";
-    doc["value"] = bms.get.packCurrent;
-    // Serialize JSON to buffer
-    size_t n2 = serializeJson(doc, output2, sizeof(output2));
-    if (n2 == sizeof(output2)) {
-        Serial.println(F("Error: JSON message truncated"));
-    } else {
-        if(webSocket.sendTXT(output2)) {
-            Serial.println(F("Current data sent"));
-            Serial.println(output2);
-            lastTimeBmsSent = millis();
-        } else {
-            Serial.println(F("Failed to send current data"));
-            lastTimeBmsSent = millis();
+    // ── Temperature polling (non-blocking) ──────────────────────
+    if (temp_sensor.isConversionReady()) {
+        auto temps = temp_sensor.readTemperatures();
+        if (!temps.empty()) {
+            Serial.print("[temp] Firing event with temperatures:");
+            for (float t : temps) Serial.printf(" %.2f", t);
+            Serial.println();
+            rt.notify_event(Esp32ServiceConfig::ZC_BATTERY_ID,
+                            Esp32ServiceConfig::ZC_BATTERY_EVENT_TEMP_ID,
+                            reinterpret_cast<const uint8_t*>(temps.data()),
+                            temps.size() * sizeof(float));
         }
+    }
+    // Re-arm next conversion after the polling interval
+    if (!temp_sensor.isConversionReady() && (now - last_temp_request >= TEMP_POLL_INTERVAL_MS)) {
+        temp_sensor.requestConversion();
+        last_temp_request = now;
     }
 }

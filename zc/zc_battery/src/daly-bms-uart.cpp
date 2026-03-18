@@ -13,7 +13,7 @@ Daly_BMS_UART::Daly_BMS_UART(HardwareSerial &serial_peripheral)
     this->my_serialIntf = &serial_peripheral;
 }
 
-bool Daly_BMS_UART::Init()
+bool Daly_BMS_UART::Init(int rx_pin, int tx_pin)
 {
 #ifdef DEBUG_SERIAL
     // Initialize debug serial interface
@@ -30,7 +30,12 @@ bool Daly_BMS_UART::Init()
     }
 
     // Initialize the serial link to 9600 baud with 8 data bits and no parity bits, per the Daly BMS spec
-    this->my_serialIntf->begin(9600, SERIAL_8N1);
+    if (rx_pin >= 0 && tx_pin >= 0)
+        this->my_serialIntf->begin(9600, SERIAL_8N1, rx_pin, tx_pin);
+    else
+        this->my_serialIntf->begin(9600, SERIAL_8N1);
+    // Short timeout: 13 bytes at 9600 baud takes ~13 ms; 150 ms is generous without blocking the main loop
+    this->my_serialIntf->setTimeout(150);
 
     // Set up the output buffer with some values that won't be changing
     this->my_txBuffer[0] = 0xA5; // Start byte
