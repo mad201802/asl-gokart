@@ -33,15 +33,25 @@ struct Esp32Config {
 
 struct Esp32ServiceConfig {
     static constexpr uint16_t ESP32_UNICAST_PORT     = 30491;
+    // Methods
     static constexpr uint16_t ZC_LIGHTS_ID           = 0x0001;
     static constexpr uint16_t ZC_LIGHTS_LEFT_ID      = 0x0002;
     static constexpr uint16_t ZC_LIGHTS_RIGHT_ID     = 0x0003;
     static constexpr uint16_t ZC_LIGHTS_HAZARD_ID    = 0x0004;
+    static constexpr uint16_t ZC_LIGHTS_HEADLIGHTS_ID = 0x0005;
+    static constexpr uint16_t ZC_LIGHTS_HIGH_BEAMS_ID = 0x0006;
+    // Events (bit 15 must be set, and IDs must be >= 0x8000)
     static constexpr uint16_t ZC_LIGHTS_EVENT_STATE_ID = 0x8001; // Event: blinker state changed [left, hazard, right] — bit 15 must be set for NOTIFICATION messages
+    static constexpr uint16_t ZC_LIGHTS_EVENT_HEADLIGHT_STATE_ID = 0x8002;
+    static constexpr uint16_t ZC_LIGHTS_EVENT_HIGH_BEAM_STATE_ID = 0x8003;  
 };
 
 struct Esp32HwConfig {
     // Define any hardware-specific configuration parameters here, such as GPIO pins.
     static constexpr int LED_PIN_LEFT = GPIO_NUM_14;
     static constexpr int LED_PIN_RIGHT = GPIO_NUM_15;
+    static constexpr int LED_PIN_HEADLIGHT_LEFT = GPIO_NUM_32;
+    static constexpr int LED_PIN_HEADLIGHT_RIGHT = GPIO_NUM_33;
+    static constexpr int LED_PIN_HIGH_BEAM_LEFT = GPIO_NUM_3;
+    static constexpr int LED_PIN_HIGH_BEAM_RIGHT = GPIO_NUM_4; 
 };

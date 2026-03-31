@@ -4,10 +4,11 @@
 #include <sero.hpp>
 #include <config.hpp>
 #include <blinker_controller.hpp>
+#include <headlights_controller.hpp>
 
 class LightsService : public sero::IService<LightsService> {
 public:
-    explicit LightsService(BlinkerController& blinker) : blinker_(blinker) {}
+    explicit LightsService(BlinkerController& blinker, HeadlightsController& headlights) : blinker_(blinker), headlights_(headlights) {}
 
     bool impl_is_ready() const { return true; }
 
@@ -27,6 +28,13 @@ public:
             case Esp32ServiceConfig::ZC_LIGHTS_HAZARD_ID:
                 blinker_.toggle_hazard();
                 return sero::ReturnCode::E_OK;
+            case Esp32ServiceConfig::ZC_LIGHTS_HEADLIGHTS_ID:
+                headlights_.toggle_headlights();
+                return sero::ReturnCode::E_OK;
+            case Esp32ServiceConfig::ZC_LIGHTS_HIGH_BEAMS_ID:
+                headlights_.toggle_high_beams();
+                return sero::ReturnCode::E_OK;
+            // Also create headlight_controller.hpp
             default:
                 return sero::ReturnCode::E_UNKNOWN_METHOD;
         }
@@ -34,4 +42,5 @@ public:
 
 private:
     BlinkerController& blinker_;
+    HeadlightsController& headlights_;
 };

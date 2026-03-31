@@ -45,6 +45,10 @@ export enum LightsCommands {
     SET_TOGGLE_TURN_SIGNAL_LEFT = "setToggleTurnSignalLeft",
     SET_TOGGLE_TURN_SIGNAL_RIGHT = "setToggleTurnSignalRight",
     SET_TOGGLE_HAZARD_LIGHTS = "setToggleHazardLights",
+    GET_HEADLIGHTS = "getHeadlights",
+    SET_TOGGLE_HEADLIGHTS = "setToggleHeadlights",
+    GET_HIGH_BEAMS = "getHighBeams",
+    SET_TOGGLE_HIGH_BEAMS = "setToggleHighBeams",
 }
 
 export class ZoneController{
