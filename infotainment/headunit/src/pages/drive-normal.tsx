@@ -12,7 +12,7 @@ import ResetDailyDistanceDialog from "@/components/shared/reset-daily-distance-d
 import React, { useEffect } from "react";
 import { IncomingPacket, OutgoingPacket, RegisterPacket } from "@/data/zonecontrollers/packets";
 import { ButtonsCommands, LightsCommands, ThrottleCommands, Zones } from "@/data/zonecontrollers/zonecontrollers";
-import { OctagonAlert, SquareArrowLeft, SquareArrowRight, TriangleAlert } from "lucide-react";
+import { Lightbulb, OctagonAlert, Spotlight, SquareArrowLeft, SquareArrowRight, TriangleAlert } from "lucide-react";
 import log from "@/lib/logger";
 
 interface Segment {
@@ -90,8 +90,8 @@ function interpolateColorBetween(
 
 const DriveNormalPage = () => {
 
-  const { gear, rawThrottle, throttle, showRawThrottle, rpm, speed, rpmBoundaries, batteryPercentage, turnSignalRight, turnSignalLeft, hazardLights } = useStore()
-  const { setRpm, setRawThrottle, setThrottle, setGear, setTurnSignalRight, setTurnSignalLeft, setHazardLights } = useStore();
+  const { gear, rawThrottle, throttle, showRawThrottle, rpm, speed, rpmBoundaries, batteryPercentage, turnSignalRight, turnSignalLeft, hazardLights, headlights, highBeams } = useStore()
+  const { setRpm, setRawThrottle, setThrottle, setGear, setTurnSignalRight, setTurnSignalLeft, setHazardLights, setHeadlights, setHighBeams } = useStore();
 
   useEffect(() => {
     window.websocket.onThrottleMessage((incomingPacket: string) => {
@@ -122,6 +122,12 @@ const DriveNormalPage = () => {
             setTurnSignalLeft(parsed.value[0]);
             setHazardLights(parsed.value[0] === 1 && parsed.value[1] === 1);
             setTurnSignalRight(parsed.value[1]);
+            break;
+        case LightsCommands.GET_HEADLIGHTS:
+            setHeadlights([parsed.value[0] === 1, parsed.value[1] === 1]);
+            break;
+        case LightsCommands.GET_HIGH_BEAMS:
+            setHighBeams([parsed.value[0] === 1, parsed.value[1] === 1]);
             break;
         default:
             log.error("Invalid command (data type) received in lights message!");
@@ -240,10 +246,16 @@ const DriveNormalPage = () => {
           <div className="flex flex-row items-start gap-x-6 justify-evenly">
                 {/* Use color text-red-500 if critical or text-orange-400 if warning */}
 
-                {/* <OctagonAlert size={36} className="text-orange-400" /> */}
-                <OctagonAlert size={36} className="text-gray-700" />
-                {/* <OctagonAlert size={36} className="text-red-500" /> */}
-                <OctagonAlert size={36} className="text-gray-700" />
+                {(headlights[0] || headlights[1]) ?
+                  <Lightbulb size={36} className="text-green-600" onClick={() => window.sero.sendLightsCommand(LightsCommands.SET_TOGGLE_HEADLIGHTS)} />
+                  :
+                  <Lightbulb size={36} className="text-gray-700" onClick={() => window.sero.sendLightsCommand(LightsCommands.SET_TOGGLE_HEADLIGHTS)} />
+                }
+                {(highBeams[0] || highBeams[1]) ?
+                  <Spotlight size={36} className="text-blue-600" onClick={() => window.sero.sendLightsCommand(LightsCommands.SET_TOGGLE_HIGH_BEAMS)} />
+                  :
+                  <Spotlight size={36} className="text-gray-700" onClick={() => window.sero.sendLightsCommand(LightsCommands.SET_TOGGLE_HIGH_BEAMS)} />
+                }
                 {/* <OctagonAlert size={36} className="text-red-500" /> */}
                 <OctagonAlert size={36} className="text-gray-700" />
 

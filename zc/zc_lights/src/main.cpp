@@ -4,6 +4,7 @@
 #include <sero.hpp>
 #include <udp_transport_esp32.hpp>
 #include <blinker_controller.hpp>
+#include <headlights_controller.hpp>
 #include <lights_service.hpp>
 
 const char* FIRMWARE_VERSION = "0.1.0";
@@ -20,6 +21,7 @@ static esp32_app::UdpTransportEsp32 transport;
 static Runtime* runtime_ptr = nullptr;
 
 static BlinkerController blinker;
+static HeadlightsController headlights;
 
 // --- Function Declarations ----------------------------------------------
 void WiFiEvent(WiFiEvent_t event);
@@ -89,6 +91,7 @@ void connect_ethernet() {
 void setup() {
     connect_ethernet();
     blinker.begin(); // initialises GPIO pins and starts blink task
+    headlights.begin(); // initialises GPIO pins for headlights
 
     // ── Transport ───────────────────────────────────────────────
     if (!transport.init(Esp32ServiceConfig::ESP32_UNICAST_PORT)) {
@@ -104,6 +107,9 @@ void setup() {
     uint32_t now = millis();
 
     rt.register_event(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_EVENT_STATE_ID);
+    rt.register_event(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_EVENT_HEADLIGHT_STATE_ID);
+    rt.register_event(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_EVENT_HIGH_BEAM_STATE_ID);
+
 
     blinker.set_led_callback([](uint8_t left, uint8_t right) {
         if (!runtime_ptr) return;
@@ -113,7 +119,23 @@ void setup() {
                                   payload, 2);
     });
 
-    static LightsService lights_svc(blinker);
+    headlights.set_headlight_callback([](uint8_t left, uint8_t right) {
+        if (!runtime_ptr) return;
+        uint8_t payload[2] = { left, right };
+        runtime_ptr->notify_event(Esp32ServiceConfig::ZC_LIGHTS_ID,
+                                  Esp32ServiceConfig::ZC_LIGHTS_EVENT_HEADLIGHT_STATE_ID,
+                                  payload, 2);
+    });
+
+    headlights.set_high_beam_callback([](uint8_t left, uint8_t right) {
+        if (!runtime_ptr) return;
+        uint8_t payload[2] = { left, right };
+        runtime_ptr->notify_event(Esp32ServiceConfig::ZC_LIGHTS_ID,
+                                  Esp32ServiceConfig::ZC_LIGHTS_EVENT_HIGH_BEAM_STATE_ID,
+                                  payload, 2);
+    });
+
+    static LightsService lights_svc(blinker, headlights);
 
     rt.register_service(Esp32ServiceConfig::ZC_LIGHTS_ID, lights_svc,
                         1, 0,

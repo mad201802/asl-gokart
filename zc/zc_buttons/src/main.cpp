@@ -193,6 +193,8 @@ void loop() {
                        payload, sizeof(payload), on_lights_response, nullptr, 2000, now);
             Serial.println("Button 3 pressed - method call sent");
         }
+        // Add more buttons and method calls here for headlight control
+        //
     }
 }
 
