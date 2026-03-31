@@ -1,6 +1,7 @@
 #pragma once
 /// @file blinker_controller.hpp
-/// Real-car turn-signal / hazard logic running in a dedicated FreeRTOS task.
+/// Running (sequential) turn-signal animation using a NeoPixelBus ARGB strip.
+/// Mimics modern-car sweeping indicators (Audi-style).
 ///
 /// State machine
 /// ─────────────
@@ -21,6 +22,8 @@
 #include <freertos/semphr.h>
 #include <freertos/task.h>
 #include <functional>
+#include <algorithm>
+#include <NeoPixelBus.h>
 #include <config.hpp>
 
 enum class BlinkerState : uint8_t {
@@ -32,28 +35,28 @@ enum class BlinkerState : uint8_t {
 
 class BlinkerController {
 public:
-    // 500 ms on / 500 ms off  — standard automotive blink rate
-    static constexpr uint32_t BLINK_ON_MS  = 500;
-    static constexpr uint32_t BLINK_OFF_MS = 500;
-
-    /// Callback fired whenever the physical LED state changes: (left_on, right_on).
+    using StripType  = NeoPixelBus<NeoGrbFeature, NeoEsp32I2s1X8Ws2812xMethod>;
+    /// Callback fired whenever the logical blinker state changes: (left_on, right_on).
     using LedStateFn = std::function<void(uint8_t left, uint8_t right)>;
 
     BlinkerController()
         : state_(BlinkerState::OFF)
         , mutex_(xSemaphoreCreateMutex())
         , task_handle_(nullptr)
+        , strip_(nullptr)
     {}
 
     void set_led_callback(LedStateFn fn) { led_cb_ = std::move(fn); }
 
-    /// Call once from setup() after Arduino GPIO is ready.
+    /// Call once from setup().  Initialises the NeoPixelBus strip and starts
+    /// the animation task.
     void begin() {
-        pinMode(Esp32HwConfig::LED_PIN_LEFT,  OUTPUT);
-        pinMode(Esp32HwConfig::LED_PIN_RIGHT, OUTPUT);
-        all_off();
+        strip_ = new StripType(Esp32LightsConfig::ARGB_STRIP_NUM_LEDS,
+                                Esp32HwConfig::LED_PIN_ARGB_STRIP);
+        strip_->Begin();
+        clear_all();
 
-        xTaskCreate(blink_task, "blinker", 2048, this, /*priority=*/2, &task_handle_);
+        xTaskCreate(blink_task, "blinker", 4096, this, /*priority=*/2, &task_handle_);
     }
 
     // ── toggle methods (safe to call from any task / ISR context) ──────────
@@ -103,43 +106,37 @@ public:
     }
 
 private:
+    static constexpr uint32_t FRAME_INTERVAL_MS = 20; // ~50 fps animation
+
     BlinkerState      state_;
     SemaphoreHandle_t mutex_;
     TaskHandle_t      task_handle_;
+    StripType*        strip_;
     LedStateFn        led_cb_;
     uint8_t           last_left_  = 0;
     uint8_t           last_right_ = 0;
 
-    void all_off() {
-        digitalWrite(Esp32HwConfig::LED_PIN_LEFT,  LOW);
-        digitalWrite(Esp32HwConfig::LED_PIN_RIGHT, LOW);
-        maybe_emit(0, 0);
+    // ── LED helpers ─────────────────────────────────────────────────────────
+
+    void clear_all() {
+        for (uint16_t i = 0; i < Esp32LightsConfig::ARGB_STRIP_NUM_LEDS; ++i)
+            strip_->SetPixelColor(i, Esp32LightsConfig::COLOR_OFF);
+        strip_->Show();
     }
 
-    void apply_leds(BlinkerState s, bool lit) {
-        uint8_t l = 0, r = 0;
-        switch (s) {
-            case BlinkerState::LEFT:
-                l = lit ? 1 : 0;
-                digitalWrite(Esp32HwConfig::LED_PIN_LEFT,  lit ? HIGH : LOW);
-                digitalWrite(Esp32HwConfig::LED_PIN_RIGHT, LOW);
-                break;
-            case BlinkerState::RIGHT:
-                r = lit ? 1 : 0;
-                digitalWrite(Esp32HwConfig::LED_PIN_LEFT,  LOW);
-                digitalWrite(Esp32HwConfig::LED_PIN_RIGHT, lit ? HIGH : LOW);
-                break;
-            case BlinkerState::HAZARD:
-                l = r = lit ? 1 : 0;
-                digitalWrite(Esp32HwConfig::LED_PIN_LEFT,  lit ? HIGH : LOW);
-                digitalWrite(Esp32HwConfig::LED_PIN_RIGHT, lit ? HIGH : LOW);
-                break;
-            case BlinkerState::OFF:
-            default:
-                all_off();
-                return; // all_off already calls maybe_emit
+    void clear_segment(uint8_t start, uint8_t length) {
+        for (uint8_t i = 0; i < length; ++i)
+            strip_->SetPixelColor(start + i, Esp32LightsConfig::COLOR_OFF);
+    }
+
+    /// Light `count` LEDs in a segment with the blinker color.
+    /// @param forward  true → fill from start toward end; false → fill from end toward start.
+    void set_sweep(uint8_t start, uint8_t length, uint8_t count, bool forward) {
+        for (uint8_t i = 0; i < length; ++i) {
+            uint8_t idx = forward ? (start + i) : (start + length - 1 - i);
+            strip_->SetPixelColor(idx, (i < count) ? Esp32LightsConfig::COLOR_ORANGE
+                                                    : Esp32LightsConfig::COLOR_OFF);
         }
-        maybe_emit(l, r);
     }
 
     void maybe_emit(uint8_t left, uint8_t right) {
@@ -150,11 +147,9 @@ private:
         }
     }
 
-    /// Wake the blink task so it reacts immediately to a state change.
     void notify_task() const {
-        if (task_handle_) {
+        if (task_handle_)
             xTaskNotify(task_handle_, 0, eNoAction);
-        }
     }
 
     static const char* state_name(BlinkerState s) {
@@ -167,44 +162,100 @@ private:
         }
     }
 
-    // ── FreeRTOS blink task ─────────────────────────────────────────────────
-    /// Each iteration handles one complete ON→OFF blink cycle.
+    // ── FreeRTOS animation task ─────────────────────────────────────────────
+    /// Each iteration: sequential sweep ON → all off → pause → repeat.
     /// xTaskNotify wakes it early on any state change so the cycle resets
-    /// immediately and LEDs respond without the full blink delay.
+    /// immediately.
     static void blink_task(void* arg) {
-        BlinkerController* self = static_cast<BlinkerController*>(arg);
+        auto* self = static_cast<BlinkerController*>(arg);
 
         while (true) {
             const BlinkerState current = self->get_state();
 
             if (current == BlinkerState::OFF) {
-                // LEDs off; park until something changes.
-                self->all_off();
-                xTaskNotifyWait(0, 0, nullptr, portMAX_DELAY);
+                self->clear_all();
+                self->maybe_emit(0, 0);
+                xTaskNotifyWait(0, ULONG_MAX, nullptr, portMAX_DELAY);
                 continue;
             }
 
-            // ── ON phase ──────────────────────────────────────────────────
-            self->apply_leds(current, /*lit=*/true);
-            if (xTaskNotifyWait(0, ULONG_MAX, nullptr,
-                                pdMS_TO_TICKS(BLINK_ON_MS)) == pdTRUE) {
-                // State changed mid-cycle; turn everything off and restart.
-                self->all_off();
+            const bool do_left  = (current == BlinkerState::LEFT  || current == BlinkerState::HAZARD);
+            const bool do_right = (current == BlinkerState::RIGHT || current == BlinkerState::HAZARD);
+
+            const uint32_t sweep_left_ms  = do_left  ? Esp32LightsConfig::BLINK_SWEEP_DURATION_LEFT_MS  : 0;
+            const uint32_t sweep_right_ms = do_right ? Esp32LightsConfig::BLINK_SWEEP_DURATION_RIGHT_MS : 0;
+            const uint32_t sweep_ms       = std::max(sweep_left_ms, sweep_right_ms);
+
+            // Notify subscribers that the blinker is active.
+            self->maybe_emit(do_left ? 1 : 0, do_right ? 1 : 0);
+
+            // ── Sweep ON phase ────────────────────────────────────────────
+            const uint32_t sweep_start = millis();
+            bool aborted = false;
+
+            while (true) {
+                const uint32_t elapsed = millis() - sweep_start;
+                if (elapsed >= sweep_ms) break;
+
+                if (do_left) {
+                    float progress = std::min(1.0f, static_cast<float>(elapsed) / sweep_left_ms);
+                    uint8_t count  = static_cast<uint8_t>(progress * Esp32LightsConfig::ARGB_STRIP_LEFT_LENGTH);
+                    self->set_sweep(Esp32LightsConfig::ARGB_STRIP_LEFT_START,
+                                    Esp32LightsConfig::ARGB_STRIP_LEFT_LENGTH,
+                                    count,
+                                    Esp32LightsConfig::BLINK_SWEEP_FORWARD_LEFT);
+                }
+                if (do_right) {
+                    float progress = std::min(1.0f, static_cast<float>(elapsed) / sweep_right_ms);
+                    uint8_t count  = static_cast<uint8_t>(progress * Esp32LightsConfig::ARGB_STRIP_RIGHT_LENGTH);
+                    self->set_sweep(Esp32LightsConfig::ARGB_STRIP_RIGHT_START,
+                                    Esp32LightsConfig::ARGB_STRIP_RIGHT_LENGTH,
+                                    count,
+                                    Esp32LightsConfig::BLINK_SWEEP_FORWARD_RIGHT);
+                }
+                self->strip_->Show();
+
+                if (xTaskNotifyWait(0, ULONG_MAX, nullptr,
+                                    pdMS_TO_TICKS(FRAME_INTERVAL_MS)) == pdTRUE) {
+                    aborted = true;
+                    break;
+                }
+            }
+
+            if (aborted || self->get_state() != current) {
+                self->clear_all();
+                self->maybe_emit(0, 0);
                 continue;
             }
 
-            // Verify state hasn't drifted (belt-and-suspenders).
-            if (self->get_state() != current) {
-                self->all_off();
-                continue;
-            }
+            // Ensure all LEDs are fully lit at the end of the sweep.
+            if (do_left)
+                self->set_sweep(Esp32LightsConfig::ARGB_STRIP_LEFT_START,
+                                Esp32LightsConfig::ARGB_STRIP_LEFT_LENGTH,
+                                Esp32LightsConfig::ARGB_STRIP_LEFT_LENGTH,
+                                Esp32LightsConfig::BLINK_SWEEP_FORWARD_LEFT);
+            if (do_right)
+                self->set_sweep(Esp32LightsConfig::ARGB_STRIP_RIGHT_START,
+                                Esp32LightsConfig::ARGB_STRIP_RIGHT_LENGTH,
+                                Esp32LightsConfig::ARGB_STRIP_RIGHT_LENGTH,
+                                Esp32LightsConfig::BLINK_SWEEP_FORWARD_RIGHT);
+            self->strip_->Show();
 
             // ── OFF phase ─────────────────────────────────────────────────
-            self->apply_leds(current, /*lit=*/false);
+            const uint32_t off_left_ms  = do_left  ? Esp32LightsConfig::BLINK_OFF_DURATION_LEFT_MS  : 0;
+            const uint32_t off_right_ms = do_right ? Esp32LightsConfig::BLINK_OFF_DURATION_RIGHT_MS : 0;
+            const uint32_t off_ms       = std::max(off_left_ms, off_right_ms);
+
+            if (do_left)  self->clear_segment(Esp32LightsConfig::ARGB_STRIP_LEFT_START,
+                                              Esp32LightsConfig::ARGB_STRIP_LEFT_LENGTH);
+            if (do_right) self->clear_segment(Esp32LightsConfig::ARGB_STRIP_RIGHT_START,
+                                              Esp32LightsConfig::ARGB_STRIP_RIGHT_LENGTH);
+            self->strip_->Show();
+            self->maybe_emit(0, 0);
+
             if (xTaskNotifyWait(0, ULONG_MAX, nullptr,
-                                pdMS_TO_TICKS(BLINK_OFF_MS)) == pdTRUE) {
-                // State changed; restart immediately.
-                continue;
+                                pdMS_TO_TICKS(off_ms)) == pdTRUE) {
+                continue; // state changed — restart immediately
             }
         }
     }

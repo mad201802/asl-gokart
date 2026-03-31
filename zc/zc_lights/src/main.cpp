@@ -142,6 +142,8 @@ void setup() {
                         /*auth_required=*/false);
     rt.offer_service(Esp32ServiceConfig::ZC_LIGHTS_ID, /*ttl=*/30, now);
     std::printf("[server] LightsService 0x%04X offered\n", Esp32ServiceConfig::ZC_LIGHTS_ID);
+
+
 }
 
 void loop() {
