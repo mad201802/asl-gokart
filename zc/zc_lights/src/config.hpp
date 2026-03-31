@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <sero/core/log.hpp>
+#include <NeoPixelBus.h>
 
 struct Esp32Config {
     static constexpr std::size_t MaxPayloadSize         = 512;
@@ -48,10 +49,46 @@ struct Esp32ServiceConfig {
 
 struct Esp32HwConfig {
     // Define any hardware-specific configuration parameters here, such as GPIO pins.
-    static constexpr int LED_PIN_LEFT = GPIO_NUM_14;
-    static constexpr int LED_PIN_RIGHT = GPIO_NUM_15;
     static constexpr int LED_PIN_HEADLIGHT_LEFT = GPIO_NUM_32;
     static constexpr int LED_PIN_HEADLIGHT_RIGHT = GPIO_NUM_33;
     static constexpr int LED_PIN_HIGH_BEAM_LEFT = GPIO_NUM_3;
     static constexpr int LED_PIN_HIGH_BEAM_RIGHT = GPIO_NUM_4; 
+    static constexpr int LED_PIN_ARGB_STRIP = GPIO_NUM_2;
+
+};
+
+struct Esp32LightsConfig {
+    // Color for the ARGB strip
+    static constexpr uint32_t ARGB_STRIP_COLOR = 0xFF0000; // Red color in ARGB format
+    // Brightness for the ARGB strip (0-255)
+    static constexpr uint8_t ARGB_STRIP_BRIGHTNESS = 128; // 50% brightness
+    // Start LED index left blinker (0-based)
+    static constexpr uint8_t ARGB_STRIP_LEFT_START = 0;
+    static constexpr uint8_t ARGB_STRIP_LEFT_LENGTH= 10;
+    // Start LED index right blinker (0-based)
+    static constexpr uint8_t ARGB_STRIP_RIGHT_START = 10;
+    static constexpr uint8_t ARGB_STRIP_RIGHT_LENGTH= 10;
+
+    // Total number of LEDs on the ARGB strip
+    static constexpr uint16_t ARGB_STRIP_NUM_LEDS = 20;
+
+    // ── Blinker sweep animation settings ──
+    // Sweep duration: time for the running animation to fill all LEDs (ms)
+    static constexpr uint32_t BLINK_SWEEP_DURATION_LEFT_MS  = 400;
+    static constexpr uint32_t BLINK_SWEEP_DURATION_RIGHT_MS = 400;
+    // Off duration: pause with all LEDs off between blink cycles (ms)
+    static constexpr uint32_t BLINK_OFF_DURATION_LEFT_MS    = 300;
+    static constexpr uint32_t BLINK_OFF_DURATION_RIGHT_MS   = 300;
+    // Sweep direction: true = from start index toward end, false = from end toward start.
+    // Defaults: left sweeps outward (end→start), right sweeps outward (start→end).
+    static constexpr bool BLINK_SWEEP_FORWARD_LEFT  = false;
+    static constexpr bool BLINK_SWEEP_FORWARD_RIGHT = true;
+
+    // NeoPixelBus RgbColor constants — use inline static const (C++17) because
+    // RgbColor constructors are not constexpr in NeoPixelBus.
+    inline static const RgbColor COLOR_OFF          = RgbColor(  0,   0,   0);
+    inline static const RgbColor COLOR_RED          = RgbColor(255,   0,   0);
+    inline static const RgbColor COLOR_WHITE        = RgbColor(255, 255, 255);
+    inline static const RgbColor COLOR_WARM_WHITE   = RgbColor(255, 255, 200);
+    inline static const RgbColor COLOR_ORANGE       = RgbColor(255, 40,   0);
 };
