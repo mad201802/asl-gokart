@@ -27,21 +27,16 @@ import { Loader2, Check, X } from "lucide-react";
 import PowerMenu from "@/components/power-menu/power-menu";
 import log, { setRendererLogLevel, type LogLevel } from "@/lib/logger";
 import { AnalyticsBackendDialog } from "@/components/settings/analytics-backend-dialog";
+import { AdminAuthDialog } from "@/components/admin-mode/admin-auth-dialog";
 
 const SettingsPage = () => {
 
-  const { driveMode, adminMode, speedLimit, minSettableSpeed, maxSettableSpeed, appVersion, analyticsEnabled, logLevel } = useStore();
-  const { setDriveMode, setAdminMode, setAdminPin, setSpeedLimit, setAppVersion, setAnalyticsEnabled, setLogLevel } = useStore();
+  const { driveMode, speedLimit, minSettableSpeed, maxSettableSpeed, appVersion, analyticsEnabled, logLevel } = useStore();
+  const { setDriveMode, setSpeedLimit, setAppVersion, setAnalyticsEnabled, setLogLevel } = useStore();
 
   const [analyticsDialogOpen, setAnalyticsDialogOpen] = React.useState(false);
 
 //  const [speedLimitUiLabel, setSpeedLimitUiLabel] = React.useState(speedLimit);
-
-  let handleLogout = () => {
-    setAdminMode(false);
-    setAdminPin("");
-    toast("Admin mode disabled!");
-  }
 
   useEffect(() => {
     const fetchAppVersion = async () => {
@@ -143,31 +138,9 @@ const SettingsPage = () => {
           </div>
           <div className="flex flex-row justify-between items-center space-x-4">
               <Label htmlFor="admin-mode" className="text-base mr-5">Admin Mode</Label>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button>Authenticate</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Admin Mode</DialogTitle>
-                  </DialogHeader>
-                  <DialogDescription>
-                    {!adminMode && <p>Enter your Pin to unlock the administrator features</p>}
-                    {adminMode && <p className="text-green-700">Admin Mode activated!</p>}
-                    <Separator className="mt-3"/>
-                  </DialogDescription>
-                  
-                  { !adminMode && <div className="flex flex-row justify-center">
-                    <CodeInput />
-                  </div> }
-                  
-                  { !adminMode && <CodeNumberpad /> }
-                  
-                  { adminMode && <div className="flex flex-row justify-center">
-                    <Button onClick={() => handleLogout()}>Logout</Button>
-                  </div> }
-                </DialogContent>
-              </Dialog>
+              <AdminAuthDialog 
+                trigger={<Button variant="outline">Authenticate</Button>}
+              />
           </div>
           <div className="flex flex-row justify-between items-center space-x-4">
               <Label htmlFor="avanced-settings" className="text-base mr-5">Admin Settings</Label>
