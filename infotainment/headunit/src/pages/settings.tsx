@@ -2,28 +2,16 @@ import LabeledSwitch from "@/components/shared/labeled-switch";
 import TabsSelector from "@/components/shared/tabs-selector";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Slider } from "@/components/ui/slider"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
 import { useStore } from "@/stores/useStore";
 import { DriveModes, tabsSelectorStates } from "@/data/controlling_models/drivetrain";
-import { CodeInput } from "@/components/admin-mode/code-input";
-import { CodeNumberpad } from "@/components/admin-mode/code-numberpad";
 import { HeaderBar } from "@/components/shared/header-bar";
 import { toast } from "sonner";
 import AvancedSettingsDialog from "@/components/shared/advanced-settings/advanced-settings-dialog";
 import AdminSettingsDialog from "@/components/admin-mode/admin-settings-dialog";
 import React, { useEffect } from "react";
-import { Loader2, Check, X } from "lucide-react";
 import PowerMenu from "@/components/power-menu/power-menu";
 import log, { setRendererLogLevel, type LogLevel } from "@/lib/logger";
 import { AnalyticsBackendDialog } from "@/components/settings/analytics-backend-dialog";
