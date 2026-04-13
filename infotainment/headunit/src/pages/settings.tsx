@@ -26,14 +26,13 @@ import React, { useEffect } from "react";
 import { Loader2, Check, X } from "lucide-react";
 import PowerMenu from "@/components/power-menu/power-menu";
 import log, { setRendererLogLevel, type LogLevel } from "@/lib/logger";
+import { AnalyticsBackendDialog } from "@/components/settings/analytics-backend-dialog";
 
 const SettingsPage = () => {
 
-  const { driveMode, adminMode, speedLimit, minSettableSpeed, maxSettableSpeed, appVersion, analyticsEnabled, analyticsBackendUrl, logLevel } = useStore();
-  const { setDriveMode, setAdminMode, setAdminPin, setSpeedLimit, setAppVersion, setAnalyticsEnabled, setAnalyticsBackendUrl, setLogLevel } = useStore();
+  const { driveMode, adminMode, speedLimit, minSettableSpeed, maxSettableSpeed, appVersion, analyticsEnabled, logLevel } = useStore();
+  const { setDriveMode, setAdminMode, setAdminPin, setSpeedLimit, setAppVersion, setAnalyticsEnabled, setLogLevel } = useStore();
 
-  const [urlInput, setUrlInput] = React.useState(analyticsBackendUrl);
-  const [connectionStatus, setConnectionStatus] = React.useState<"idle" | "checking" | "success" | "error">("idle");
   const [analyticsDialogOpen, setAnalyticsDialogOpen] = React.useState(false);
 
 //  const [speedLimitUiLabel, setSpeedLimitUiLabel] = React.useState(speedLimit);
@@ -53,15 +52,6 @@ const SettingsPage = () => {
       log.error(e);
       }
     };
-    const fetchAnalyticsUrl = async () => {
-      try {
-        const url = await window.app.getAnalyticsUrl();
-        setAnalyticsBackendUrl(url);
-        setUrlInput(url);
-      } catch (e) {
-        log.error(e);
-      }
-    };
     const fetchLogLevel = async () => {
       try {
         const level = await window.app.getLogLevel() as LogLevel;
@@ -72,7 +62,6 @@ const SettingsPage = () => {
       }
     };
     fetchAppVersion();
-    fetchAnalyticsUrl();
     fetchLogLevel();
   }, []);
 
@@ -84,32 +73,13 @@ const SettingsPage = () => {
       });
   }
 
-  let handleCheckConnection = async () => {
-    setConnectionStatus("checking");
-    try {
-      // backend URL stripped of any API path, for connection testing (universal stripping, not just /api/gokart)
-      const urlToTest = urlInput.replace(/\/api\/.*$/, "");
-      const ok = await window.app.checkAnalyticsConnection(urlToTest);
-      setConnectionStatus(ok ? "success" : "error");
-    } catch {
-      setConnectionStatus("error");
-    }
-  }
-
-  let handleSaveAnalyticsUrl = async () => {
-    const savedUrl = await window.app.setAnalyticsUrl(urlInput);
-    setAnalyticsBackendUrl(savedUrl);
-    setAnalyticsDialogOpen(false);
-    toast("Analytics Backend URL updated!");
-  }
-
-  let handleAnalyticsDialogOpenChange = (open: boolean) => {
-    setAnalyticsDialogOpen(open);
-    if (open) {
-      setUrlInput(analyticsBackendUrl);
-      setConnectionStatus("idle");
-    }
-  }
+  // let handleAnalyticsDialogOpenChange = (open: boolean) => {
+  //   setAnalyticsDialogOpen(open);
+  //   if (open) {
+  //     setUrlInput(analyticsBackendUrl);
+  //     setConnectionStatus("idle");
+  //   }
+  // }
 
   let handleLogLevelChange = async (level: LogLevel) => {
     setLogLevel(level);
@@ -139,46 +109,13 @@ const SettingsPage = () => {
           <LabeledSwitch id="on-by-default" label="On by Default" defaultValue={true} />
           <div className="flex flex-row justify-between items-center space-x-4">
               <Label htmlFor="analytics-backend" className="text-base mr-5">Analytics Backend</Label>
-              <Dialog open={analyticsDialogOpen} onOpenChange={handleAnalyticsDialogOpenChange}>
-                <DialogTrigger asChild>
-                  <Button variant="outline">Configure</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Analytics Backend URL</DialogTitle>
-                  </DialogHeader>
-                  <DialogDescription>
-                    Set the URL of the analytics backend. Connection must be verified before saving.
-                    <Separator className="mt-3" />
-                  </DialogDescription>
-                  <div className="flex flex-col gap-y-4">
-                    <div className="flex flex-row items-center gap-x-2">
-                      <Input
-                        placeholder="http://localhost:3000/api/gokart"
-                        value={urlInput}
-                        onChange={(e) => {
-                          setUrlInput(e.target.value);
-                          setConnectionStatus("idle");
-                        }}
-                      />
-                      {connectionStatus === "success" && <Check className="text-green-500 shrink-0" size={20} />}
-                      {connectionStatus === "error" && <X className="text-red-500 shrink-0" size={20} />}
-                      {connectionStatus === "checking" && <Loader2 className="animate-spin text-muted-foreground shrink-0" size={20} />}
-                    </div>
-                    {connectionStatus === "error" && (
-                      <p className="text-sm text-red-500">Connection failed. Please check the URL and try again.</p>
-                    )}
-                    <div className="flex flex-row justify-end gap-x-2">
-                      <Button variant="outline" onClick={handleCheckConnection} disabled={connectionStatus === "checking" || !urlInput}>
-                        {connectionStatus === "checking" ? "Checking..." : "Check Connection"}
-                      </Button>
-                      <Button onClick={handleSaveAnalyticsUrl} disabled={connectionStatus !== "success"}>
-                        Save
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
+              <AnalyticsBackendDialog
+                trigger={<Button variant="outline">Configure</Button>}
+                open={analyticsDialogOpen}
+                onOpenChange={(open) => {
+                  setAnalyticsDialogOpen(open);
+                }}
+              />
           </div>
           <div className="flex flex-row justify-between items-center space-x-4">
             <Label htmlFor="log-level" className="text-base mr-5">Log Level</Label>
