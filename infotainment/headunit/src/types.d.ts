@@ -4,6 +4,7 @@
 import { WebSocket } from "ws";
 import { IncomingPacket, OutgoingPacket } from "./data/zonecontrollers/packets";
 import { BatteryCommands, LightsCommands, Zones } from "./data/zonecontrollers/zonecontrollers";
+import { ResolvedInterface } from "./helpers/ipc/hardware/network-config";
 
 // whether you're running in development or production).
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
@@ -47,6 +48,12 @@ interface SeroContext {
     onBatteryMessage: (callback: (batteryMessage: string) => void) => void;
 }
 
+interface HardwareContext {
+    getAvailableNetworkInterfaces: () => Promise<unknown>;
+    getNetworkInterface: () => Promise<ResolvedInterface | null>;
+    setNetworkInterface: (mac: string) => Promise<ResolvedInterface | null>;
+}
+
 
 declare global {
     interface Window {
@@ -55,5 +62,6 @@ declare global {
         websocket: WebSocketContext;
         sero: SeroContext;
         app: AppContext;
+        hardware: HardwareContext;
     }
 } 

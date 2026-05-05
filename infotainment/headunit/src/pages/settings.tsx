@@ -16,6 +16,7 @@ import PowerMenu from "@/components/power-menu/power-menu";
 import log, { setRendererLogLevel, type LogLevel } from "@/lib/logger";
 import { AnalyticsBackendDialog } from "@/components/settings/analytics-backend-dialog";
 import { AdminAuthDialog } from "@/components/admin-mode/admin-auth-dialog";
+import { NetworkInterfaceDialog } from "@/components/settings/network-interface-dialog";
 
 const SettingsPage = () => {
 
@@ -23,6 +24,7 @@ const SettingsPage = () => {
   const { setDriveMode, setSpeedLimit, setAppVersion, setAnalyticsEnabled, setLogLevel } = useStore();
 
   const [analyticsDialogOpen, setAnalyticsDialogOpen] = React.useState(false);
+  const [networkInterfaceDialogOpen, setNetworkInterfaceDialogOpen] = React.useState(false);
 
 //  const [speedLimitUiLabel, setSpeedLimitUiLabel] = React.useState(speedLimit);
 
@@ -97,6 +99,16 @@ const SettingsPage = () => {
                 open={analyticsDialogOpen}
                 onOpenChange={(open) => {
                   setAnalyticsDialogOpen(open);
+                }}
+              />
+          </div>
+          <div className="flex flex-row justify-between items-center space-x-4">
+              <Label htmlFor="network-interface" className="text-base mr-5">Network Interface</Label>
+              <NetworkInterfaceDialog
+                trigger={<Button variant="outline">Configure</Button>}
+                open={networkInterfaceDialogOpen}
+                onOpenChange={(open) => {
+                  setNetworkInterfaceDialogOpen(open);
                 }}
               />
           </div>
