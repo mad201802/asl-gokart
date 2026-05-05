@@ -54,9 +54,10 @@ export const AnalyticsBackendDialog = ({ trigger, open, onOpenChange }: Analytic
         }
     };
 
-    let handleSaveAnalyticsUrl = async () => {
+    let handleSaveAnalyticsUrl = async (onOpenChange: (open: boolean) => void) => {
         const savedUrl = await window.app.setAnalyticsUrl(urlInput);
         setAnalyticsBackendUrl(savedUrl);
+        onOpenChange(false);
         toast("Analytics Backend URL updated!");
     };
     
@@ -95,7 +96,7 @@ export const AnalyticsBackendDialog = ({ trigger, open, onOpenChange }: Analytic
                       <Button variant="outline" onClick={handleCheckConnection} disabled={connectionStatus === ConnectionStatus.Checking || !urlInput}>
                         {connectionStatus === ConnectionStatus.Checking ? "Checking..." : "Check Connection"}
                       </Button>
-                      <Button onClick={handleSaveAnalyticsUrl} disabled={connectionStatus !== ConnectionStatus.Success}>
+                      <Button onClick={() => handleSaveAnalyticsUrl(onOpenChange)} disabled={connectionStatus !== ConnectionStatus.Success}>
                         Save
                       </Button>
                     </div>
