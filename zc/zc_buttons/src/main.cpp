@@ -5,12 +5,14 @@
 #include <sero.hpp>
 #include <udp_transport_esp32.hpp>
 
-const char* FIRMWARE_VERSION = "0.1.0";
+const char* FIRMWARE_VERSION = "0.2.0";
 
 // Button pins
 #define BUTTON_PIN_1 GPIO_NUM_14
 #define BUTTON_PIN_2 GPIO_NUM_15
 #define BUTTON_PIN_3 GPIO_NUM_32
+#define BUTTON_PIN_4 GPIO_NUM_33
+#define BUTTON_PIN_5 GPIO_NUM_4
 
 // --- Type Aliases -----------------------------------------------
 
@@ -27,6 +29,8 @@ static Runtime* runtime_ptr = nullptr;
 Bounce2::Button button1 = Bounce2::Button();
 Bounce2::Button button2 = Bounce2::Button();
 Bounce2::Button button3 = Bounce2::Button();
+Bounce2::Button button4 = Bounce2::Button();
+Bounce2::Button button5 = Bounce2::Button();
 
 struct AppState {
     bool lights_found = false;
@@ -193,6 +197,18 @@ void loop() {
                        payload, sizeof(payload), on_lights_response, nullptr, 2000, now);
             Serial.println("Button 3 pressed - method call sent");
         }
+        if (button4.pressed()) {
+            uint8_t payload[1] = {0x04};
+            rt.request(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_HEADLIGHTS_ID,
+                       payload, sizeof(payload), on_lights_response, nullptr, 2000, now);
+            Serial.println("Button 4 pressed - method call sent");
+        }
+        if (button5.pressed()) {
+            uint8_t payload[1] = {0x05};
+            rt.request(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_HIGH_BEAMS_ID,
+                       payload, sizeof(payload), on_lights_response, nullptr, 2000, now);
+            Serial.println("Button 5 pressed - method call sent");
+        }
         // Add more buttons and method calls here for headlight control
         //
     }
@@ -210,12 +226,20 @@ void initializeButtons() {
     button3.attach(BUTTON_PIN_3, INPUT_PULLDOWN);
     button3.setPressedState(HIGH);
     button3.interval(50);
+    button4.attach(BUTTON_PIN_4, INPUT_PULLDOWN);
+    button4.setPressedState(HIGH);
+    button4.interval(50);
+    button5.attach(BUTTON_PIN_5, INPUT_PULLDOWN);
+    button5.setPressedState(HIGH);
+    button5.interval(50);
 }
 
 void updateButtonStates() {
     button1.update();
     button2.update();
     button3.update();
+    button4.update();
+    button5.update();
 }
 
 // -----------------------------------------------------------------------
