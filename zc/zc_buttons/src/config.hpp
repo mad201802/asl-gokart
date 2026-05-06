@@ -32,11 +32,11 @@ struct Esp32Config {
 };
 
 struct Esp32ServiceConfig {
-    static constexpr uint16_t ESP32_UNICAST_PORT     = 30491;
-    static constexpr uint16_t ZC_LIGHTS_ID           = 0x0001;
-    static constexpr uint16_t ZC_LIGHTS_LEFT_ID      = 0x0002;
-    static constexpr uint16_t ZC_LIGHTS_RIGHT_ID     = 0x0003;
-    static constexpr uint16_t ZC_LIGHTS_HAZARD_ID    = 0x0004;
-    // Add Headlight control method ID here
-    //
+    static constexpr uint16_t ESP32_UNICAST_PORT        = 30491;
+    static constexpr uint16_t ZC_LIGHTS_ID              = 0x0001;
+    static constexpr uint16_t ZC_LIGHTS_LEFT_ID         = 0x0002;
+    static constexpr uint16_t ZC_LIGHTS_RIGHT_ID        = 0x0003;
+    static constexpr uint16_t ZC_LIGHTS_HAZARD_ID       = 0x0004;
+    static constexpr uint16_t ZC_LIGHTS_HEADLIGHTS_ID   = 0x0005;
+    static constexpr uint16_t ZC_LIGHTS_HIGH_BEAMS_ID   = 0x0006;
 };
