@@ -1,4 +1,4 @@
-import { APP_VERSION_CHANNEL, APP_TOGGLE_ANALYTICS_CHANNEL, APP_GET_ANALYTICS_URL_CHANNEL, APP_SET_ANALYTICS_URL_CHANNEL, APP_CHECK_ANALYTICS_CONNECTION_CHANNEL, APP_SET_LOG_LEVEL_CHANNEL, APP_GET_LOG_LEVEL_CHANNEL } from "./app-channels";
+import { APP_VERSION_CHANNEL, APP_TOGGLE_ANALYTICS_CHANNEL, APP_GET_ANALYTICS_URL_CHANNEL, APP_SET_ANALYTICS_URL_CHANNEL, APP_CHECK_ANALYTICS_CONNECTION_CHANNEL, APP_SET_LOG_LEVEL_CHANNEL, APP_GET_LOG_LEVEL_CHANNEL, APP_GET_ANALYTICS_INTERFACE_CHANNEL, APP_SET_ANALYTICS_INTERFACE_CHANNEL } from "./app-channels";
 
 export function exposeAppContext() {
     const { contextBridge, ipcRenderer } = window.require('electron');
@@ -24,6 +24,12 @@ export function exposeAppContext() {
         },
         getLogLevel: async (): Promise<string> => {
             return await ipcRenderer.invoke(APP_GET_LOG_LEVEL_CHANNEL);
-        }
+        },
+        getAnalyticsInterface: async () => {
+            return await ipcRenderer.invoke(APP_GET_ANALYTICS_INTERFACE_CHANNEL);
+        },
+        setAnalyticsInterface: async (mac: string | null) => {
+            return await ipcRenderer.invoke(APP_SET_ANALYTICS_INTERFACE_CHANNEL, mac);
+        },
     });
 }

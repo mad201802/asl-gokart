@@ -1,10 +1,13 @@
+import http from "http";
+import https from "https";
 import { SensorData } from "@/data/analytics/sensor-data";
 import { IncomingPacket } from "@/data/zonecontrollers/packets";
 import { BatteryCommands, ThrottleCommands, Zones } from "@/data/zonecontrollers/zonecontrollers";
 import log from "electron-log/main";
+import { getAnalyticsBindAddress, getStoredAnalyticsUrl, setStoredAnalyticsUrl } from "@/helpers/ipc/hardware/network-config";
 
 
-let analyticsBackendUrl = "http://localhost:3000/api/gokart";
+let analyticsBackendUrl = getStoredAnalyticsUrl() ?? "http://localhost:3000/api/gokart";
 const COMMAND_RATE_LIMITS: Record<string, number> = {
     [ThrottleCommands.GET_THROTTLE]: 1000,
     [ThrottleCommands.GET_RPM]: 1000,
@@ -20,25 +23,38 @@ const lastSentTimestamps: Record<string, number> = {};
 
 export function setAnalyticsBackendUrl(url: string): void {
     analyticsBackendUrl = url;
+    setStoredAnalyticsUrl(url);
 }
 
 export function getAnalyticsBackendUrl(): string {
     return analyticsBackendUrl;
 }
 
-export async function checkAnalyticsConnection(url: string): Promise<boolean> {
-    try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 5000);
-        const response = await fetch(url, {
-            method: 'GET',
-            signal: controller.signal,
-        });
-        clearTimeout(timeout);
-        return response.ok;
-    } catch {
-        return false;
-    }
+export function checkAnalyticsConnection(url: string): Promise<boolean> {
+    return new Promise((resolve) => {
+        try {
+            const parsed = new URL(url);
+            const driver = parsed.protocol === "https:" ? https : http;
+            const localAddress = getAnalyticsBindAddress();
+            const options: http.RequestOptions = {
+                method: "GET",
+                hostname: parsed.hostname,
+                port: parsed.port || (parsed.protocol === "https:" ? 443 : 80),
+                path: parsed.pathname + parsed.search,
+                timeout: 5000,
+                ...(localAddress ? { localAddress } : {}),
+            };
+            const req = driver.request(options, (res) => {
+                resolve((res.statusCode ?? 0) >= 200 && (res.statusCode ?? 0) < 400);
+                res.resume();
+            });
+            req.on("timeout", () => { req.destroy(); resolve(false); });
+            req.on("error", () => resolve(false));
+            req.end();
+        } catch {
+            resolve(false);
+        }
+    });
 }
 
 export function toggleAnalytics(enabled: boolean): boolean {
@@ -136,29 +152,45 @@ export function processAnalytics(message: string): void {
     lastSentTimestamps[parsedMessage.command] = now;
 
     // Send POST request to analytics backend
-    fetch(`${analyticsBackendUrl}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(sensorData)
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        // Detect if the POST was misrouted to the GET handler
-        if (Array.isArray(data?.data)) {
-            log.error("Analytics POST was handled as GET — data was NOT written. Check if you switched http with https and remove trailing slashes from the URL in settings.");
-        } else {
-            // console.log("Analytics data sent successfully:", data);
-        }
-    })
-    .catch(error => {
+    try {
+        const parsed = new URL(analyticsBackendUrl);
+        const driver = parsed.protocol === "https:" ? https : http;
+        const body = JSON.stringify(sensorData);
+        const localAddress = getAnalyticsBindAddress();
+        const options: http.RequestOptions = {
+            method: "POST",
+            hostname: parsed.hostname,
+            port: parsed.port || (parsed.protocol === "https:" ? 443 : 80),
+            path: parsed.pathname + parsed.search,
+            headers: {
+                "Content-Type": "application/json",
+                "Content-Length": Buffer.byteLength(body),
+            },
+            ...(localAddress ? { localAddress } : {}),
+        };
+        const req = driver.request(options, (res) => {
+            if (!res.statusCode || res.statusCode < 200 || res.statusCode >= 300) {
+                log.error(`Analytics HTTP error: ${res.statusCode}`);
+                res.resume();
+                return;
+            }
+            let raw = "";
+            res.on("data", (chunk: Buffer) => { raw += chunk.toString(); });
+            res.on("end", () => {
+                try {
+                    const data = JSON.parse(raw);
+                    // Detect if the POST was misrouted to the GET handler
+                    if (Array.isArray(data?.data)) {
+                        log.error("Analytics POST was handled as GET — data was NOT written. Check if you switched http with https and remove trailing slashes from the URL in settings.");
+                    }
+                } catch { /* non-JSON response is fine */ }
+            });
+        });
+        req.on("error", (error: Error) => log.error("Error sending analytics data:", error));
+        req.write(body);
+        req.end();
+    } catch (error) {
         log.error("Error sending analytics data:", error);
-    });
+    }
 }
 

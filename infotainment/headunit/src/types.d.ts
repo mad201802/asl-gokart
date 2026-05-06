@@ -37,6 +37,8 @@ interface AppContext {
     checkAnalyticsConnection: (url: string) => Promise<boolean>;
     setLogLevel: (level: string) => Promise<string>;
     getLogLevel: () => Promise<string>;
+    getAnalyticsInterface: () => Promise<ResolvedInterface | null>;
+    setAnalyticsInterface: (mac: string | null) => Promise<ResolvedInterface | null>;
 }
 
 interface SeroContext {
