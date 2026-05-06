@@ -7,53 +7,65 @@ import log from 'electron-log/main';
 import { SERO_SEND_LIGHTS_CHANNEL, SERO_LIGHTS_MESSAGE_CHANNEL, SERO_BATTERY_MESSAGE_CHANNEL } from './sero-channels';
 import { BatteryCommands, LightsCommands, Zones } from '@/data/zonecontrollers/zonecontrollers';
 import { IncomingPacket } from '@/data/zonecontrollers/packets';
+import { getBindAddress } from '@/helpers/ipc/hardware/network-config';
 
 const UNICAST_PORT = 30491;
 const CLIENT_ID = 0x0002;
 const RT_INTERVAL = 10; // Interval in milliseconds for processing SeroRuntime events
 
-const rt = new SeroRuntime({
-    port: UNICAST_PORT,
-    clientId: CLIENT_ID,
-});
+let rt: SeroRuntime | null = null;
+let rtInterval: ReturnType<typeof setInterval> | null = null;
+let storedMainWindow: BrowserWindow | null = null;
 
-setInterval(() => rt.process(), RT_INTERVAL);
+function createRuntime(): SeroRuntime {
+    const bindIp = getBindAddress();
+    const runtime = new SeroRuntime({
+        port: UNICAST_PORT,
+        clientId: CLIENT_ID,
+        bindIp,
+    });
+    return runtime;
+}
 
 export function startSeroService(mainWindow: BrowserWindow) {
+    storedMainWindow = mainWindow;
+    rt = createRuntime();
+    const runtime = rt;
+    rtInterval = setInterval(() => runtime.process(), RT_INTERVAL);
+
     log.info("Starting SERO service...");
+    log.info('SeroRuntime initialized on', runtime.getLocalAddress().ip, 'port', runtime.getLocalAddress().port);
     
-    log.info('SeroRuntime initialized on', rt.getLocalAddress().ip, 'port', rt.getLocalAddress().port);
-    
-    rt.onServiceFound((serviceId, address) => {
+    runtime.onServiceFound((serviceId, address) => {
         log.info('Service found:', serviceId, 'at', address);
         if(serviceId == 0x0001) {
             // Subscribe to LED state change events (event ID 0x8001: [left, right])
-            rt.subscribeEvent(0x0001, 0x8001, (svcId, evtId, payload) => {
+            runtime.subscribeEvent(0x0001, 0x8001, (svcId, evtId, payload) => {
                 log.debug(`[SERO] LED state event: left=${payload[0]}, right=${payload[1]}`);
                 handleTurnsignalEvent(mainWindow, payload);
             });
             // Subscribe to headlight state change events (event ID 0x8002: [left, right])
-            rt.subscribeEvent(0x0001, 0x8002, (svcId, evtId, payload) => {
+            runtime.subscribeEvent(0x0001, 0x8002, (svcId, evtId, payload) => {
                 log.debug(`[SERO] Headlight state event: left=${payload[0]}, right=${payload[1]}`);
                 handleHeadlightsEvent(mainWindow, payload);
             });
             // Subscribe to high beam state change events (event ID 0x8003: [left, right])
-            rt.subscribeEvent(0x0001, 0x8003, (svcId, evtId, payload) => {
+            runtime.subscribeEvent(0x0001, 0x8003, (svcId, evtId, payload) => {
                 log.debug(`[SERO] High beam state event: left=${payload[0]}, right=${payload[1]}`);
                 handleHighBeamsEvent(mainWindow, payload);
             });
         }
         if(serviceId == 0x0003) {
             // Subscribe to battery voltage events (event ID 0x8001: float voltage)
-            rt.subscribeEvent(0x0003, 0x8001, (svcId, evtId, payload) => {
+            runtime.subscribeEvent(0x0003, 0x8001, (svcId, evtId, payload) => {
                 log.debug(`[SERO] Battery voltage event: voltage=${payload.readFloatLE(0)}`);
                 handleZcBatteryVoltageEvent(mainWindow, payload);
             });
-            rt.subscribeEvent(0x0003, 0x8002, (svcId, evtId, payload) => {
+            runtime.subscribeEvent(0x0003, 0x8002, (svcId, evtId, payload) => {
                 log.debug(`[SERO] Battery current event: current=${payload.readFloatLE(0)}`);
                 handleZcBatteryCurrentEvent(mainWindow, payload);
             });
-            rt.subscribeEvent(0x0003, 0x8003, (svcId, evtId, payload) => {
+            runtime.subscribeEvent(0x0003, 0x8003, (svcId, evtId, payload) => {
                 const floatCount = Math.floor(payload.length / 4);
                 const tempValues = Array.from({ length: floatCount }, (_, i) => payload.readFloatLE(i * 4));
                 log.debug(`[SERO] Battery temperature event: temperatures=[${tempValues.join(', ')}]`);
@@ -62,16 +74,16 @@ export function startSeroService(mainWindow: BrowserWindow) {
         }
     });
     
-    rt.onServiceLost((service) => {
+    runtime.onServiceLost((service) => {
         log.info('Service lost:', service);
     });
     
-    rt.onSubscriptionAck((ack) => {
+    runtime.onSubscriptionAck((ack) => {
         log.debug('Subscription acknowledged:', ack);
     });
 
-    rt.findService(0x0001);
-    rt.findService(0x0003);
+    runtime.findService(0x0001);
+    runtime.findService(0x0003);
 
     
 }
@@ -79,6 +91,10 @@ export function startSeroService(mainWindow: BrowserWindow) {
 // --- zc_lights ---------------------------------------------------------------------------
 
 function toggleLights(command: LightsCommands) {
+    if (!rt) {
+        log.error('[SERO] Cannot toggle lights: SeroRuntime not initialized');
+        return;
+    }
     switch (command) {
         case LightsCommands.SET_TOGGLE_TURN_SIGNAL_LEFT:
             rt.fireAndForget(0x0001, 0x0002);
@@ -169,6 +185,26 @@ function handleZcBatteryTemperatureEvent(mainWindow: BrowserWindow, temps: numbe
 }
 
 // -----------------------------------------------------------------------------------------
+
+export function stopSeroService(): void {
+    if (rtInterval) {
+        clearInterval(rtInterval);
+        rtInterval = null;
+    }
+    if (rt) {
+        rt.destroy();
+        rt = null;
+        log.info('[SERO] SeroRuntime destroyed');
+    }
+}
+
+export function restartSeroService(): void {
+    if (!storedMainWindow) {
+        throw new Error('Sero service has not been started yet');
+    }
+    stopSeroService();
+    startSeroService(storedMainWindow);
+}
 
 // Handles IPC messages from the renderer
 export function registerSeroHandlers() {

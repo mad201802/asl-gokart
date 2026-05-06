@@ -6,6 +6,7 @@ import * as http from 'http';
 import { ButtonHandler } from './handlers/button-handler';
 import { defaultButtonMappings } from './handlers/default-mapping';
 import { processAnalytics } from '@/helpers/analytics_helpers';
+import { getBindAddress } from '@/helpers/ipc/hardware/network-config';
 const WebSocket = require('faye-websocket').WebSocket;
 
 const WSS_PORT = 6969;
@@ -13,8 +14,14 @@ export let connected_zonecontrollers = new Map<Zones, ZoneController>();
 
 const buttonHandler: ButtonHandler = new ButtonHandler(defaultButtonMappings);
 
+let currentServer: http.Server | null = null;
+let storedMainWindow: BrowserWindow | null = null;
+
 export function startWebSocketServer(mainWindow: BrowserWindow) {
+  storedMainWindow = mainWindow;
+  const bindAddress = getBindAddress();
   const server = http.createServer();
+  currentServer = server;
 
   server.on('upgrade', (req, socket, head) => {
     if (WebSocket.isWebSocket(req)) {
@@ -123,8 +130,8 @@ export function startWebSocketServer(mainWindow: BrowserWindow) {
     }
   });
 
-  server.listen(WSS_PORT, '0.0.0.0', () => {
-    log.info('WebSocket server is running on ws://0.0.0.0:' + WSS_PORT);
+  server.listen(WSS_PORT, bindAddress, () => {
+    log.info(`WebSocket server is running on ws://${bindAddress}:${WSS_PORT}`);
   });
 
   server.on('error', (err) => {
@@ -133,4 +140,39 @@ export function startWebSocketServer(mainWindow: BrowserWindow) {
     log.error(`WebSocket server error stack: ${err.stack}`);
     log.error(`WebSocket server error cause: ${err.cause}`);
   });
+}
+
+export function stopWebSocketServer(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    // Close all connected zone controller WebSockets
+    connected_zonecontrollers.forEach((zc) => {
+      if (zc.webSocket) {
+        zc.webSocket.close(1012, 'Server restarting');
+      }
+    });
+    connected_zonecontrollers.clear();
+
+    if (currentServer) {
+      currentServer.close((err) => {
+        if (err) {
+          log.error(`Error stopping WebSocket server: ${err.message}`);
+          reject(err);
+        } else {
+          log.info('WebSocket server stopped');
+          currentServer = null;
+          resolve();
+        }
+      });
+    } else {
+      resolve();
+    }
+  });
+}
+
+export async function restartWebSocketServer(): Promise<void> {
+  if (!storedMainWindow) {
+    throw new Error('WebSocket server has not been started yet');
+  }
+  await stopWebSocketServer();
+  startWebSocketServer(storedMainWindow);
 }
