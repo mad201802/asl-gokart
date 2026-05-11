@@ -20,7 +20,7 @@ jobs:
             run:
                 working-directory: infotainment/headunit
         steps:
-            - uses: actions/checkout@v5
+            - uses: actions/checkout@v6
 
             - uses: actions/setup-node@v6.2.0
               with:
@@ -29,7 +29,6 @@ jobs:
             - uses: oven-sh/setup-bun@v2
               with:
                   bun-version: latest
-                  cache: true
                   registries: |
                       https://registry.npmjs.org/
                       @asl-gokart:https://registry.leotm.de/
@@ -50,7 +49,7 @@ jobs:
             run:
                 working-directory: infotainment/headunit
         steps:
-            - uses: actions/checkout@v5
+            - uses: actions/checkout@v6
 
             - uses: actions/setup-node@v6.2.0
               with:
@@ -59,7 +58,6 @@ jobs:
             - uses: oven-sh/setup-bun@v2
               with:
                   bun-version: latest
-                  cache: true
                   registries: |
                       https://registry.npmjs.org/
                       @asl-gokart:https://registry.leotm.de/
@@ -71,7 +69,7 @@ jobs:
               run: bun run make
 
             - name: Upload artifact
-              uses: actions/upload-artifact@v5
+              uses: actions/upload-artifact@v7
               with:
                   name: headunit-deb-x86
                   path: infotainment/headunit/out/make/deb/**/*.deb
@@ -87,7 +85,7 @@ jobs:
             run:
                 working-directory: infotainment/headunit
         steps:
-            - uses: actions/checkout@v5
+            - uses: actions/checkout@v6
 
             - uses: actions/setup-node@v6.2.0
               with:
@@ -115,7 +113,7 @@ jobs:
               run: bun run make:pi4
 
             - name: Upload artifact
-              uses: actions/upload-artifact@v5
+              uses: actions/upload-artifact@v7
               with:
                   name: headunit-deb-arm64
                   path: infotainment/headunit/out/make/deb/arm64/*.deb
@@ -128,7 +126,7 @@ jobs:
         name: Zone Controllers — Build
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v5
+            - uses: actions/checkout@v6
 
             - uses: actions/setup-python@v5
               with:
@@ -138,7 +136,7 @@ jobs:
             # Key includes a hash of all platformio.ini files so the cache is
             # invalidated whenever any ZC project changes its dependencies.
             - name: Cache PlatformIO
-              uses: actions/cache@v4
+              uses: actions/cache@v5
               with:
                   path: ~/.platformio
                   key: platformio-${{ hashFiles('zc/**/platformio.ini') }}
@@ -174,7 +172,7 @@ jobs:
 
             - name: Upload firmware artifacts
               if: startsWith(github.ref, 'refs/tags/')
-              uses: actions/upload-artifact@v5
+              uses: actions/upload-artifact@v7
               with:
                   name: zc-firmware
                   path: firmware-artifacts/*.bin
@@ -195,9 +193,9 @@ jobs:
             name: github-pages
             url: ${{ steps.deployment.outputs.page_url }}
         steps:
-            - uses: actions/checkout@v5
+            - uses: actions/checkout@v6
 
-            - uses: actions/setup-python@v5
+            - uses: actions/setup-python@v6
               with:
                   python-version: '3.x'
 
@@ -205,13 +203,13 @@ jobs:
               run: python zc/tools/gen_pinout_docs.py --output-dir docs/
 
             - name: Upload Pages artifact
-              uses: actions/upload-pages-artifact@v3
+              uses: actions/upload-pages-artifact@v5
               with:
                   path: docs/
 
             - name: Deploy to GitHub Pages
               id: deployment
-              uses: actions/deploy-pages@v4
+              uses: actions/deploy-pages@v5
 
     # ──────────────────────────────────────────────────────────────────────────
     # ANALYTICS
@@ -224,7 +222,7 @@ jobs:
     #         run:
     #             working-directory: analytics
     #     steps:
-    #         - uses: actions/checkout@v5
+    #         - uses: actions/checkout@v6
 
     #         - uses: actions/setup-node@v6.2.0
     #           with:
@@ -232,7 +230,7 @@ jobs:
 
     #         # Cache node_modules — keyed by package.json since there is no lockfile
     #         - name: Cache node_modules
-    #           uses: actions/cache@v4
+    #           uses: actions/cache@v5
     #           with:
     #               path: analytics/node_modules
     #               key: analytics-node-modules-${{ hashFiles('analytics/package.json') }}
@@ -271,25 +269,25 @@ jobs:
             contents: write
         steps:
             - name: Download headunit arm64 artifact
-              uses: actions/download-artifact@v4
+              uses: actions/download-artifact@v8
               with:
                   name: headunit-deb-arm64
                   path: release-assets/
 
             - name: Download headunit x86_64 artifact
-              uses: actions/download-artifact@v4
+              uses: actions/download-artifact@v8
               with:
                   name: headunit-deb-x86
                   path: release-assets/
 
             - name: Download ZC firmware artifacts
-              uses: actions/download-artifact@v4
+              uses: actions/download-artifact@v8
               with:
                   name: zc-firmware
                   path: release-assets/
 
             - name: Create GitHub Release
-              uses: softprops/action-gh-release@v2
+              uses: softprops/action-gh-release@v3
               with:
                   files: release-assets/**
                   generate_release_notes: true
