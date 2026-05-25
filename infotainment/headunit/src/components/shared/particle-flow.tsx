@@ -458,4 +458,4 @@ const ParticleFlow: React.FC<ParticleFlowProps> = ({
     );
 };
 
-export default ParticleFlow;
+export { ParticleFlow };

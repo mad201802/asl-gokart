@@ -5,8 +5,8 @@ import motorDark from "../../images/motor_dark.png";
 import motorLight from "../../images/motor_light.png";
 
 // Import particle effect components
-import EnergyFlowCanvas from "@/components/shared/EnergyFlowCanvas";
-import ParticleToggle from "@/components/shared/ParticleToggle";
+import { EnergyFlowCanvas } from "@/components/shared/energy-flow-canvas";
+import { ParticleToggle } from "@/components/shared/particle-toggle";
 
 const MotorPage = () => {
     const containerRef = useRef<HTMLDivElement>(null);

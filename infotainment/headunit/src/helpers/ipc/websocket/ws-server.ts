@@ -5,7 +5,7 @@ import { WEBSOCKET_BATTERY_MESSAGE_CHANNEL, WEBSOCKET_THROTTLE_MESSAGE_CHANNEL, 
 import * as http from 'http';
 import { ButtonHandler } from './handlers/button-handler';
 import { defaultButtonMappings } from './handlers/default-mapping';
-import { processAnalytics } from '@/helpers/analytics_helpers';
+import { processAnalytics } from '@/helpers/analytics-helpers';
 import { getBindAddress } from '@/helpers/ipc/hardware/network-config';
 const WebSocket = require('faye-websocket').WebSocket;
 

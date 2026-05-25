@@ -62,4 +62,4 @@ const ParticleToggle: React.FC<ParticleToggleProps> = ({ className }) => {
     );
 };
 
-export default ParticleToggle;
+export { ParticleToggle };
