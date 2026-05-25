@@ -94,7 +94,7 @@ const DriveNormalPage = () => {
   const { setRpm, setRawThrottle, setThrottle, setGear, setTurnSignalRight, setTurnSignalLeft, setHazardLights, setHeadlights, setHighBeams } = useStore();
 
   useEffect(() => {
-    window.websocket.onThrottleMessage((incomingPacket: string) => {
+    const cleanupThrottle = window.websocket.onThrottleMessage((incomingPacket: string) => {
       log.debug("Received incoming throttle message in drive-normal.tsx");
       const parsed: IncomingPacket = JSON.parse(incomingPacket);
       switch(parsed.command) {
@@ -114,7 +114,7 @@ const DriveNormalPage = () => {
     });
 
     // Using sero for lights messages instead of WebSocket
-    window.sero.onLightsMessage((incomingPacket: string) => {
+    const cleanupLights = window.sero.onLightsMessage((incomingPacket: string) => {
       log.debug("Received incoming lights message in drive-normal.tsx");
       const parsed: IncomingPacket = JSON.parse(incomingPacket);
       switch(parsed.command) {
@@ -134,10 +134,9 @@ const DriveNormalPage = () => {
       }
     });
 
-    // Cleanup listeners on component unmount
     return () => {
-      window.websocket.onThrottleMessage(() => {});
-      window.sero.onLightsMessage(() => {});
+      cleanupThrottle();
+      cleanupLights();
     };
 }, []);
 

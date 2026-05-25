@@ -14,6 +14,7 @@ import CarPage from "./pages/car";
 import BatteryPage from "./pages/battery";
 import { Toaster } from "@/components/ui/sonner"
 import MotorPage from "./pages/motor";
+import { ErrorBoundary } from "@/components/shared/error-boundary";
 
 export default function App() {
     const { i18n } = useTranslation();
@@ -56,11 +57,11 @@ export default function App() {
                 <div className="flex-1">
                     <>
                         <Routes>
-                            <Route path="/" element={<DriveNormalPage />} />
-                            <Route path="/motor" element={<MotorPage />} />
-                            <Route path="/car" element={<CarPage />} />
-                            <Route path="/settings" element={<SettingsPage />} />
-                            <Route path="/battery" element={<BatteryPage />} />
+                            <Route path="/" element={<ErrorBoundary><DriveNormalPage /></ErrorBoundary>} />
+                            <Route path="/motor" element={<ErrorBoundary><MotorPage /></ErrorBoundary>} />
+                            <Route path="/car" element={<ErrorBoundary><CarPage /></ErrorBoundary>} />
+                            <Route path="/settings" element={<ErrorBoundary><SettingsPage /></ErrorBoundary>} />
+                            <Route path="/battery" element={<ErrorBoundary><BatteryPage /></ErrorBoundary>} />
                         </Routes>
                     </>
                 </div>

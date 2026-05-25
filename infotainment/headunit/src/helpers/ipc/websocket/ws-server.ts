@@ -7,6 +7,7 @@ import { ButtonHandler } from './handlers/button-handler';
 import { defaultButtonMappings } from './handlers/default-mapping';
 import { processAnalytics } from '@/helpers/analytics-helpers';
 import { getBindAddress } from '@/helpers/ipc/hardware/network-config';
+import { z } from 'zod';
 const WebSocket = require('faye-websocket').WebSocket;
 
 const WSS_PORT = 6969;
@@ -16,6 +17,13 @@ const buttonHandler: ButtonHandler = new ButtonHandler(defaultButtonMappings);
 
 let currentServer: http.Server | null = null;
 let storedMainWindow: BrowserWindow | null = null;
+
+const wsIncomingSchema = z.object({
+  zone: z.string(),
+  command: z.string().optional(),
+  value: z.unknown().optional(),
+  identifier: z.string().optional(),
+});
 
 export function startWebSocketServer(mainWindow: BrowserWindow) {
   storedMainWindow = mainWindow;
@@ -30,14 +38,25 @@ export function startWebSocketServer(mainWindow: BrowserWindow) {
       log.info('WebSocket client connected');
 
       ws.on('message', (event: any) => {
-        // TODO: add zod message validation
         const message = event.data;
-        const receivedMsg = JSON.parse(message.toString());
+        let rawParsed: unknown;
+        try {
+          rawParsed = JSON.parse(message.toString());
+        } catch {
+          log.error('WebSocket: received non-JSON message, discarding');
+          return;
+        }
+        const parseResult = wsIncomingSchema.safeParse(rawParsed);
+        if (!parseResult.success) {
+          log.error('WebSocket: received invalid message structure, discarding:', parseResult.error.message);
+          return;
+        }
+        const receivedMsg = parseResult.data;
 
         if (receivedMsg.zone && !receivedMsg.command) {
           log.info(`Received register packet for zone [${receivedMsg.zone}]`);
 
-          if (Object.values(Zones).includes(receivedMsg.zone)) {
+          if (Object.values(Zones).includes(receivedMsg.zone as Zones)) {
             // if (!connected_zonecontrollers.has(receivedMsg.zone)) {
               switch (receivedMsg.zone) {
                 case Zones.THROTTLE:

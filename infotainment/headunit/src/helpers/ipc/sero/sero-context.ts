@@ -12,7 +12,9 @@ export function exposeSeroContext()  {
         },
         // Listen for lights status updates from SERO
         onLightsMessage: (callback: (lightsMessage: string) => void) => {
-            ipcRenderer.on(SERO_LIGHTS_MESSAGE_CHANNEL, (_, message) => callback(message));
+            const listener = (_: unknown, message: string) => callback(message);
+            ipcRenderer.on(SERO_LIGHTS_MESSAGE_CHANNEL, listener);
+            return () => ipcRenderer.removeListener(SERO_LIGHTS_MESSAGE_CHANNEL, listener);
         },
 
         // Send commands to the SERO zone controller for battery control
@@ -21,7 +23,9 @@ export function exposeSeroContext()  {
         },
         // Listen for battery status updates from SERO
         onBatteryMessage: (callback: (batteryMessage: string) => void) => {
-            ipcRenderer.on(SERO_BATTERY_MESSAGE_CHANNEL, (_, message) => callback(message));
+            const listener = (_: unknown, message: string) => callback(message);
+            ipcRenderer.on(SERO_BATTERY_MESSAGE_CHANNEL, listener);
+            return () => ipcRenderer.removeListener(SERO_BATTERY_MESSAGE_CHANNEL, listener);
         },
     });
 }

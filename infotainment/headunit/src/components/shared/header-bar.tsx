@@ -14,7 +14,7 @@ export const HeaderBar = () => {
     const { setBatteryVoltage } = useStore();
 
     useEffect(() => {
-        window.sero.onBatteryMessage((incomingPacket: string) => {
+        const cleanup = window.sero.onBatteryMessage((incomingPacket: string) => {
           log.debug("Received incoming battery message header-bar.tsx");
           const parsed: IncomingPacket = JSON.parse(incomingPacket);
           switch(parsed.command) {
@@ -23,10 +23,7 @@ export const HeaderBar = () => {
                 break;
           }
         });
-    // Cleanup listener on component unmount
-    return () => {
-        window.sero.onBatteryMessage(() => {});
-      };
+        return cleanup;
     }, []);
 
     return (

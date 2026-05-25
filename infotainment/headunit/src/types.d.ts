@@ -26,7 +26,7 @@ interface ElectronWindow {
 
 interface WebSocketContext {
     send: (message: OutgoingPacket, zone: Zones) => void;
-    onThrottleMessage: (callback: (throttleMessage: string) => void) => void;
+    onThrottleMessage: (callback: (throttleMessage: string) => void) => () => void;
 }
 
 interface AppContext {
@@ -44,10 +44,10 @@ interface AppContext {
 interface SeroContext {
     // zc_lights
     sendLightsCommand: (command: LightsCommands, value?: boolean | boolean[]) => void;
-    onLightsMessage: (callback: (lightsMessage: string) => void) => void;
+    onLightsMessage: (callback: (lightsMessage: string) => void) => () => void;
     // zc_battery
-    sendBatteryMessage: (command: BatteryCommands, value?: boolean | boolean[]) => void;
-    onBatteryMessage: (callback: (batteryMessage: string) => void) => void;
+    sendBatteryCommand: (command: BatteryCommands, value?: boolean | boolean[]) => void;
+    onBatteryMessage: (callback: (batteryMessage: string) => void) => () => void;
 }
 
 interface HardwareContext {

@@ -7,6 +7,7 @@ import motorLight from "../../images/motor_light.png";
 // Import particle effect components
 import { EnergyFlowCanvas } from "@/components/shared/energy-flow-canvas";
 import { ParticleToggle } from "@/components/shared/particle-toggle";
+import { ErrorBoundary } from "@/components/shared/error-boundary";
 
 const MotorPage = () => {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -104,12 +105,14 @@ const MotorPage = () => {
         <div ref={containerRef} className="relative h-full w-full">
             {/* Particle effect canvas layer */}
             {containerSize.width > 0 && motorPositions.left.x > 0 && motorPositions.right.x > 0 && (
-                <EnergyFlowCanvas
-                    leftMotorPosition={motorPositions.left}
-                    rightMotorPosition={motorPositions.right}
-                    containerWidth={containerSize.width}
-                    containerHeight={containerSize.height}
-                />
+                <ErrorBoundary fallback={null}>
+                    <EnergyFlowCanvas
+                        leftMotorPosition={motorPositions.left}
+                        rightMotorPosition={motorPositions.right}
+                        containerWidth={containerSize.width}
+                        containerHeight={containerSize.height}
+                    />
+                </ErrorBoundary>
             )}
 
             {/* Motor images layer */}

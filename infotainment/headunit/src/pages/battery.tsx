@@ -17,7 +17,7 @@ const BatteryPage = () => {
     const { setBatteryTemps, setBatteryVoltage, setBatteryCurrent } = useStore();
 
     useEffect(() => {
-        window.sero.onBatteryMessage((incomingPacket: string) => {
+        const cleanup = window.sero.onBatteryMessage((incomingPacket: string) => {
           log.debug("Received incoming battery message in battery.tsx");
           const parsed: IncomingPacket = JSON.parse(incomingPacket);
           switch(parsed.command) {
@@ -34,11 +34,8 @@ const BatteryPage = () => {
                 log.error("Invalid command (data type) received in battery message!");
           }
         });
-    // Cleanup listener on component unmount
-    return () => {
-        window.sero.onBatteryMessage(() => {});
-      };
-  }, []);
+        return cleanup;
+    }, []);
 
     // Generate 6 random battery temperatures from 10 to 40
     const randomBatteryTemps = () => {
