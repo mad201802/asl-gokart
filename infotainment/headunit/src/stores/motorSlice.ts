@@ -110,21 +110,21 @@ export const createMotorSlice: StateCreator<
   pedalMultiplier: 100,
   flowState: FlowState.IDLE,
   debugFlowStateOverride: null,
-  setGear: (gear: Gears) => set(() => ({ gear: gear })),
-  setDriveMode: (driveMode: DriveModes) => set(() => ({ driveMode: driveMode })),
-  setRawThrottle: (rawThrottle: number) => set(() => ({ rawThrottle: rawThrottle })),
-  setThrottle: (throttle: number) => set(() => {
+  setGear: (gear: Gears) => set({ gear }),
+  setDriveMode: (driveMode: DriveModes) => set({ driveMode }),
+  setRawThrottle: (rawThrottle: number) => set({ rawThrottle }),
+  setThrottle: (throttle: number) => {
     const batteryCurrent = get().batteryCurrent;
     const rpm = get().rpm;
     const debugOverride = get().debugFlowStateOverride;
-    return { 
+    set({ 
       throttle: throttle,
       flowState: debugOverride ?? calculateFlowState(batteryCurrent, throttle, rpm)
-    };
-  }),
-  setShowRawThrottle: (showRawThrottle: boolean) => set(() => ({ showRawThrottle: showRawThrottle })),
+    });
+  },
+  setShowRawThrottle: (showRawThrottle: boolean) => set({ showRawThrottle }),
   setPipeThroughRawThrottle: (pipeThroughRawThrottle: boolean) => {
-    set(() => ({ pipeThroughRawThrottle: pipeThroughRawThrottle }));
+    set({ pipeThroughRawThrottle });
     sendPipeThroughRawThrottlePacket(pipeThroughRawThrottle);
   },
   setRpm: (rpm: number) => {
@@ -132,32 +132,32 @@ export const createMotorSlice: StateCreator<
     const batteryCurrent = get().batteryCurrent;
     const throttle = get().throttle;
     const debugOverride = get().debugFlowStateOverride;
-    set(() => ({ 
+    set({ 
       rpm: rpm,
       speed: (rpm / 60) * wheelCircumference * 3.6,
       flowState: debugOverride ?? calculateFlowState(batteryCurrent, throttle, rpm)
-    }));
+    });
   },
-  setWheelCircumference: (wheelCircumference: number) => set(() => ({ wheelCircumference: wheelCircumference })),
-  setSpeed: (speed: number) => set(() => ({ speed: speed })),
-  setDailyDistance: (dailyDistance: number) => set(() => ({ dailyDistance: dailyDistance })),
+  setWheelCircumference: (wheelCircumference: number) => set({ wheelCircumference }),
+  setSpeed: (speed: number) => set({ speed }),
+  setDailyDistance: (dailyDistance: number) => set({ dailyDistance }),
   setSpeedLimit: (speedLimit: number) => {
-    set(() => ({ speedLimit: speedLimit }));
+    set({ speedLimit });
     sendThrottleLimitPacket(speedLimit, get().wheelCircumference);
   },
-  setMaxSettableSpeed: (maxSettableSpeed: number) => set(() => ({ maxSettableSpeed: maxSettableSpeed })),
-  setMinSettableSpeed: (minSettableSpeed: number) => set(() => ({ minSettableSpeed: minSettableSpeed })),
+  setMaxSettableSpeed: (maxSettableSpeed: number) => set({ maxSettableSpeed }),
+  setMinSettableSpeed: (minSettableSpeed: number) => set({ minSettableSpeed }),
   setPedalMultiplier: (pedalMultiplier: number) => {
-    set(() => ({ pedalMultiplier: pedalMultiplier }));
+    set({ pedalMultiplier });
     sendPedalMultiplierPacket(pedalMultiplier);
   },
   setDebugFlowStateOverride: (flowState: FlowState | null) => {
     const batteryCurrent = get().batteryCurrent;
     const throttle = get().throttle;
     const rpm = get().rpm;
-    set(() => ({ 
+    set({ 
       debugFlowStateOverride: flowState,
       flowState: flowState ?? calculateFlowState(batteryCurrent, throttle, rpm)
-    }));
+    });
   },
   })

@@ -1,6 +1,7 @@
 import TabsSelector from "@/components/shared/tabs-selector";
 import { Progress } from "@/components/ui/progress";
 import { useStore } from "@/stores/useStore";
+import { useShallow } from "zustand/react/shallow";
 import { Gears, tabsSelectorStates } from "@/data/controlling_models/drivetrain";
 import {
   CircularProgressbarWithChildren,
@@ -86,8 +87,32 @@ function interpolateColorBetween(
 
 const DriveNormalPage = () => {
 
-  const { gear, rawThrottle, throttle, showRawThrottle, rpm, speed, rpmBoundaries, batteryPercentage, turnSignalRight, turnSignalLeft, hazardLights, headlights, highBeams } = useStore()
-  const { setRpm, setRawThrottle, setThrottle, setGear, setTurnSignalRight, setTurnSignalLeft, setHazardLights, setHeadlights, setHighBeams } = useStore();
+  const { gear, rawThrottle, throttle, showRawThrottle, rpm, speed, rpmBoundaries, batteryPercentage, turnSignalRight, turnSignalLeft, hazardLights, headlights, highBeams, setRpm, setRawThrottle, setThrottle, setGear, setTurnSignalRight, setTurnSignalLeft, setHazardLights, setHeadlights, setHighBeams } = useStore(
+    useShallow((state) => ({
+      gear: state.gear,
+      rawThrottle: state.rawThrottle,
+      throttle: state.throttle,
+      showRawThrottle: state.showRawThrottle,
+      rpm: state.rpm,
+      speed: state.speed,
+      rpmBoundaries: state.rpmBoundaries,
+      batteryPercentage: state.batteryPercentage,
+      turnSignalRight: state.turnSignalRight,
+      turnSignalLeft: state.turnSignalLeft,
+      hazardLights: state.hazardLights,
+      headlights: state.headlights,
+      highBeams: state.highBeams,
+      setRpm: state.setRpm,
+      setRawThrottle: state.setRawThrottle,
+      setThrottle: state.setThrottle,
+      setGear: state.setGear,
+      setTurnSignalRight: state.setTurnSignalRight,
+      setTurnSignalLeft: state.setTurnSignalLeft,
+      setHazardLights: state.setHazardLights,
+      setHeadlights: state.setHeadlights,
+      setHighBeams: state.setHighBeams,
+    }))
+  );
 
   useEffect(() => {
     const cleanupThrottle = window.websocket.onThrottleMessage((incomingPacket: string) => {

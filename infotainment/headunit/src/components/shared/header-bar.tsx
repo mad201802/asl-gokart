@@ -3,6 +3,7 @@ import DigitalClock from "./clock";
 import DriveModeIndicator from "./drive-mode-indicator";
 import BatteryIndicator from "./battery-indicator";
 import { useStore } from "@/stores/useStore";
+import { useShallow } from "zustand/react/shallow";
 import React, { useEffect } from "react";
 import { IncomingPacket } from "@/data/zonecontrollers/packets";
 import { BatteryCommands } from "@/data/zonecontrollers/zonecontrollers";
@@ -10,8 +11,13 @@ import log from "@/lib/logger";
 
 export const HeaderBar = () => {
 
-    const { adminMode, batteryPercentage } = useStore();
-    const { setBatteryVoltage } = useStore();
+    const { adminMode, batteryPercentage, setBatteryVoltage } = useStore(
+        useShallow((state) => ({
+            adminMode: state.adminMode,
+            batteryPercentage: state.batteryPercentage,
+            setBatteryVoltage: state.setBatteryVoltage,
+        }))
+    );
 
     useEffect(() => {
         const cleanup = window.sero.onBatteryMessage((incomingPacket: string) => {

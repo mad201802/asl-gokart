@@ -50,9 +50,9 @@ export const createBatterySlice: StateCreator<
       const throttle = get().throttle;
       const rpm = get().rpm;
       const debugOverride = get().debugFlowStateOverride;
-      set(() => ({ 
+      set({ 
         batteryCurrent: current,
         flowState: debugOverride ?? calculateFlowState(current, throttle, rpm)
-      }));
+      });
     }
   })

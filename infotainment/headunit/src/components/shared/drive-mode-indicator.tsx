@@ -5,7 +5,7 @@ import React from "react";
 
 const DriveModeIndicator = () => {
 
-    const { driveMode } = useStore();
+    const driveMode = useStore((state) => state.driveMode);
     
     const styleClasses: { [key in DriveModes]: string } = {
         [DriveModes.eco]: 'border-green-500 bg-green-500',

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { BatteryCommands, ThrottleCommands, Zones } from "@/data/zonecontrollers/zonecontrollers";
 import { IncomingPacket, OutgoingPacket } from "@/data/zonecontrollers/packets";
 import { useStore } from "@/stores/useStore";
+import { useShallow } from "zustand/react/shallow";
 import React, { useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import ValueCard from "@/components/shared/value-card";
@@ -13,8 +14,19 @@ import log from "@/lib/logger";
 
 const BatteryPage = () => {
 
-    const { batteryTemps, avgBatteryTemp, minTemp, maxTemp, voltage, batteryCurrent } = useStore();
-    const { setBatteryTemps, setBatteryVoltage, setBatteryCurrent } = useStore();
+    const { batteryTemps, avgBatteryTemp, minTemp, maxTemp, voltage, batteryCurrent, setBatteryTemps, setBatteryVoltage, setBatteryCurrent } = useStore(
+        useShallow((state) => ({
+            batteryTemps: state.batteryTemps,
+            avgBatteryTemp: state.avgBatteryTemp,
+            minTemp: state.minTemp,
+            maxTemp: state.maxTemp,
+            voltage: state.voltage,
+            batteryCurrent: state.batteryCurrent,
+            setBatteryTemps: state.setBatteryTemps,
+            setBatteryVoltage: state.setBatteryVoltage,
+            setBatteryCurrent: state.setBatteryCurrent,
+        }))
+    );
 
     useEffect(() => {
         const cleanup = window.sero.onBatteryMessage((incomingPacket: string) => {

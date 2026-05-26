@@ -6,6 +6,7 @@ import { Slider } from "@/components/ui/slider"
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStore } from "@/stores/useStore";
+import { useShallow } from "zustand/react/shallow";
 import { DriveModes, tabsSelectorStates } from "@/data/controlling_models/drivetrain";
 import { HeaderBar } from "@/components/shared/header-bar";
 import { toast } from "sonner";
@@ -20,8 +21,22 @@ import { NetworkInterfaceDialog } from "@/components/settings/network-interface-
 
 const SettingsPage = () => {
 
-  const { driveMode, speedLimit, minSettableSpeed, maxSettableSpeed, appVersion, analyticsEnabled, logLevel } = useStore();
-  const { setDriveMode, setSpeedLimit, setAppVersion, setAnalyticsEnabled, setLogLevel } = useStore();
+  const { driveMode, speedLimit, minSettableSpeed, maxSettableSpeed, appVersion, analyticsEnabled, logLevel, setDriveMode, setSpeedLimit, setAppVersion, setAnalyticsEnabled, setLogLevel } = useStore(
+    useShallow((state) => ({
+      driveMode: state.driveMode,
+      speedLimit: state.speedLimit,
+      minSettableSpeed: state.minSettableSpeed,
+      maxSettableSpeed: state.maxSettableSpeed,
+      appVersion: state.appVersion,
+      analyticsEnabled: state.analyticsEnabled,
+      logLevel: state.logLevel,
+      setDriveMode: state.setDriveMode,
+      setSpeedLimit: state.setSpeedLimit,
+      setAppVersion: state.setAppVersion,
+      setAnalyticsEnabled: state.setAnalyticsEnabled,
+      setLogLevel: state.setLogLevel,
+    }))
+  );
 
   const [analyticsDialogOpen, setAnalyticsDialogOpen] = React.useState(false);
   const [networkInterfaceDialogOpen, setNetworkInterfaceDialogOpen] = React.useState(false);
