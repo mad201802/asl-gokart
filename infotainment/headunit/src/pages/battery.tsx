@@ -1,20 +1,17 @@
 import BatteryHeatmap from "@/components/shared/battery-temp-map/battery-heatmap";
 import { HeaderBar } from "@/components/shared/header-bar";
 import { Button } from "@/components/ui/button";
-import { BatteryCommands, ThrottleCommands, Zones } from "@/data/zonecontrollers/zonecontrollers";
-import { IncomingPacket, OutgoingPacket } from "@/data/zonecontrollers/packets";
 import { useStore } from "@/stores/useStore";
 import { useShallow } from "zustand/react/shallow";
-import React, { useEffect } from "react";
+import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import ValueCard from "@/components/shared/value-card";
 import { Label } from "@/components/ui/label";
-import log from "@/lib/logger";
 
 
 const BatteryPage = () => {
 
-    const { batteryTemps, avgBatteryTemp, minTemp, maxTemp, voltage, batteryCurrent, setBatteryTemps, setBatteryVoltage, setBatteryCurrent } = useStore(
+    const { batteryTemps, avgBatteryTemp, minTemp, maxTemp, voltage, batteryCurrent, setBatteryTemps } = useStore(
         useShallow((state) => ({
             batteryTemps: state.batteryTemps,
             avgBatteryTemp: state.avgBatteryTemp,
@@ -23,31 +20,8 @@ const BatteryPage = () => {
             voltage: state.voltage,
             batteryCurrent: state.batteryCurrent,
             setBatteryTemps: state.setBatteryTemps,
-            setBatteryVoltage: state.setBatteryVoltage,
-            setBatteryCurrent: state.setBatteryCurrent,
         }))
     );
-
-    useEffect(() => {
-        const cleanup = window.sero.onBatteryMessage((incomingPacket: string) => {
-          log.debug("Received incoming battery message in battery.tsx");
-          const parsed: IncomingPacket = JSON.parse(incomingPacket);
-          switch(parsed.command) {
-            case BatteryCommands.GET_TEMP:
-                setBatteryTemps(parsed.value);
-                break;
-            case BatteryCommands.GET_VOLTAGE:
-                setBatteryVoltage(parsed.value);
-                break;
-            case BatteryCommands.GET_CURRENT:
-                setBatteryCurrent(parsed.value);
-                break;
-            default:
-                log.error("Invalid command (data type) received in battery message!");
-          }
-        });
-        return cleanup;
-    }, []);
 
     // Generate 6 random battery temperatures from 10 to 40
     const randomBatteryTemps = () => {

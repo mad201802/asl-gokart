@@ -83,8 +83,6 @@ export function startSeroService(mainWindow: BrowserWindow) {
 
     runtime.findService(0x0001);
     runtime.findService(0x0003);
-
-    
 }
 
 // --- zc_lights ---------------------------------------------------------------------------

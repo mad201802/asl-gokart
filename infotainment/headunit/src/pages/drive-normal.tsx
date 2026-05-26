@@ -2,7 +2,7 @@ import TabsSelector from "@/components/shared/tabs-selector";
 import { Progress } from "@/components/ui/progress";
 import { useStore } from "@/stores/useStore";
 import { useShallow } from "zustand/react/shallow";
-import { Gears, tabsSelectorStates } from "@/data/controlling_models/drivetrain";
+import { tabsSelectorStates } from "@/data/controlling_models/drivetrain";
 import {
   CircularProgressbarWithChildren,
   buildStyles,
@@ -10,84 +10,15 @@ import {
 import "react-circular-progressbar/dist/styles.css";
 import { HeaderBar } from "@/components/shared/header-bar";
 import ResetDailyDistanceDialog from "@/components/shared/reset-daily-distance-dialog";
-import React, { useEffect } from "react";
-import { IncomingPacket, OutgoingPacket, RegisterPacket } from "@/data/zonecontrollers/packets";
-import { ButtonsCommands, LightsCommands, ThrottleCommands, Zones } from "@/data/zonecontrollers/zonecontrollers";
+import React from "react";
+import { LightsCommands } from "@/data/zonecontrollers/zonecontrollers";
 import { Lightbulb, OctagonAlert, Spotlight, SquareArrowLeft, SquareArrowRight, TriangleAlert } from "lucide-react";
-import log from "@/lib/logger";
-import { Segment, THROTTLE_BOUNDARIES, THROTTLE_SEGMENTS, RPM_SEGMENTS } from "@/data/gauge-config";
-
-function interpolateColor(
-  value: number,
-  minValue: number,
-  maxValue: number,
-  segments: Segment[]
-): string {
-  // Ensure the value is within the specified range
-  value = Math.max(minValue, Math.min(value, maxValue));
-
-  // Sort segments by value in ascending order
-  segments.sort((a, b) => a.value - b.value);
-
-  // Find the segment that contains the given value
-  for (let i = 0; i < segments.length - 1; i++) {
-    const currentSegment = segments[i];
-    const nextSegment = segments[i + 1];
-
-    if (value >= currentSegment.value && value < nextSegment.value) {
-      // Interpolate color between the two segments
-      const ratio =
-        (value - currentSegment.value) /
-        (nextSegment.value - currentSegment.value);
-      const interpolatedColor = interpolateColorBetween(
-        currentSegment.color,
-        nextSegment.color,
-        ratio
-      );
-      return interpolatedColor;
-    }
-  }
-
-  // If the value is outside the specified segments, return the color of the last segment
-  return segments[segments.length - 1].color;
-}
-
-function interpolateColorBetween(
-  startColor: string,
-  endColor: string,
-  ratio: number
-): string {
-  const hex = (c: number) => {
-    const hexValue = Math.round(c).toString(16);
-    return hexValue.length === 1 ? "0" + hexValue : hexValue;
-  };
-
-  // Parse colors to RGB
-  const start = startColor.match(/\w\w/g)?.map((x) => parseInt(x, 16)) || [
-    0, 0, 0,
-  ];
-  const end = endColor.match(/\w\w/g)?.map((x) => parseInt(x, 16)) || [0, 0, 0];
-
-  // Interpolate RGB values
-  const interpolatedColor = start.map((startValue, index) => {
-    const endValue = end[index];
-    const interpolatedValue = startValue + ratio * (endValue - startValue);
-    // Ensure the interpolated value stays within the valid range (0 to 255)
-    return Math.min(255, Math.max(0, interpolatedValue));
-  });
-
-  // Convert back to hex
-  return (
-    "#" +
-    hex(interpolatedColor[0]) +
-    hex(interpolatedColor[1]) +
-    hex(interpolatedColor[2])
-  );
-}
+import { THROTTLE_BOUNDARIES, THROTTLE_SEGMENTS, RPM_SEGMENTS } from "@/data/gauge-config";
+import { interpolateColor } from "@/lib/utils/gauge-utils";
 
 const DriveNormalPage = () => {
 
-  const { gear, rawThrottle, throttle, showRawThrottle, rpm, speed, rpmBoundaries, batteryPercentage, turnSignalRight, turnSignalLeft, hazardLights, headlights, highBeams, setRpm, setRawThrottle, setThrottle, setGear, setTurnSignalRight, setTurnSignalLeft, setHazardLights, setHeadlights, setHighBeams } = useStore(
+  const { gear, rawThrottle, throttle, showRawThrottle, rpm, speed, rpmBoundaries, batteryPercentage, turnSignalRight, turnSignalLeft, hazardLights, headlights, highBeams } = useStore(
     useShallow((state) => ({
       gear: state.gear,
       rawThrottle: state.rawThrottle,
@@ -102,64 +33,8 @@ const DriveNormalPage = () => {
       hazardLights: state.hazardLights,
       headlights: state.headlights,
       highBeams: state.highBeams,
-      setRpm: state.setRpm,
-      setRawThrottle: state.setRawThrottle,
-      setThrottle: state.setThrottle,
-      setGear: state.setGear,
-      setTurnSignalRight: state.setTurnSignalRight,
-      setTurnSignalLeft: state.setTurnSignalLeft,
-      setHazardLights: state.setHazardLights,
-      setHeadlights: state.setHeadlights,
-      setHighBeams: state.setHighBeams,
     }))
   );
-
-  useEffect(() => {
-    const cleanupThrottle = window.websocket.onThrottleMessage((incomingPacket: string) => {
-      log.debug("Received incoming throttle message in drive-normal.tsx");
-      const parsed: IncomingPacket = JSON.parse(incomingPacket);
-      switch(parsed.command) {
-        case ThrottleCommands.GET_THROTTLE:
-            setRawThrottle(parsed.value[0]);
-            setThrottle(parsed.value[1]);
-            break;
-        case ThrottleCommands.GET_RPM:
-            setRpm(parsed.value);
-            break;
-        case ThrottleCommands.GET_REVERSE:
-            setGear(parsed.value === 1 ? Gears.r : Gears.d);
-            break;
-        default:
-            log.error("Invalid command (data type) received in throttle message!");
-      }
-    });
-
-    // Using sero for lights messages instead of WebSocket
-    const cleanupLights = window.sero.onLightsMessage((incomingPacket: string) => {
-      log.debug("Received incoming lights message in drive-normal.tsx");
-      const parsed: IncomingPacket = JSON.parse(incomingPacket);
-      switch(parsed.command) {
-        case LightsCommands.GET_TURN_SIGNAL_LIGHTS:
-            setTurnSignalLeft(parsed.value[0]);
-            setHazardLights(parsed.value[0] === 1 && parsed.value[1] === 1);
-            setTurnSignalRight(parsed.value[1]);
-            break;
-        case LightsCommands.GET_HEADLIGHTS:
-            setHeadlights([parsed.value[0] === 1, parsed.value[1] === 1]);
-            break;
-        case LightsCommands.GET_HIGH_BEAMS:
-            setHighBeams([parsed.value[0] === 1, parsed.value[1] === 1]);
-            break;
-        default:
-            log.error("Invalid command (data type) received in lights message!");
-      }
-    });
-
-    return () => {
-      cleanupThrottle();
-      cleanupLights();
-    };
-}, []);
 
   // TODO: Convert colors to tailwind-css colors
   // TODO: Transfer color scaling boundaries to individual states (or only max. value) and multiply times 0.75 or 0.5 for the scale.

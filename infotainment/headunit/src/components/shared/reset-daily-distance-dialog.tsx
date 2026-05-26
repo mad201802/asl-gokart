@@ -11,6 +11,7 @@ import {
 import { useStore } from "@/stores/useStore";
 import { useShallow } from "zustand/react/shallow";
 import React from "react";
+import { sendResetDailyDistance } from "@/services/throttle-commands";
 
 const ResetDailyDistanceDialog = () => {
 
@@ -40,7 +41,7 @@ const ResetDailyDistanceDialog = () => {
               </Button>
             </DialogClose>
             <DialogClose>
-              <Button variant="destructive" onClick={() => {setDailyDistance(0)}}>
+              <Button variant="destructive" onClick={() => { setDailyDistance(0); sendResetDailyDistance(); }}>
                 <p>Reset</p>
               </Button>
             </DialogClose>
