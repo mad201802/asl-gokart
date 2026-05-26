@@ -8,9 +8,9 @@ import { defaultButtonMappings } from './handlers/default-mapping';
 import { processAnalytics } from '@/helpers/analytics-helpers';
 import { getBindAddress } from '@/helpers/ipc/hardware/network-config';
 import { z } from 'zod';
+import { WEBSOCKET_PORT } from '@/data/config';
 const WebSocket = require('faye-websocket').WebSocket;
 
-const WSS_PORT = 6969;
 export let connected_zonecontrollers = new Map<Zones, ZoneController>();
 
 const buttonHandler: ButtonHandler = new ButtonHandler(defaultButtonMappings);
@@ -149,8 +149,8 @@ export function startWebSocketServer(mainWindow: BrowserWindow) {
     }
   });
 
-  server.listen(WSS_PORT, bindAddress, () => {
-    log.info(`WebSocket server is running on ws://${bindAddress}:${WSS_PORT}`);
+  server.listen(WEBSOCKET_PORT, bindAddress, () => {
+    log.info(`WebSocket server is running on ws://${bindAddress}:${WEBSOCKET_PORT}`);
   });
 
   server.on('error', (err) => {

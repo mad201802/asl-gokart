@@ -14,11 +14,7 @@ import { IncomingPacket, OutgoingPacket, RegisterPacket } from "@/data/zonecontr
 import { ButtonsCommands, LightsCommands, ThrottleCommands, Zones } from "@/data/zonecontrollers/zonecontrollers";
 import { Lightbulb, OctagonAlert, Spotlight, SquareArrowLeft, SquareArrowRight, TriangleAlert } from "lucide-react";
 import log from "@/lib/logger";
-
-interface Segment {
-  value: number;
-  color: string;
-}
+import { Segment, THROTTLE_BOUNDARIES, THROTTLE_SEGMENTS, RPM_SEGMENTS } from "@/data/gauge-config";
 
 function interpolateColor(
   value: number,
@@ -140,22 +136,8 @@ const DriveNormalPage = () => {
     };
 }, []);
 
-  const throttleBoundaries = [0, 100];
-  const throttleSegments: Segment[] = [
-    { value: 0, color: "#339900" },
-    { value: 50, color: "#339900" },
-    { value: 70, color: "#ffcc00" },
-    { value: 100, color: "#cc3300" },
-  ];
-
   // TODO: Convert colors to tailwind-css colors
   // TODO: Transfer color scaling boundaries to individual states (or only max. value) and multiply times 0.75 or 0.5 for the scale.
-  const rpmSegments: Segment[] = [
-    { value: 0, color: "#339900" },
-    { value: 750, color: "#339900" },
-    { value: 1000, color: "#ffcc00" },
-    { value: 1500, color: "#cc3300" },
-  ];
 
   return (
     <div className="w-full flex flex-col">
@@ -179,9 +161,9 @@ const DriveNormalPage = () => {
                 styles={buildStyles({
                   pathColor: interpolateColor(
                     ((showRawThrottle ? rawThrottle : throttle)*100),
-                    throttleBoundaries[0],
-                    throttleBoundaries[1],
-                    throttleSegments
+                    THROTTLE_BOUNDARIES[0],
+                    THROTTLE_BOUNDARIES[1],
+                    THROTTLE_SEGMENTS
                   ),
                   rotation: 1 / 2 + 1 / 8,
                   strokeLinecap: "butt",
@@ -228,7 +210,7 @@ const DriveNormalPage = () => {
                     rpm,
                     rpmBoundaries[0],
                     rpmBoundaries[1],
-                    rpmSegments
+                    RPM_SEGMENTS
                   ),
                   rotation: 1 / 2 + 1 / 8,
                   strokeLinecap: "butt",
