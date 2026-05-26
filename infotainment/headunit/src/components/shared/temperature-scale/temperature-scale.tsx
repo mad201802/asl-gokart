@@ -1,5 +1,6 @@
 // ProgressComponent.jsx
 import * as  Progress from '@radix-ui/react-progress';
+import React from 'react';
 
 interface TemperatureScaleProps {
     currentTemp: number;

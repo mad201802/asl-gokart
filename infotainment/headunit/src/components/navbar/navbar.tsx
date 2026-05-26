@@ -1,5 +1,6 @@
 import { NavBarItemData } from "@/data/models";
 import NavBarItem from "./navbar-item";
+import React from "react";
 
 interface NavBarProps {
   items: NavBarItemData[];

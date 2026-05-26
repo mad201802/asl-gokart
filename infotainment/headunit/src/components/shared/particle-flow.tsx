@@ -57,11 +57,9 @@ const SparkMaterial = shaderMaterial(
 extend({ SparkMaterial });
 
 // Add type declaration for the custom material
-declare global {
-    namespace JSX {
-        interface IntrinsicElements {
-            sparkMaterial: any;
-        }
+declare module "@react-three/fiber" {
+    interface ThreeElements {
+        sparkMaterial: object;
     }
 }
 
@@ -430,18 +428,21 @@ const ParticleFlow: React.FC<ParticleFlowProps> = ({
             <bufferGeometry>
                 <bufferAttribute
                     attach="attributes-position"
+                    args={[positions, 3]}
                     count={totalParticles}
                     array={positions}
                     itemSize={3}
                 />
                 <bufferAttribute
                     attach="attributes-color"
+                    args={[colorsBuffer, 3]}
                     count={totalParticles}
                     array={colorsBuffer}
                     itemSize={3}
                 />
                 <bufferAttribute
                     attach="attributes-size"
+                    args={[sizes, 1]}
                     count={totalParticles}
                     array={sizes}
                     itemSize={1}

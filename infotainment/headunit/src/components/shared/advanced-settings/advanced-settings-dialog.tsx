@@ -18,7 +18,6 @@ import React from "react";
 import LabeledSwitch from "../labeled-switch";
 import { OutgoingPacket } from "@/data/zonecontrollers/packets";
 import { ThrottleCommands, Zones } from "@/data/zonecontrollers/zonecontrollers";
-import ButtonMapperDialog from "./button-mapper-dialog";
 import log from "@/lib/logger";
 
 
@@ -72,7 +71,6 @@ const AvancedSettingsDialog = () => {
               >
                 Reconnect Controller UART
               </Button>
-              <ButtonMapperDialog />
             </div>
             </DialogDescription>
             <DialogFooter>

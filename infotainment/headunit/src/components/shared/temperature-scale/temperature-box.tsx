@@ -1,3 +1,4 @@
+import React from "react";
 import TemperatureScale from "./temperature-scale";
 
 interface TemperatureBoxProps {

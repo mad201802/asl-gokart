@@ -9,6 +9,7 @@ import {
   DialogClose
 } from "@/components/ui/dialog"
 import { useStore } from "@/stores/useStore";
+import React from "react";
 
 const ResetDailyDistanceDialog = () => {
 

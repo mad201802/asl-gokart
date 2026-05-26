@@ -2,6 +2,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import { DriveModes, Gears } from "@/data/controlling_models/drivetrain";
+import React from "react";
 
 export interface TabsSelectorOption {
   value: string;

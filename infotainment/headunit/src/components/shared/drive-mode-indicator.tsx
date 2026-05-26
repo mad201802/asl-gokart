@@ -1,6 +1,7 @@
 import { Label } from "@/components/ui/label";
 import { DriveModes } from "@/data/controlling_models/drivetrain";
 import { useStore } from "@/stores/useStore";
+import React from "react";
 
 const DriveModeIndicator = () => {
 
