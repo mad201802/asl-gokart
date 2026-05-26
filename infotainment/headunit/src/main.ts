@@ -2,6 +2,7 @@ import { app, BrowserWindow } from "electron";
 import log from "electron-log/main";
 import registerListeners from "./helpers/ipc/listeners-register";
 import path from "path";
+import { stopSeroService } from "./helpers/ipc/sero/sero-service";
 
 // Initialize electron-log before anything else
 log.initialize();
@@ -43,6 +44,8 @@ function createWindow() {
 }
 
 app.whenReady().then(createWindow);
+
+app.on("before-quit", stopSeroService);
 
 //osX only
 app.on("window-all-closed", () => {

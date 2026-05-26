@@ -15,13 +15,23 @@ import BatteryPage from "./pages/battery";
 import { Toaster } from "@/components/ui/sonner"
 import MotorPage from "./pages/motor";
 import { ErrorBoundary } from "@/components/shared/error-boundary";
+import { useThrottleData } from "./hooks/useThrottleData";
+import { useBatteryData } from "./hooks/useBatteryData";
+import { useLightsData } from "./hooks/useLightsData";
+import { initHardwareCommandSubscriber } from "./services/hardware-command-subscriber";
 
 export default function App() {
     const { i18n } = useTranslation();
 
+    useThrottleData();
+    useBatteryData();
+    useLightsData();
+
     useEffect(() => {
         syncThemeWithLocal();
         updateAppLanguage(i18n);
+        const unsubHardwareCommands = initHardwareCommandSubscriber();
+        return unsubHardwareCommands;
     }, []);
 
     const navBarItems: NavBarItemData[] = [

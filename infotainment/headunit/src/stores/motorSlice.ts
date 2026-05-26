@@ -1,9 +1,6 @@
 import { Gears, DriveModes } from '@/data/controlling_models/drivetrain'
-import { OutgoingPacket } from '@/data/zonecontrollers/packets'
-import { Zones, ThrottleCommands } from '@/data/zonecontrollers/zonecontrollers'
 import { StateCreator } from 'zustand'
 import { BatterySlice } from './batterySlice'
-import log from '@/lib/logger'
 import { FlowState, calculateFlowState } from '@/lib/utils/flow-state'
 
 export { FlowState } from '@/lib/utils/flow-state'
@@ -43,50 +40,6 @@ export interface MotorSlice {
     setDebugFlowStateOverride: (flowState: FlowState | null) => void
   }
 
-const sendThrottleLimitPacket = (limit: number, wheelCircumference: number) => {
-    // Formula to calculate speed from RPM: (rpm / 60) * wheelCircumference * 3.6
-    // Map the limit to an RPM value using rearranged formula: rpm = (limit / 3.6) / wheelCircumference * 60
-    const rpm = (limit / 3.6) / wheelCircumference * 60;
-
-    const newPacket: OutgoingPacket = {
-      zone: Zones.THROTTLE,
-      command: ThrottleCommands.SET_LIMIT,
-      value: Math.round(rpm)
-    };
-    log.info(JSON.stringify(newPacket));
-    window.websocket.send(newPacket, Zones.THROTTLE);
-  }
-
-const sendPedalMultiplierPacket = (multiplier: number) => {
-    const newPacket: OutgoingPacket = {
-      zone: Zones.THROTTLE,
-      command: ThrottleCommands.SET_PEDAL_MULTIPLIER,
-      value: Math.round(multiplier)
-    };
-    log.info(JSON.stringify(newPacket));
-    window.websocket.send(newPacket, Zones.THROTTLE);
-  }
-  
-const sendPipeThroughRawThrottlePacket = (pipeThroughRawThrottle: boolean) => {
-    const newPacket: OutgoingPacket = {
-      zone: Zones.THROTTLE,
-      command: ThrottleCommands.SET_PIPE_THROUGH_RAW_THROTTLE,
-      value: pipeThroughRawThrottle
-    };
-    log.info(JSON.stringify(newPacket));
-    window.websocket.send(newPacket, Zones.THROTTLE);
-  }
-
-const sendResetDailyDistancePacket = () => {
-    const newPacket: OutgoingPacket = {
-      zone: Zones.THROTTLE,
-      command: ThrottleCommands.SET_DAILY_DISTANCE,
-      value: 0
-    };
-    log.info(JSON.stringify(newPacket));
-    window.websocket.send(newPacket, Zones.THROTTLE);
-  }
-
 export const createMotorSlice: StateCreator<
   MotorSlice & BatterySlice,
   [],
@@ -123,10 +76,7 @@ export const createMotorSlice: StateCreator<
     });
   },
   setShowRawThrottle: (showRawThrottle: boolean) => set({ showRawThrottle }),
-  setPipeThroughRawThrottle: (pipeThroughRawThrottle: boolean) => {
-    set({ pipeThroughRawThrottle });
-    sendPipeThroughRawThrottlePacket(pipeThroughRawThrottle);
-  },
+  setPipeThroughRawThrottle: (pipeThroughRawThrottle: boolean) => set({ pipeThroughRawThrottle }),
   setRpm: (rpm: number) => {
     const wheelCircumference = get().wheelCircumference;
     const batteryCurrent = get().batteryCurrent;
@@ -141,16 +91,10 @@ export const createMotorSlice: StateCreator<
   setWheelCircumference: (wheelCircumference: number) => set({ wheelCircumference }),
   setSpeed: (speed: number) => set({ speed }),
   setDailyDistance: (dailyDistance: number) => set({ dailyDistance }),
-  setSpeedLimit: (speedLimit: number) => {
-    set({ speedLimit });
-    sendThrottleLimitPacket(speedLimit, get().wheelCircumference);
-  },
+  setSpeedLimit: (speedLimit: number) => set({ speedLimit }),
   setMaxSettableSpeed: (maxSettableSpeed: number) => set({ maxSettableSpeed }),
   setMinSettableSpeed: (minSettableSpeed: number) => set({ minSettableSpeed }),
-  setPedalMultiplier: (pedalMultiplier: number) => {
-    set({ pedalMultiplier });
-    sendPedalMultiplierPacket(pedalMultiplier);
-  },
+  setPedalMultiplier: (pedalMultiplier: number) => set({ pedalMultiplier }),
   setDebugFlowStateOverride: (flowState: FlowState | null) => {
     const batteryCurrent = get().batteryCurrent;
     const throttle = get().throttle;
