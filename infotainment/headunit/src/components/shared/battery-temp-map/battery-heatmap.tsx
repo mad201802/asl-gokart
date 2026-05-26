@@ -1,5 +1,6 @@
 import { DataPoint } from "@mars3d/heatmap.js";
 import HeatmapComponent from "./heatmap-component";
+import React from "react";
 
 interface BatteryHeatmapProps {
     tempValues: number[];

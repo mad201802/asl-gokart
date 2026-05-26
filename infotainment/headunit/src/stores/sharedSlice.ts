@@ -14,15 +14,7 @@ export const createSharedSlice: StateCreator<
     [],
     SharedSlice
 > = (set, get) => ({
-    setAdminMode: (adminMode: boolean) => set(() => {
-        // If admin mode is activated, 
-        // the max settable speed is set to 120 km/h
-        return { 
-            adminMode: adminMode,
-            // This is currently not used because the maxSettableSpeed can be set in the AdminSettingsDialog
-            // maxSettableSpeed: adminMode ? 120 : 35,
-         }
-    }),
+    setAdminMode: (adminMode: boolean) => set({ adminMode }),
     setMaxSettableSpeed: (maxSettableSpeed: number) => set(() => {
         const speedLimit = get().speedLimit;
         const minSettableSpeed = get().minSettableSpeed;

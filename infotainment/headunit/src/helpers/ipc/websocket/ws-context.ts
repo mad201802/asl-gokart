@@ -12,7 +12,9 @@ export function exposeWebSocketContext() {
 
         },
         onThrottleMessage: (callback: (throttleMessage: string) => void) => {
-            ipcRenderer.on(WEBSOCKET_THROTTLE_MESSAGE_CHANNEL, (_, message) => callback(message));
+            const listener = (_: unknown, message: string) => callback(message);
+            ipcRenderer.on(WEBSOCKET_THROTTLE_MESSAGE_CHANNEL, listener);
+            return () => ipcRenderer.removeListener(WEBSOCKET_THROTTLE_MESSAGE_CHANNEL, listener);
         },
     });
 }

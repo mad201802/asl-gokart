@@ -3,6 +3,7 @@ import DigitalClock from "./clock";
 import DriveModeIndicator from "./drive-mode-indicator";
 import BatteryIndicator from "./battery-indicator";
 import { useStore } from "@/stores/useStore";
+import { useShallow } from "zustand/react/shallow";
 import React, { useEffect } from "react";
 import { IncomingPacket } from "@/data/zonecontrollers/packets";
 import { BatteryCommands } from "@/data/zonecontrollers/zonecontrollers";
@@ -10,11 +11,16 @@ import log from "@/lib/logger";
 
 export const HeaderBar = () => {
 
-    const { adminMode, batteryPercentage } = useStore();
-    const { setBatteryVoltage } = useStore();
+    const { adminMode, batteryPercentage, setBatteryVoltage } = useStore(
+        useShallow((state) => ({
+            adminMode: state.adminMode,
+            batteryPercentage: state.batteryPercentage,
+            setBatteryVoltage: state.setBatteryVoltage,
+        }))
+    );
 
     useEffect(() => {
-        window.sero.onBatteryMessage((incomingPacket: string) => {
+        const cleanup = window.sero.onBatteryMessage((incomingPacket: string) => {
           log.debug("Received incoming battery message header-bar.tsx");
           const parsed: IncomingPacket = JSON.parse(incomingPacket);
           switch(parsed.command) {
@@ -23,10 +29,7 @@ export const HeaderBar = () => {
                 break;
           }
         });
-    // Cleanup listener on component unmount
-    return () => {
-        window.sero.onBatteryMessage(() => {});
-      };
+        return cleanup;
     }, []);
 
     return (

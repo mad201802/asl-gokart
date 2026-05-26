@@ -1,10 +1,11 @@
 import { Label } from "@/components/ui/label";
 import { DriveModes } from "@/data/controlling_models/drivetrain";
 import { useStore } from "@/stores/useStore";
+import React from "react";
 
 const DriveModeIndicator = () => {
 
-    const { driveMode } = useStore();
+    const driveMode = useStore((state) => state.driveMode);
     
     const styleClasses: { [key in DriveModes]: string } = {
         [DriveModes.eco]: 'border-green-500 bg-green-500',

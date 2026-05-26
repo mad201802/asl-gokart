@@ -1,7 +1,7 @@
 import React, { Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
 import { useStore } from "@/stores/useStore";
-import ParticleFlow from "./ParticleFlow";
+import { ParticleFlow } from "./particle-flow";
 
 interface EnergyFlowCanvasProps {
     leftMotorPosition: { x: number; y: number };
@@ -97,4 +97,4 @@ const EnergyFlowCanvas: React.FC<EnergyFlowCanvasProps> = ({
     );
 };
 
-export default EnergyFlowCanvas;
+export { EnergyFlowCanvas };

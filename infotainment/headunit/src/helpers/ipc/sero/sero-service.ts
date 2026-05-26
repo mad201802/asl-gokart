@@ -8,9 +8,8 @@ import { SERO_SEND_LIGHTS_CHANNEL, SERO_LIGHTS_MESSAGE_CHANNEL, SERO_BATTERY_MES
 import { BatteryCommands, LightsCommands, Zones } from '@/data/zonecontrollers/zonecontrollers';
 import { IncomingPacket } from '@/data/zonecontrollers/packets';
 import { getBindAddress } from '@/helpers/ipc/hardware/network-config';
+import { SERO_UNICAST_PORT, SERO_CLIENT_ID } from '@/data/config';
 
-const UNICAST_PORT = 30491;
-const CLIENT_ID = 0x0002;
 const RT_INTERVAL = 10; // Interval in milliseconds for processing SeroRuntime events
 
 let rt: SeroRuntime | null = null;
@@ -20,8 +19,8 @@ let storedMainWindow: BrowserWindow | null = null;
 function createRuntime(): SeroRuntime {
     const bindIp = getBindAddress();
     const runtime = new SeroRuntime({
-        port: UNICAST_PORT,
-        clientId: CLIENT_ID,
+        port: SERO_UNICAST_PORT,
+        clientId: SERO_CLIENT_ID,
         bindIp,
     });
     return runtime;

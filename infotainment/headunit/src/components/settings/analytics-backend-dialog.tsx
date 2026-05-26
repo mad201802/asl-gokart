@@ -6,6 +6,7 @@ import { DialogHeader } from "../ui/dialog";
 import { Input } from "../ui/input";
 import React, { useEffect } from "react";
 import { useStore } from "@/stores/useStore";
+import { useShallow } from "zustand/react/shallow";
 import log from "@/lib/logger";
 import { toast } from "sonner";
 
@@ -24,7 +25,12 @@ enum ConnectionStatus {
 
 export const AnalyticsBackendDialog = ({ trigger, open, onOpenChange }: AnalyticsBackendDialogProps) => {
 
-    const { analyticsBackendUrl, setAnalyticsBackendUrl } = useStore();
+    const { analyticsBackendUrl, setAnalyticsBackendUrl } = useStore(
+        useShallow((state) => ({
+            analyticsBackendUrl: state.analyticsBackendUrl,
+            setAnalyticsBackendUrl: state.setAnalyticsBackendUrl,
+        }))
+    );
 
     const [urlInput, setUrlInput] = React.useState(analyticsBackendUrl);
     const [connectionStatus, setConnectionStatus] = React.useState<ConnectionStatus>(ConnectionStatus.Idle);

@@ -1,7 +1,7 @@
 import { app, ipcMain } from "electron";
 import log from "electron-log/main";
 import { APP_TOGGLE_ANALYTICS_CHANNEL, APP_VERSION_CHANNEL, APP_GET_ANALYTICS_URL_CHANNEL, APP_SET_ANALYTICS_URL_CHANNEL, APP_CHECK_ANALYTICS_CONNECTION_CHANNEL, APP_SET_LOG_LEVEL_CHANNEL, APP_GET_LOG_LEVEL_CHANNEL, APP_GET_ANALYTICS_INTERFACE_CHANNEL, APP_SET_ANALYTICS_INTERFACE_CHANNEL } from "./app-channels";
-import { toggleAnalytics, getAnalyticsBackendUrl, setAnalyticsBackendUrl, checkAnalyticsConnection } from "@/helpers/analytics_helpers";
+import { toggleAnalytics, getAnalyticsBackendUrl, setAnalyticsBackendUrl, checkAnalyticsConnection } from "@/helpers/analytics-helpers";
 import { getCurrentAnalyticsInterface, setStoredAnalyticsMac } from "@/helpers/ipc/hardware/network-config";
 import type { LogLevel } from "@/lib/logger";
 

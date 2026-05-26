@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { BatteryCommands, ThrottleCommands, Zones } from "@/data/zonecontrollers/zonecontrollers";
 import { IncomingPacket, OutgoingPacket } from "@/data/zonecontrollers/packets";
 import { useStore } from "@/stores/useStore";
+import { useShallow } from "zustand/react/shallow";
 import React, { useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import ValueCard from "@/components/shared/value-card";
@@ -13,11 +14,22 @@ import log from "@/lib/logger";
 
 const BatteryPage = () => {
 
-    const { batteryTemps, avgBatteryTemp, minTemp, maxTemp, voltage, batteryCurrent } = useStore();
-    const { setBatteryTemps, setBatteryVoltage, setBatteryCurrent } = useStore();
+    const { batteryTemps, avgBatteryTemp, minTemp, maxTemp, voltage, batteryCurrent, setBatteryTemps, setBatteryVoltage, setBatteryCurrent } = useStore(
+        useShallow((state) => ({
+            batteryTemps: state.batteryTemps,
+            avgBatteryTemp: state.avgBatteryTemp,
+            minTemp: state.minTemp,
+            maxTemp: state.maxTemp,
+            voltage: state.voltage,
+            batteryCurrent: state.batteryCurrent,
+            setBatteryTemps: state.setBatteryTemps,
+            setBatteryVoltage: state.setBatteryVoltage,
+            setBatteryCurrent: state.setBatteryCurrent,
+        }))
+    );
 
     useEffect(() => {
-        window.sero.onBatteryMessage((incomingPacket: string) => {
+        const cleanup = window.sero.onBatteryMessage((incomingPacket: string) => {
           log.debug("Received incoming battery message in battery.tsx");
           const parsed: IncomingPacket = JSON.parse(incomingPacket);
           switch(parsed.command) {
@@ -34,11 +46,8 @@ const BatteryPage = () => {
                 log.error("Invalid command (data type) received in battery message!");
           }
         });
-    // Cleanup listener on component unmount
-    return () => {
-        window.sero.onBatteryMessage(() => {});
-      };
-  }, []);
+        return cleanup;
+    }, []);
 
     // Generate 6 random battery temperatures from 10 to 40
     const randomBatteryTemps = () => {

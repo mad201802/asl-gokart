@@ -1,6 +1,7 @@
 import TabsSelector from "@/components/shared/tabs-selector";
 import { Progress } from "@/components/ui/progress";
 import { useStore } from "@/stores/useStore";
+import { useShallow } from "zustand/react/shallow";
 import { Gears, tabsSelectorStates } from "@/data/controlling_models/drivetrain";
 import {
   CircularProgressbarWithChildren,
@@ -14,11 +15,7 @@ import { IncomingPacket, OutgoingPacket, RegisterPacket } from "@/data/zonecontr
 import { ButtonsCommands, LightsCommands, ThrottleCommands, Zones } from "@/data/zonecontrollers/zonecontrollers";
 import { Lightbulb, OctagonAlert, Spotlight, SquareArrowLeft, SquareArrowRight, TriangleAlert } from "lucide-react";
 import log from "@/lib/logger";
-
-interface Segment {
-  value: number;
-  color: string;
-}
+import { Segment, THROTTLE_BOUNDARIES, THROTTLE_SEGMENTS, RPM_SEGMENTS } from "@/data/gauge-config";
 
 function interpolateColor(
   value: number,
@@ -90,11 +87,35 @@ function interpolateColorBetween(
 
 const DriveNormalPage = () => {
 
-  const { gear, rawThrottle, throttle, showRawThrottle, rpm, speed, rpmBoundaries, batteryPercentage, turnSignalRight, turnSignalLeft, hazardLights, headlights, highBeams } = useStore()
-  const { setRpm, setRawThrottle, setThrottle, setGear, setTurnSignalRight, setTurnSignalLeft, setHazardLights, setHeadlights, setHighBeams } = useStore();
+  const { gear, rawThrottle, throttle, showRawThrottle, rpm, speed, rpmBoundaries, batteryPercentage, turnSignalRight, turnSignalLeft, hazardLights, headlights, highBeams, setRpm, setRawThrottle, setThrottle, setGear, setTurnSignalRight, setTurnSignalLeft, setHazardLights, setHeadlights, setHighBeams } = useStore(
+    useShallow((state) => ({
+      gear: state.gear,
+      rawThrottle: state.rawThrottle,
+      throttle: state.throttle,
+      showRawThrottle: state.showRawThrottle,
+      rpm: state.rpm,
+      speed: state.speed,
+      rpmBoundaries: state.rpmBoundaries,
+      batteryPercentage: state.batteryPercentage,
+      turnSignalRight: state.turnSignalRight,
+      turnSignalLeft: state.turnSignalLeft,
+      hazardLights: state.hazardLights,
+      headlights: state.headlights,
+      highBeams: state.highBeams,
+      setRpm: state.setRpm,
+      setRawThrottle: state.setRawThrottle,
+      setThrottle: state.setThrottle,
+      setGear: state.setGear,
+      setTurnSignalRight: state.setTurnSignalRight,
+      setTurnSignalLeft: state.setTurnSignalLeft,
+      setHazardLights: state.setHazardLights,
+      setHeadlights: state.setHeadlights,
+      setHighBeams: state.setHighBeams,
+    }))
+  );
 
   useEffect(() => {
-    window.websocket.onThrottleMessage((incomingPacket: string) => {
+    const cleanupThrottle = window.websocket.onThrottleMessage((incomingPacket: string) => {
       log.debug("Received incoming throttle message in drive-normal.tsx");
       const parsed: IncomingPacket = JSON.parse(incomingPacket);
       switch(parsed.command) {
@@ -114,7 +135,7 @@ const DriveNormalPage = () => {
     });
 
     // Using sero for lights messages instead of WebSocket
-    window.sero.onLightsMessage((incomingPacket: string) => {
+    const cleanupLights = window.sero.onLightsMessage((incomingPacket: string) => {
       log.debug("Received incoming lights message in drive-normal.tsx");
       const parsed: IncomingPacket = JSON.parse(incomingPacket);
       switch(parsed.command) {
@@ -134,29 +155,14 @@ const DriveNormalPage = () => {
       }
     });
 
-    // Cleanup listeners on component unmount
     return () => {
-      window.websocket.onThrottleMessage(() => {});
-      window.sero.onLightsMessage(() => {});
+      cleanupThrottle();
+      cleanupLights();
     };
 }, []);
 
-  const throttleBoundaries = [0, 100];
-  const throttleSegments: Segment[] = [
-    { value: 0, color: "#339900" },
-    { value: 50, color: "#339900" },
-    { value: 70, color: "#ffcc00" },
-    { value: 100, color: "#cc3300" },
-  ];
-
   // TODO: Convert colors to tailwind-css colors
   // TODO: Transfer color scaling boundaries to individual states (or only max. value) and multiply times 0.75 or 0.5 for the scale.
-  const rpmSegments: Segment[] = [
-    { value: 0, color: "#339900" },
-    { value: 750, color: "#339900" },
-    { value: 1000, color: "#ffcc00" },
-    { value: 1500, color: "#cc3300" },
-  ];
 
   return (
     <div className="w-full flex flex-col">
@@ -180,9 +186,9 @@ const DriveNormalPage = () => {
                 styles={buildStyles({
                   pathColor: interpolateColor(
                     ((showRawThrottle ? rawThrottle : throttle)*100),
-                    throttleBoundaries[0],
-                    throttleBoundaries[1],
-                    throttleSegments
+                    THROTTLE_BOUNDARIES[0],
+                    THROTTLE_BOUNDARIES[1],
+                    THROTTLE_SEGMENTS
                   ),
                   rotation: 1 / 2 + 1 / 8,
                   strokeLinecap: "butt",
@@ -229,7 +235,7 @@ const DriveNormalPage = () => {
                     rpm,
                     rpmBoundaries[0],
                     rpmBoundaries[1],
-                    rpmSegments
+                    RPM_SEGMENTS
                   ),
                   rotation: 1 / 2 + 1 / 8,
                   strokeLinecap: "butt",

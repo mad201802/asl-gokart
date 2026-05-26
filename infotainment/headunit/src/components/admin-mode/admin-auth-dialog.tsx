@@ -1,5 +1,6 @@
 import React from "react";
 import { useStore } from "@/stores/useStore";
+import { useShallow } from "zustand/react/shallow";
 import { toast } from "sonner";
 import { CodeInput } from "./code-input";
 import { CodeNumberpad } from "./code-numberpad";
@@ -13,7 +14,13 @@ type AdminAuthDialogProps = {
 
 export const AdminAuthDialog = ({ trigger }: AdminAuthDialogProps) => {
 
-    const { adminMode, setAdminMode, setAdminPin } = useStore();
+    const { adminMode, setAdminMode, setAdminPin } = useStore(
+        useShallow((state) => ({
+            adminMode: state.adminMode,
+            setAdminMode: state.setAdminMode,
+            setAdminPin: state.setAdminPin,
+        }))
+    );
 
     let handleLogout = () => {
         setAdminMode(false);

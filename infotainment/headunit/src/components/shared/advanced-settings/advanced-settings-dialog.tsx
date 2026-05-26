@@ -14,11 +14,11 @@ import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
 import { useStore } from "@/stores/useStore";
+import { useShallow } from "zustand/react/shallow";
 import React from "react";
 import LabeledSwitch from "../labeled-switch";
 import { OutgoingPacket } from "@/data/zonecontrollers/packets";
 import { ThrottleCommands, Zones } from "@/data/zonecontrollers/zonecontrollers";
-import ButtonMapperDialog from "./button-mapper-dialog";
 import log from "@/lib/logger";
 
 
@@ -26,8 +26,14 @@ const AvancedSettingsDialog = () => {
 
     const [showBrightnessWarning, setShowBrightnessWarning] = useState(false);
 
-    const { screenBrightness, showRawThrottle } = useStore();
-    const { setScreenBrightness, setShowRawThrottle } = useStore();
+    const { screenBrightness, showRawThrottle, setScreenBrightness, setShowRawThrottle } = useStore(
+        useShallow((state) => ({
+            screenBrightness: state.screenBrightness,
+            showRawThrottle: state.showRawThrottle,
+            setScreenBrightness: state.setScreenBrightness,
+            setShowRawThrottle: state.setShowRawThrottle,
+        }))
+    );
 
     let handleSliderChange = (value: number) => {
         setScreenBrightness(value);
@@ -72,7 +78,6 @@ const AvancedSettingsDialog = () => {
               >
                 Reconnect Controller UART
               </Button>
-              <ButtonMapperDialog />
             </div>
             </DialogDescription>
             <DialogFooter>

@@ -18,15 +18,15 @@ export const createLightsSlice: StateCreator<
   [],
   [],
   LightsSlice
-  > = (set, get) => ({
+  > = (set) => ({
   turnSignalLeft: false,
   turnSignalRight: false,
   hazardLights: false,
   headlights: [false, false],
   highBeams: [false, false],
-  setTurnSignalLeft: (value: boolean) => set(() => ({ turnSignalLeft: value })),
-  setTurnSignalRight: (value: boolean) => set(() => ({ turnSignalRight: value })),
-  setHazardLights: (value: boolean) => set(() => ({ hazardLights: value })),
-  setHeadlights: (value: [boolean, boolean]) => set(() => ({ headlights: value })),
-  setHighBeams: (value: [boolean, boolean]) => set(() => ({ highBeams: value })),
+  setTurnSignalLeft: (value: boolean) => set({ turnSignalLeft: value }),
+  setTurnSignalRight: (value: boolean) => set({ turnSignalRight: value }),
+  setHazardLights: (value: boolean) => set({ hazardLights: value }),
+  setHeadlights: (value: [boolean, boolean]) => set({ headlights: value }),
+  setHighBeams: (value: [boolean, boolean]) => set({ highBeams: value }),
   })

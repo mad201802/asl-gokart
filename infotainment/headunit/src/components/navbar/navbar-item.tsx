@@ -1,4 +1,5 @@
 import { NavBarItemData } from "@/data/models";
+import React from "react";
 import { Link } from "react-router-dom";
 
 const NavBarItem = ({ Icon, label, linkTo }: NavBarItemData) => {

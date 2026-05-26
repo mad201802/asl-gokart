@@ -9,10 +9,17 @@ import {
   DialogClose
 } from "@/components/ui/dialog"
 import { useStore } from "@/stores/useStore";
+import { useShallow } from "zustand/react/shallow";
+import React from "react";
 
 const ResetDailyDistanceDialog = () => {
 
-    const { dailyDistance, setDailyDistance } = useStore();
+    const { dailyDistance, setDailyDistance } = useStore(
+        useShallow((state) => ({
+            dailyDistance: state.dailyDistance,
+            setDailyDistance: state.setDailyDistance,
+        }))
+    );
 
     return (
         <Dialog>

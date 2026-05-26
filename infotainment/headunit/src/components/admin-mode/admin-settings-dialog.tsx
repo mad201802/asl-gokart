@@ -13,14 +13,26 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { useStore } from "@/stores/useStore";
+import { useShallow } from "zustand/react/shallow";
 import React from "react";
 import LabeledSwitch from "../shared/labeled-switch";
 
 
 const AdminSettingsDialog = () => {
 
-    const { adminMode, maxSettableSpeed, minSettableSpeed, pipeThroughRawThrottle, pedalMultiplier } = useStore();
-    const { setMaxSettableSpeed, setMinSettableSpeed, setPipeThroughRawThrottle, setPedalMultiplier } = useStore();
+    const { adminMode, maxSettableSpeed, minSettableSpeed, pipeThroughRawThrottle, pedalMultiplier, setMaxSettableSpeed, setMinSettableSpeed, setPipeThroughRawThrottle, setPedalMultiplier } = useStore(
+        useShallow((state) => ({
+            adminMode: state.adminMode,
+            maxSettableSpeed: state.maxSettableSpeed,
+            minSettableSpeed: state.minSettableSpeed,
+            pipeThroughRawThrottle: state.pipeThroughRawThrottle,
+            pedalMultiplier: state.pedalMultiplier,
+            setMaxSettableSpeed: state.setMaxSettableSpeed,
+            setMinSettableSpeed: state.setMinSettableSpeed,
+            setPipeThroughRawThrottle: state.setPipeThroughRawThrottle,
+            setPedalMultiplier: state.setPedalMultiplier,
+        }))
+    );
 
     return (
     <Dialog>
