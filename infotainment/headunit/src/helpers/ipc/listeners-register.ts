@@ -9,6 +9,8 @@ import { Zones } from "@/data/zonecontrollers/zonecontrollers";
 import { addAppEventListeners } from "./application/app-listeners";
 import { registerSeroHandlers, startSeroService } from "./sero/sero-service";
 import { registerHardwareListeners } from "./hardware/hardware-listeners";
+import { registerFirmwareListeners } from "./firmware/firmware-listeners";
+import { startFirmwareServer } from "./firmware/firmware-server";
 
 export default function registerListeners(mainWindow: BrowserWindow) {
     addWindowEventListeners(mainWindow);
@@ -18,6 +20,8 @@ export default function registerListeners(mainWindow: BrowserWindow) {
     registerSeroHandlers();
     addAppEventListeners();
     registerHardwareListeners();
+    startFirmwareServer();
+    registerFirmwareListeners();
 
     ipcMain.on(WEBSOCKET_SEND_CHANNEL, (event, message: OutgoingPacket, zoneToSendTo: Zones) => {
         // Send the message to the zone controller matching the specified zone
