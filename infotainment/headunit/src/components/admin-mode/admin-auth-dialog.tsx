@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { CodeInput } from "./code-input";
 import { CodeNumberpad } from "./code-numberpad";
 import { Button } from "../ui/button";
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "../ui/dialog";
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
 import { Separator } from "../ui/separator";
 
 type AdminAuthDialogProps = {
@@ -30,29 +30,40 @@ export const AdminAuthDialog = ({ trigger }: AdminAuthDialogProps) => {
 
     return (
         <Dialog>
-        <DialogTrigger asChild>
-            {trigger}
-        </DialogTrigger>
-        <DialogContent>
-            <DialogHeader>
-            <DialogTitle>Admin Mode</DialogTitle>
-            </DialogHeader>
-            <DialogDescription>
-            {!adminMode && <p>Enter your Pin to unlock the administrator features</p>}
-            {adminMode && <p className="text-green-700">Admin Mode activated!</p>}
-            <Separator className="mt-3"/>
-            </DialogDescription>
-            
-            { !adminMode && <div className="flex flex-row justify-center">
-            <CodeInput />
-            </div> }
-            
-            { !adminMode && <CodeNumberpad /> }
-            
-            { adminMode && <div className="flex flex-row justify-center">
-            <Button onClick={() => handleLogout()}>Logout</Button>
-            </div> }
-        </DialogContent>
+            <DialogTrigger asChild>
+                {trigger}
+            </DialogTrigger>
+            <DialogContent className="max-w-sm">
+                <DialogHeader>
+                    <DialogTitle>Admin Mode</DialogTitle>
+                </DialogHeader>
+                <DialogDescription>
+                    {!adminMode && <p>Enter your PIN to unlock administrator features</p>}
+                    {adminMode && <p className="text-green-600">Admin mode is active</p>}
+                    <Separator className="mt-3" />
+                </DialogDescription>
+
+                {!adminMode && (
+                    <>
+                        <div className="flex flex-row justify-center pt-1">
+                            <CodeInput />
+                        </div>
+                        <CodeNumberpad />
+                    </>
+                )}
+
+                {adminMode && (
+                    <div className="flex flex-col items-center gap-3 py-2">
+                        <Button
+                            variant="destructive"
+                            className="h-14 w-full text-base"
+                            onClick={handleLogout}
+                        >
+                            Lock Admin Mode
+                        </Button>
+                    </div>
+                )}
+            </DialogContent>
         </Dialog>
-    )
+    );
 }
