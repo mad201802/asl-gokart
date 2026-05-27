@@ -22,7 +22,7 @@ export const AdminAuthDialog = ({ trigger }: AdminAuthDialogProps) => {
         }))
     );
 
-    let handleLogout = () => {
+    const handleLogout = () => {
         setAdminMode(false);
         setAdminPin("");
         toast("Admin mode disabled!");

@@ -16,13 +16,12 @@ import { NetworkInterface, NetworkInterfaceType, parseNetworkInterfaces } from "
 import { Loader2 } from "lucide-react";
 
 type NetworkInterfaceDialogProps = {
-    trigger: React.ReactNode,
-    open: boolean,
-    onOpenChange: (open: boolean) => void,
+    trigger: React.ReactNode;
 };
 
-export const NetworkInterfaceDialog = ({ trigger, open, onOpenChange }: NetworkInterfaceDialogProps) => {
+export const NetworkInterfaceDialog = ({ trigger }: NetworkInterfaceDialogProps) => {
 
+    const [open, setOpen] = React.useState(false);
     const [availableInterfaces, setAvailableInterfaces] = React.useState<NetworkInterface[]>([]);
 
     // Background services interface
@@ -126,15 +125,14 @@ export const NetworkInterfaceDialog = ({ trigger, open, onOpenChange }: NetworkI
     );
 
     return (
-        <div>
-            <Dialog 
-                open={open} 
-                onOpenChange={(v) => {
-                    if (!saving) onOpenChange(v);
-                }}>
-                <DialogTrigger asChild>
-                    {trigger}
-                </DialogTrigger>
+        <Dialog
+            open={open}
+            onOpenChange={(v) => {
+                if (!saving) setOpen(v);
+            }}>
+            <DialogTrigger asChild>
+                {trigger}
+            </DialogTrigger>
                 <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Network Interface Configuration</DialogTitle>
@@ -219,7 +217,6 @@ export const NetworkInterfaceDialog = ({ trigger, open, onOpenChange }: NetworkI
                         {saving ? (backgroundChanged ? "Restarting..." : "Saving...") : "Save"}
                     </Button>
                 </DialogContent>
-            </Dialog>
-        </div>
-    )
+        </Dialog>
+    );
 }

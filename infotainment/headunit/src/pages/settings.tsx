@@ -10,7 +10,7 @@ import { useShallow } from "zustand/react/shallow";
 import { DriveModes, tabsSelectorStates } from "@/data/controlling_models/drivetrain";
 import { HeaderBar } from "@/components/shared/header-bar";
 import { toast } from "sonner";
-import AvancedSettingsDialog from "@/components/shared/advanced-settings/advanced-settings-dialog";
+import AdvancedSettingsDialog from "@/components/shared/advanced-settings/advanced-settings-dialog";
 import AdminSettingsDialog from "@/components/admin-mode/admin-settings-dialog";
 import React, { useEffect } from "react";
 import PowerMenu from "@/components/power-menu/power-menu";
@@ -38,11 +38,6 @@ const SettingsPage = () => {
     }))
   );
 
-  const [analyticsDialogOpen, setAnalyticsDialogOpen] = React.useState(false);
-  const [networkInterfaceDialogOpen, setNetworkInterfaceDialogOpen] = React.useState(false);
-
-//  const [speedLimitUiLabel, setSpeedLimitUiLabel] = React.useState(speedLimit);
-
   useEffect(() => {
     const fetchAppVersion = async () => {
       try {
@@ -63,9 +58,9 @@ const SettingsPage = () => {
     };
     fetchAppVersion();
     fetchLogLevel();
-  }, []);
+  }, [setAppVersion, setLogLevel]);
 
-  let handleToggleAnalytics = (enabled: boolean) => {
+  const handleToggleAnalytics = (enabled: boolean) => {
     window.app.toggleAnalytics(enabled)
       .then((result) => {
         setAnalyticsEnabled(result);
@@ -73,15 +68,7 @@ const SettingsPage = () => {
       });
   }
 
-  // let handleAnalyticsDialogOpenChange = (open: boolean) => {
-  //   setAnalyticsDialogOpen(open);
-  //   if (open) {
-  //     setUrlInput(analyticsBackendUrl);
-  //     setConnectionStatus("idle");
-  //   }
-  // }
-
-  let handleLogLevelChange = async (level: LogLevel) => {
+  const handleLogLevelChange = async (level: LogLevel) => {
     setLogLevel(level);
     setRendererLogLevel(level);
     await window.app.setLogLevel(level);
@@ -109,20 +96,12 @@ const SettingsPage = () => {
               <Label htmlFor="analytics-backend" className="text-base mr-5">Analytics Backend</Label>
               <AnalyticsBackendDialog
                 trigger={<Button variant="outline">Configure</Button>}
-                open={analyticsDialogOpen}
-                onOpenChange={(open) => {
-                  setAnalyticsDialogOpen(open);
-                }}
               />
           </div>
           <div className="flex flex-row justify-between items-center space-x-4">
               <Label htmlFor="network-interface" className="text-base mr-5">Network Interface</Label>
               <NetworkInterfaceDialog
                 trigger={<Button variant="outline">Configure</Button>}
-                open={networkInterfaceDialogOpen}
-                onOpenChange={(open) => {
-                  setNetworkInterfaceDialogOpen(open);
-                }}
               />
           </div>
           <div className="flex flex-row justify-between items-center space-x-4">
@@ -147,7 +126,7 @@ const SettingsPage = () => {
               />
           <div className="flex flex-row justify-between items-center space-x-4">
               <Label htmlFor="avanced-settings" className="text-base mr-5">Advanced Settings</Label>
-              <AvancedSettingsDialog />
+              <AdvancedSettingsDialog />
           </div>
           <div className="flex flex-row justify-between items-center space-x-4">
               <Label htmlFor="admin-mode" className="text-base mr-5">Admin Mode</Label>
@@ -165,8 +144,6 @@ const SettingsPage = () => {
               { speedLimit } km/h
             </Label>
             <Slider 
-              // onValueChange={(v) => setSpeedLimit(Number(v))}  
-              // onValueChange={(v) => setSpeedLimitUiLabel(Number(v))}
               onValueCommit={(v) => setSpeedLimit(Number(v))}
               defaultValue={[speedLimit]} 
               min={minSettableSpeed} 

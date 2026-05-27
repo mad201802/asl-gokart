@@ -15,7 +15,7 @@ const PowerMenu = () => {
 
     return (
         <Dialog>
-        <DialogTrigger>
+        <DialogTrigger asChild>
             <Button>
                 <Power size={24} className="mr-3" />
                 Power Menu

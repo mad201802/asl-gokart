@@ -11,9 +11,7 @@ import log from "@/lib/logger";
 import { toast } from "sonner";
 
 type AnalyticsBackendDialogProps = {
-    trigger: React.ReactNode,
-    open: boolean,
-    onOpenChange: (open: boolean) => void,
+    trigger: React.ReactNode;
 };
 
 enum ConnectionStatus {
@@ -23,7 +21,7 @@ enum ConnectionStatus {
     Error = "error",
 };
 
-export const AnalyticsBackendDialog = ({ trigger, open, onOpenChange }: AnalyticsBackendDialogProps) => {
+export const AnalyticsBackendDialog = ({ trigger }: AnalyticsBackendDialogProps) => {
 
     const { analyticsBackendUrl, setAnalyticsBackendUrl } = useStore(
         useShallow((state) => ({
@@ -32,23 +30,26 @@ export const AnalyticsBackendDialog = ({ trigger, open, onOpenChange }: Analytic
         }))
     );
 
+    const [open, setOpen] = React.useState(false);
     const [urlInput, setUrlInput] = React.useState(analyticsBackendUrl);
     const [connectionStatus, setConnectionStatus] = React.useState<ConnectionStatus>(ConnectionStatus.Idle);
-    
+
     useEffect(() => {
+        if (!open) return;
+        setConnectionStatus(ConnectionStatus.Idle);
         const fetchAnalyticsUrl = async () => {
-        try {
-            const url = await window.app.getAnalyticsUrl();
-            setAnalyticsBackendUrl(url);
-            setUrlInput(url);
-        } catch (e) {
-            log.error(e);
-        }
+            try {
+                const url = await window.app.getAnalyticsUrl();
+                setAnalyticsBackendUrl(url);
+                setUrlInput(url);
+            } catch (e) {
+                log.error(e);
+            }
         };
         fetchAnalyticsUrl();
-    }, []);
+    }, [open, setAnalyticsBackendUrl]);
 
-    let handleCheckConnection = async () => {
+    const handleCheckConnection = async () => {
         setConnectionStatus(ConnectionStatus.Checking);
         try {
             // backend URL stripped of any API path, for connection testing (universal stripping, not just /api/gokart)
@@ -60,19 +61,18 @@ export const AnalyticsBackendDialog = ({ trigger, open, onOpenChange }: Analytic
         }
     };
 
-    let handleSaveAnalyticsUrl = async (onOpenChange: (open: boolean) => void) => {
+    const handleSaveAnalyticsUrl = async () => {
         const savedUrl = await window.app.setAnalyticsUrl(urlInput);
         setAnalyticsBackendUrl(savedUrl);
-        onOpenChange(false);
+        setOpen(false);
         toast("Analytics Backend URL updated!");
     };
     
     return (
-        <div>
-            <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogTrigger asChild>
-                    {trigger}
-                </DialogTrigger>
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                {trigger}
+            </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Analytics Backend URL</DialogTitle>
@@ -102,13 +102,12 @@ export const AnalyticsBackendDialog = ({ trigger, open, onOpenChange }: Analytic
                       <Button variant="outline" onClick={handleCheckConnection} disabled={connectionStatus === ConnectionStatus.Checking || !urlInput}>
                         {connectionStatus === ConnectionStatus.Checking ? "Checking..." : "Check Connection"}
                       </Button>
-                      <Button onClick={() => handleSaveAnalyticsUrl(onOpenChange)} disabled={connectionStatus !== ConnectionStatus.Success}>
+                      <Button onClick={handleSaveAnalyticsUrl} disabled={connectionStatus !== ConnectionStatus.Success}>
                         Save
                       </Button>
                     </div>
                   </div>
                 </DialogContent>
-              </Dialog>
-        </div>
-    )
+        </Dialog>
+    );
 }

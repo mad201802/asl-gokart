@@ -22,7 +22,7 @@ import { ThrottleCommands, Zones } from "@/data/zonecontrollers/zonecontrollers"
 import log from "@/lib/logger";
 
 
-const AvancedSettingsDialog = () => {
+const AdvancedSettingsDialog = () => {
 
     const [showBrightnessWarning, setShowBrightnessWarning] = useState(false);
 
@@ -35,7 +35,7 @@ const AvancedSettingsDialog = () => {
         }))
     );
 
-    let handleSliderChange = (value: number) => {
+    const handleSliderChange = (value: number) => {
         setScreenBrightness(value);
         if(value < 25) {
           setShowBrightnessWarning(true);
@@ -90,4 +90,4 @@ const AvancedSettingsDialog = () => {
     )
 } 
 
-export default AvancedSettingsDialog;
+export default AdvancedSettingsDialog;
