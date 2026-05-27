@@ -105,8 +105,6 @@ const SettingsPage = () => {
             defaultValue={analyticsEnabled} 
             onChange={(v) => handleToggleAnalytics(v)}
             />
-          <LabeledSwitch id="airplane-mode" label="Airplane Mode" defaultValue={false} />
-          <LabeledSwitch id="on-by-default" label="On by Default" defaultValue={true} />
           <div className="flex flex-row justify-between items-center space-x-4">
               <Label htmlFor="analytics-backend" className="text-base mr-5">Analytics Backend</Label>
               <AnalyticsBackendDialog
