@@ -18,10 +18,11 @@ import log, { setRendererLogLevel, type LogLevel } from "@/lib/logger";
 import { AnalyticsBackendDialog } from "@/components/settings/analytics-backend-dialog";
 import { AdminAuthDialog } from "@/components/admin-mode/admin-auth-dialog";
 import { NetworkInterfaceDialog } from "@/components/settings/network-interface-dialog";
+import { useNavigate } from "react-router-dom";
 
 const SettingsPage = () => {
 
-  const { driveMode, speedLimit, minSettableSpeed, maxSettableSpeed, appVersion, analyticsEnabled, logLevel, setDriveMode, setSpeedLimit, setAppVersion, setAnalyticsEnabled, setLogLevel } = useStore(
+  const { driveMode, speedLimit, minSettableSpeed, maxSettableSpeed, appVersion, analyticsEnabled, logLevel, adminMode, setDriveMode, setSpeedLimit, setAppVersion, setAnalyticsEnabled, setLogLevel } = useStore(
     useShallow((state) => ({
       driveMode: state.driveMode,
       speedLimit: state.speedLimit,
@@ -30,6 +31,7 @@ const SettingsPage = () => {
       appVersion: state.appVersion,
       analyticsEnabled: state.analyticsEnabled,
       logLevel: state.logLevel,
+      adminMode: state.adminMode,
       setDriveMode: state.setDriveMode,
       setSpeedLimit: state.setSpeedLimit,
       setAppVersion: state.setAppVersion,
@@ -37,6 +39,8 @@ const SettingsPage = () => {
       setLogLevel: state.setLogLevel,
     }))
   );
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchAppVersion = async () => {
@@ -137,6 +141,15 @@ const SettingsPage = () => {
           <div className="flex flex-row justify-between items-center space-x-4">
               <Label htmlFor="avanced-settings" className="text-base mr-5">Admin Settings</Label>
               <AdminSettingsDialog />
+          </div>
+          <div className="flex flex-row justify-between items-center space-x-4">
+              <Label htmlFor="ecu-manager" className="text-base mr-5">ECU Manager</Label>
+              <Button
+                disabled={!adminMode}
+                onClick={() => navigate('/ecu-manager')}
+              >
+                Open
+              </Button>
           </div>
           <div className="flex flex-row justify-between items-center space-x-4">
             <Label htmlFor="max-speed" className="text-base mr-5">Max. Speed</Label>
