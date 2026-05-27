@@ -38,7 +38,7 @@ export const HeaderBar = () => {
                 <DriveModeIndicator />
             </div>
             <DigitalClock />
-            <div className="flex min-w-28 justify-end">
+            <div className="flex min-w-28 justify-end items-center">
             { adminMode ? <Unlock className="w-6 h-6 mr-3 text-red" /> : <Lock className="w-6 h-6 mr-3" /> }
             <BatteryIndicator batteryLevel={batteryPercentage*100} />
             </div>
