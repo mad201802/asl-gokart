@@ -154,7 +154,7 @@ const SettingsPage = () => {
           <div className="flex flex-row justify-between items-center space-x-4">
               <Label htmlFor="admin-mode" className="text-base mr-5">Admin Mode</Label>
               <AdminAuthDialog 
-                trigger={<Button variant="outline">Authenticate</Button>}
+                trigger={<Button>Authenticate</Button>}
               />
           </div>
           <div className="flex flex-row justify-between items-center space-x-4">
