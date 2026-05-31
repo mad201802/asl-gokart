@@ -24,6 +24,7 @@ import {
 import { toast } from "sonner";
 import log from "@/lib/logger";
 import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
 import { type AppRelease, UpdatePhase } from "@/data/updater/updater-types";
 
 interface DownloadProgress {
@@ -69,6 +70,7 @@ export const AppUpdateDialog = ({ trigger }: AppUpdateDialogProps) => {
     const [phase, setPhase] = useState<UpdatePhase>(UpdatePhase.Idle);
     const [installError, setInstallError] = useState<string | null>(null);
     const [progress, setProgress] = useState<DownloadProgress | null>(null);
+    const [sudoConfirmed, setSudoConfirmed] = useState(false);
 
     const progressCleanupRef = useRef<(() => void) | null>(null);
 
@@ -84,6 +86,7 @@ export const AppUpdateDialog = ({ trigger }: AppUpdateDialogProps) => {
         setPhase(UpdatePhase.Idle);
         setInstallError(null);
         setProgress(null);
+        setSudoConfirmed(false);
 
         const load = async () => {
             try {
@@ -163,6 +166,7 @@ export const AppUpdateDialog = ({ trigger }: AppUpdateDialogProps) => {
         setPhase(UpdatePhase.Idle);
         setInstallError(null);
         setProgress(null);
+        setSudoConfirmed(false);
     };
 
     const getVersionBadge = (tag: string) => {
@@ -212,6 +216,24 @@ export const AppUpdateDialog = ({ trigger }: AppUpdateDialogProps) => {
                             <span>{formatDate(selectedRelease.publishedAt)}</span>
                         </div>
                     </div>
+
+                    <label className="flex items-start gap-3 rounded-md border border-muted px-4 py-3 cursor-pointer select-none hover:bg-muted/40 transition-colors">
+                        <Checkbox
+                            id="sudo-confirm"
+                            checked={sudoConfirmed}
+                            onCheckedChange={(v) => setSudoConfirmed(v === true)}
+                            className="mt-0.5 shrink-0"
+                        />
+                        <span className="text-sm text-muted-foreground leading-snug">
+                            I confirm that{" "}
+                            <span className="font-mono font-medium text-foreground">sudo</span>{" "}
+                            can be run without a password on this system, <em>or</em> the app was
+                            launched from a terminal (e.g.{" "}
+                            <span className="font-mono font-medium text-foreground">headunit</span>)
+                            so a password prompt can appear. Without this, the{" "}
+                            <span className="font-mono">dpkg</span> install step will silently fail.
+                        </span>
+                    </label>
                 </div>
             );
         }
@@ -364,11 +386,11 @@ export const AppUpdateDialog = ({ trigger }: AppUpdateDialogProps) => {
         if (phase === UpdatePhase.Confirming) {
             return (
                 <div className="flex justify-between">
-                    <Button variant="ghost" onClick={() => setPhase(UpdatePhase.Idle)}>
+                    <Button variant="ghost" onClick={() => { setPhase(UpdatePhase.Idle); setSudoConfirmed(false); }}>
                         <ChevronLeft className="mr-1 h-4 w-4" />
                         Back
                     </Button>
-                    <Button onClick={handleInstall} variant="default">
+                    <Button onClick={handleInstall} variant="default" disabled={!sudoConfirmed}>
                         <Download className="mr-2 h-4 w-4" />
                         Confirm &amp; Install
                     </Button>
