@@ -12,6 +12,8 @@ import { downloadFirmware, getCachedVersions, getFirmwareLocalUrl, isDownloaded 
 import { getBindAddress } from '@/helpers/ipc/hardware/network-config';
 import { FIRMWARE_SERVER_PORT } from '@/data/config';
 import { EcuId } from '@/data/ecu/ecu-types';
+import { ECU_DEFINITIONS } from '@/data/ecu/ecu-definitions';
+import { sendOtaTrigger } from '@/helpers/ipc/sero/sero-service';
 
 export function registerFirmwareListeners(): void {
     ipcMain.handle(FIRMWARE_GET_RELEASES_CHANNEL, async (_event, assetName: string) => {
@@ -34,9 +36,12 @@ export function registerFirmwareListeners(): void {
             throw new Error(`Firmware ${ecuId} ${tag} is not downloaded. Download it first.`);
         }
 
-        // TODO: Replace this placeholder with the actual Sero REQUEST call.
-        // The payload should be Buffer.from(url, 'utf-8') sent to the ECU's OTA service/method ID.
-        log.info(`[OTA PLACEHOLDER] Would send OTA URL to ECU ${ecuId}: ${url}`);
+        const ecuDef = ECU_DEFINITIONS.find(d => d.id === ecuId);
+        if (!ecuDef) {
+            throw new Error(`Unknown ECU id: ${ecuId}`);
+        }
+
+        await sendOtaTrigger(ecuDef.seroServiceId, url);
 
         return { success: true, url };
     });

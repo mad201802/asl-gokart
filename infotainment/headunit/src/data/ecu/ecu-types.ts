@@ -12,6 +12,8 @@ export interface EcuDefinition {
     displayName: string;
     /** Asset filename in GitHub releases, e.g. "firmware_zc_battery.bin" */
     githubAssetName: string;
+    /** Sero service ID for this ECU (used to route OTA trigger method calls). */
+    seroServiceId: number;
     /** Mock current firmware version until ECUs report their own */
     mockCurrentVersion: string;
     /** Mock online status until real telemetry is available */
