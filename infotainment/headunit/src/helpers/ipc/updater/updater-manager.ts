@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as https from 'https';
+import * as http from 'http';
 import { exec } from 'child_process';
 import log from 'electron-log/main';
 import { UpdateProgress } from '@/data/updater/updater-types';
@@ -15,10 +16,12 @@ export function downloadDeb(
         const file = fs.createWriteStream(destPath);
 
         const doGet = (url: string): void => {
-            const req = https.get(url, { headers: { 'User-Agent': 'asl-gokart-headunit' } }, (res) => {
+            const protocol = url.startsWith('https') ? https : http;
+            const req = protocol.get(url, { headers: { 'User-Agent': 'asl-gokart-headunit' } }, (res) => {
                 if (res.statusCode === 301 || res.statusCode === 302) {
-                    // GitHub release assets redirect to CDN — follow transparently
-                    file.close();
+                    // Drain and discard the redirect response body, then follow.
+                    // Do NOT close `file` — the WriteStream must stay open across redirects.
+                    res.resume();
                     doGet(res.headers.location!);
                     return;
                 }
