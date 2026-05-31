@@ -64,6 +64,29 @@ interface FirmwareContext {
     getCachedVersions: () => Promise<Record<string, string[]>>;
 }
 
+interface AppRelease {
+    tag: string;
+    version: string;
+    publishedAt: string;
+    downloadUrl: string;
+    assetName: string;
+    assetSize: number;
+    isPrerelease: boolean;
+}
+
+interface UpdateProgress {
+    percent: number;
+    bytesDownloaded: number;
+    totalBytes: number;
+}
+
+interface UpdaterContext {
+    getReleases: () => Promise<AppRelease[]>;
+    install: (tag: string, downloadUrl: string, assetName: string) => Promise<void>;
+    onProgress: (callback: (progress: UpdateProgress) => void) => () => void;
+    relaunch: () => Promise<void>;
+}
+
 declare global {
     interface Window {
         themeMode: ThemeModeContext;
@@ -73,5 +96,6 @@ declare global {
         app: AppContext;
         hardware: HardwareContext;
         firmware: FirmwareContext;
+        updater: UpdaterContext;
     }
 }
