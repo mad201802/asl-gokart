@@ -17,10 +17,11 @@ import React, { useEffect, useState } from "react";
 import PowerMenu from "@/components/power-menu/power-menu";
 import log, { setRendererLogLevel, type LogLevel } from "@/lib/logger";
 import { AnalyticsBackendDialog } from "@/components/settings/analytics-backend-dialog";
+import { AppUpdateDialog } from "@/components/settings/app-update-dialog";
 import { AdminAuthDialog } from "@/components/admin-mode/admin-auth-dialog";
 import { NetworkInterfaceDialog } from "@/components/settings/network-interface-dialog";
 import { useNavigate } from "react-router-dom";
-import { Lock, Unlock } from "lucide-react";
+import { Lock, RefreshCw, Unlock } from "lucide-react";
 
 const SettingsPage = () => {
   const {
@@ -266,6 +267,21 @@ const SettingsPage = () => {
               <Button variant="outline" onClick={() => navigate("/ecu-manager")}>
                 Open
               </Button>
+            </div>
+
+            <Separator />
+
+            {/* App Update */}
+            <div className="flex flex-row items-center justify-between min-h-13">
+              <Label className="text-base">App Update</Label>
+              <AppUpdateDialog
+                trigger={
+                  <Button variant="outline">
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Update
+                  </Button>
+                }
+              />
             </div>
           </>
         )}
