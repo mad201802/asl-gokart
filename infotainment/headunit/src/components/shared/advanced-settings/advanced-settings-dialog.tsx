@@ -21,8 +21,11 @@ import { OutgoingPacket } from "@/data/zonecontrollers/packets";
 import { ThrottleCommands, Zones } from "@/data/zonecontrollers/zonecontrollers";
 import log from "@/lib/logger";
 
+type AdvancedSettingsDialogProps = {
+    trigger?: React.ReactNode;
+};
 
-const AdvancedSettingsDialog = () => {
+const AdvancedSettingsDialog = ({ trigger }: AdvancedSettingsDialogProps = {}) => {
 
     const [showBrightnessWarning, setShowBrightnessWarning] = useState(false);
 
@@ -47,7 +50,7 @@ const AdvancedSettingsDialog = () => {
     return (
     <Dialog>
         <DialogTrigger asChild>
-            <Button>Configure</Button>
+            {trigger ?? <Button variant="outline">Configure</Button>}
         </DialogTrigger>
         <DialogContent>
             <DialogHeader>
