@@ -2,23 +2,25 @@ import {
     Dialog,
     DialogClose,
     DialogContent,
-    DialogDescription,
     DialogFooter,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
-  } from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import { useStore } from "@/stores/useStore";
 import { useShallow } from "zustand/react/shallow";
-import React from "react";
-import LabeledSwitch from "../shared/labeled-switch";
+import React, { useState } from "react";
 
+type AdminSettingsDialogProps = {
+    trigger?: React.ReactNode;
+};
 
-const AdminSettingsDialog = () => {
+const AdminSettingsDialog = ({ trigger }: AdminSettingsDialogProps = {}) => {
 
     const { adminMode, maxSettableSpeed, minSettableSpeed, pipeThroughRawThrottle, pedalMultiplier, setMaxSettableSpeed, setMinSettableSpeed, setPipeThroughRawThrottle, setPedalMultiplier } = useStore(
         useShallow((state) => ({
@@ -34,57 +36,106 @@ const AdminSettingsDialog = () => {
         }))
     );
 
+    const [liveMaxSpeed, setLiveMaxSpeed] = useState(maxSettableSpeed);
+    const [liveMinSpeed, setLiveMinSpeed] = useState(minSettableSpeed);
+    const [livePedalMultiplier, setLivePedalMultiplier] = useState(pedalMultiplier);
+
     return (
-    <Dialog>
-        <DialogTrigger asChild>
-            <Button disabled={!adminMode}>Configure</Button>
-        </DialogTrigger>
-        <DialogContent>
-            <DialogHeader>
-            <DialogTitle>Admin Settings</DialogTitle>
-            </DialogHeader>
-            <DialogDescription>
-            <p>Here you can configure core values of the system</p>
-            <Separator className="mt-3"/>
-            <div className="flex flex-col gap-4">
-                <div className="flex flex-row">
-                    <Label htmlFor="slider" className="text-base mr-5">Max. settable speed</Label>
-                    <Label htmlFor="max-speed-value" className="flex items-center justify-center font-light mr-5 w-36">{maxSettableSpeed} km/h</Label>
-                    <Slider 
-                        onValueChange={(v) => setMaxSettableSpeed(Number(v))}  
-                        defaultValue={[maxSettableSpeed]}
-                        value={[maxSettableSpeed]} 
-                        min={0} max={120} step={5} />                    
+        <Dialog onOpenChange={(open) => {
+            if (open) {
+                setLiveMaxSpeed(maxSettableSpeed);
+                setLiveMinSpeed(minSettableSpeed);
+                setLivePedalMultiplier(pedalMultiplier);
+            }
+        }}>
+            <DialogTrigger asChild>
+                {trigger ?? <Button variant="outline" disabled={!adminMode}>Configure</Button>}
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>Admin Settings</DialogTitle>
+                </DialogHeader>
+
+                <Separator />
+
+                <div className="flex flex-col gap-6 py-2">
+
+                    {/* Max settable speed */}
+                    <div className="flex flex-col gap-3">
+                        <div className="flex items-center justify-between">
+                            <Label className="text-base">Max. settable speed</Label>
+                            <span className="text-2xl font-mono font-semibold tabular-nums">
+                                {liveMaxSpeed} <span className="text-sm font-sans font-normal text-muted-foreground">km/h</span>
+                            </span>
+                        </div>
+                        <Slider
+                            value={[liveMaxSpeed]}
+                            onValueChange={(v) => setLiveMaxSpeed(v[0])}
+                            onValueCommit={(v) => setMaxSettableSpeed(Number(v))}
+                            min={0} max={120} step={5}
+                        />
+                        {liveMaxSpeed === 0 && (
+                            <p className="text-sm text-destructive">The GoKart won't drive in this configuration!</p>
+                        )}
+                    </div>
+
+                    <Separator />
+
+                    {/* Min settable speed */}
+                    <div className="flex flex-col gap-3">
+                        <div className="flex items-center justify-between">
+                            <Label className="text-base">Min. settable speed</Label>
+                            <span className="text-2xl font-mono font-semibold tabular-nums">
+                                {liveMinSpeed} <span className="text-sm font-sans font-normal text-muted-foreground">km/h</span>
+                            </span>
+                        </div>
+                        <Slider
+                            value={[liveMinSpeed]}
+                            onValueChange={(v) => setLiveMinSpeed(v[0])}
+                            onValueCommit={(v) => setMinSettableSpeed(Number(v))}
+                            min={0} max={120} step={5}
+                        />
+                    </div>
+
+                    <Separator />
+
+                    {/* Pedal Multiplier */}
+                    <div className="flex flex-col gap-3">
+                        <div className="flex items-center justify-between">
+                            <Label className="text-base">Pedal Multiplier</Label>
+                            <span className="text-2xl font-mono font-semibold tabular-nums">
+                                {livePedalMultiplier} <span className="text-sm font-sans font-normal text-muted-foreground">%</span>
+                            </span>
+                        </div>
+                        <Slider
+                            value={[livePedalMultiplier]}
+                            onValueChange={(v) => setLivePedalMultiplier(v[0])}
+                            onValueCommit={(v) => setPedalMultiplier(Number(v))}
+                            min={0} max={100} step={5}
+                        />
+                    </div>
+
+                    <Separator />
+
+                    {/* Pipe through raw throttle */}
+                    <div className="flex items-center justify-between">
+                        <Label className="text-base">Pipe through raw throttle</Label>
+                        <Switch
+                            checked={pipeThroughRawThrottle}
+                            onCheckedChange={setPipeThroughRawThrottle}
+                        />
+                    </div>
+
                 </div>
-                {(maxSettableSpeed === 0) && <p className="text-red-500">The GoKart won't drive in this configuration!</p>}
-                <div className="flex flex-row">
-                    <Label htmlFor="slider" className="text-base mr-5">Min. settable speed</Label>
-                    <Label htmlFor="min-speed-value" className="flex items-center justify-center font-light mr-5 w-36">{minSettableSpeed} km/h</Label>
-                    <Slider 
-                        onValueChange={(v) => setMinSettableSpeed(Number(v))} 
-                        defaultValue={[minSettableSpeed]} 
-                        value={[minSettableSpeed]}
-                        min={0} max={120} step={5} />  
-                </div>
-                <LabeledSwitch id={""} label={"Pipe through raw throttle"} onChange={(v) => setPipeThroughRawThrottle(v)} defaultValue={pipeThroughRawThrottle} />    
-                <div className="flex flex-row">
-                    <Label htmlFor="slider" className="text-base mr-5">Pedal Multiplier</Label>
-                    <Label htmlFor="pedal-multiplier" className="flex items-center justify-center font-light mr-5 w-36">{pedalMultiplier} %</Label>
-                    <Slider 
-                        onValueCommit={(v) => setPedalMultiplier(Number(v))} 
-                        defaultValue={[pedalMultiplier]} 
-                        min={0} max={100} step={5} />  
-                </div>              
-            </div>
-            </DialogDescription>
-            <DialogFooter>
-            <DialogClose asChild>
-                <Button>Close</Button>
-            </DialogClose>
-            </DialogFooter>
-        </DialogContent>
-    </Dialog>
-    )
-} 
+
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button variant="outline">Close</Button>
+                    </DialogClose>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+};
 
 export default AdminSettingsDialog;
