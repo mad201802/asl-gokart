@@ -48,6 +48,22 @@ interface HardwareContext {
     setNetworkInterface: (mac: string) => Promise<ResolvedInterface | null>;
 }
 
+interface FirmwareRelease {
+    tag: string;
+    version: string;
+    publishedAt: string;
+    downloadUrl: string;
+    isPrerelease: boolean;
+}
+
+interface FirmwareContext {
+    getReleases: (assetName: string) => Promise<FirmwareRelease[]>;
+    downloadFirmware: (ecuId: string, tag: string, downloadUrl: string) => Promise<{ localUrl: string }>;
+    triggerOta: (ecuId: string, tag: string) => Promise<{ success: boolean; url: string }>;
+    getServerBaseUrl: () => Promise<string>;
+    getCachedVersions: () => Promise<Record<string, string[]>>;
+}
+
 declare global {
     interface Window {
         themeMode: ThemeModeContext;
@@ -56,5 +72,6 @@ declare global {
         sero: SeroContext;
         app: AppContext;
         hardware: HardwareContext;
+        firmware: FirmwareContext;
     }
 }

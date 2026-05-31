@@ -12,6 +12,7 @@ import DriveNormalPage from "./pages/drive-normal";
 import SettingsPage from "./pages/settings";
 import CarPage from "./pages/car";
 import BatteryPage from "./pages/battery";
+import EcuManagerPage from "./pages/ecu-manager";
 import { Toaster } from "@/components/ui/sonner"
 import MotorPage from "./pages/motor";
 import { ErrorBoundary } from "@/components/shared/error-boundary";
@@ -72,6 +73,7 @@ export default function App() {
                             <Route path="/car" element={<ErrorBoundary><CarPage /></ErrorBoundary>} />
                             <Route path="/settings" element={<ErrorBoundary><SettingsPage /></ErrorBoundary>} />
                             <Route path="/battery" element={<ErrorBoundary><BatteryPage /></ErrorBoundary>} />
+                            <Route path="/ecu-manager" element={<ErrorBoundary><EcuManagerPage /></ErrorBoundary>} />
                         </Routes>
                     </>
                 </div>

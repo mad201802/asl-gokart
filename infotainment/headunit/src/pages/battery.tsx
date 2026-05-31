@@ -1,17 +1,35 @@
 import BatteryHeatmap from "@/components/shared/battery-temp-map/battery-heatmap";
 import { HeaderBar } from "@/components/shared/header-bar";
-import { Button } from "@/components/ui/button";
 import { useStore } from "@/stores/useStore";
 import { useShallow } from "zustand/react/shallow";
-import React from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import ValueCard from "@/components/shared/value-card";
-import { Label } from "@/components/ui/label";
-
+import React, { useState, useEffect } from "react";
+import {
+    CircularProgressbarWithChildren,
+    buildStyles,
+} from "react-circular-progressbar";
+import "react-circular-progressbar/dist/styles.css";
+import { SOC_BOUNDARIES, SOC_SEGMENTS, HEATMAP_MIN_TEMP, HEATMAP_MAX_TEMP } from "@/data/battery-config";
+import { FLOW_STATE_DISPLAY } from "@/data/controlling_models/battery";
+import { interpolateColor } from "@/lib/utils/gauge-utils";
 
 const BatteryPage = () => {
 
-    const { batteryTemps, avgBatteryTemp, minTemp, maxTemp, voltage, batteryCurrent, setBatteryTemps } = useStore(
+    const [isDarkMode, setIsDarkMode] = useState(
+        document.documentElement.classList.contains("dark")
+    );
+
+    useEffect(() => {
+        const observer = new MutationObserver(() => {
+            setIsDarkMode(document.documentElement.classList.contains("dark"));
+        });
+        observer.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ["class"],
+        });
+        return () => observer.disconnect();
+    }, []);
+
+    const { batteryTemps, avgBatteryTemp, minTemp, maxTemp, voltage, batteryCurrent, batteryPercentage, flowState } = useStore(
         useShallow((state) => ({
             batteryTemps: state.batteryTemps,
             avgBatteryTemp: state.avgBatteryTemp,
@@ -19,87 +37,93 @@ const BatteryPage = () => {
             maxTemp: state.maxTemp,
             voltage: state.voltage,
             batteryCurrent: state.batteryCurrent,
-            setBatteryTemps: state.setBatteryTemps,
+            batteryPercentage: state.batteryPercentage,
+            flowState: state.flowState,
         }))
     );
 
-    // Generate 6 random battery temperatures from 10 to 40
-    const randomBatteryTemps = () => {
-        const temps = [];
-        for (let i = 0; i < 6; i++) {
-            temps.push(Math.random() * 30 + 10);
-        }
-        return temps;
-    }
+    const power = batteryCurrent * voltage;
+    const socPct = batteryPercentage * 100;
 
+    const socColor = interpolateColor(socPct, SOC_BOUNDARIES[0], SOC_BOUNDARIES[1], SOC_SEGMENTS);
+    const { label: flowLabel, color: flowColor } = FLOW_STATE_DISPLAY[flowState];
 
     return (
-        <div>
+        <div className="flex flex-col w-full h-screen">
             <HeaderBar />
 
-            <Tabs defaultValue="general">
-                <div className="flex flex-col items-center mt-4">
+            <div className="flex flex-row flex-1 items-center gap-4 p-4 pt-2">
 
-                    <TabsList>
-                        <TabsTrigger value="general">General</TabsTrigger>
-                        <TabsTrigger value="temperature">Temperature</TabsTrigger>
-                        <TabsTrigger value="flow">Flow</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="general" className="w-full">
-                        <div className="flex flex-col mt-2">
-                            <div className="flex flex-row justify-evenly">
-                                <ValueCard label="Voltage" value={voltage.toFixed(1)} unit="V"/>
-                                <ValueCard label="Current" value={batteryCurrent.toFixed(1)} unit="A"/>
-                                { ((batteryCurrent * voltage) < 1000) ?
-                                    <ValueCard label="Power" value={(batteryCurrent * voltage).toFixed(2)} unit="W"/> :
-                                    <ValueCard label="Power" value={(batteryCurrent * voltage / 1000).toFixed(2)} unit="kW"/>
-                                }
+                {/* Left column: State of Charge + flow state */}
+                <div className="flex flex-col items-center justify-center gap-4 w-[40%]">
+                    <div className="w-48">
+                        <CircularProgressbarWithChildren
+                            value={socPct}
+                            styles={buildStyles({
+                                pathColor: socColor,
+                                trailColor: isDarkMode ? "#374151" : "#eee",
+                                strokeLinecap: "round",
+                            })}
+                        >
+                            <div className="flex flex-col items-center">
+                                <span className="text-4xl font-bold">{socPct.toFixed(0)}%</span>
+                                <span className="text-xs text-muted-foreground">State of Charge</span>
                             </div>
-                        </div>
-                    </TabsContent>
-                    <TabsContent value="temperature">
-                        <BatteryHeatmap 
-                            tempValues={batteryTemps} 
-                            width={300} 
-                            height={300} 
-                            minTemp={12.5} 
-                            maxTemp={40}
-                        />
-                        <div className="flex flex-col mt-2 w-72">
-                            <div className="flex flex-row justify-between">
-                                <div className="text-sm">Avg. Temperature</div>
-                                <div className="text-sm">{avgBatteryTemp.toFixed(1)} °C</div>
-                            </div>
-                            <div className="flex flex-row justify-between">
-                                <div className="text-sm">Min/Max Temperature</div>
-                                <div className="text-sm">{minTemp.toFixed(1)} / {maxTemp.toFixed(1)} °C</div>
-                            </div>
-                            <div className="flex flex-row justify-between">
-                                <div className="text-sm">Voltage</div>
-                                <div className="text-sm">{voltage.toFixed(1)} V</div>
-                            </div>
-                        </div>
-                        <div className="flex flex-row justify-center mt-4">
-                            <Button onClick={() => setBatteryTemps(randomBatteryTemps())}>Randomize Temps</Button>
-                        </div>
-                    </TabsContent>
-                    <TabsContent value="flow">
-                        <div className="flex flex-col items-center gap-2 mt-2 w-72">
-                            <div className="text-3xl mb-10">
-                                <>
-                                {/* 
-                                    If battery current is greater than 3, display "discharging".
-                                    If battery current is less than -3, display "charging".
-                                    Otherwise, display "idle".
-                                */}
-                                {batteryCurrent > 3 ? "Discharging" : batteryCurrent < -3 ? "Charging" : "Idle"}
-                                </>
-                            </div>
-                        </div>
-                    </TabsContent>
+                        </CircularProgressbarWithChildren>
+                    </div>
+                    <span style={{ color: flowColor }} className="text-2xl font-semibold">{flowLabel}</span>
                 </div>
-            </Tabs>
 
+                {/* Right column: Electrical values + temperature */}
+                <div className="flex flex-col flex-1 gap-3">
+
+                    {/* Electrical values row */}
+                    <div className="grid grid-cols-3 gap-3">
+                        <div className="flex flex-col items-center justify-center rounded-xl border bg-card py-3 px-2">
+                            <span className="text-3xl font-bold">{voltage.toFixed(1)}</span>
+                            <span className="text-xs text-muted-foreground mt-1">Voltage (V)</span>
+                        </div>
+                        <div className="flex flex-col items-center justify-center rounded-xl border bg-card py-3 px-2">
+                            <span className="text-3xl font-bold">{Math.abs(batteryCurrent).toFixed(1)}</span>
+                            <span className="text-xs text-muted-foreground mt-1">Current (A)</span>
+                        </div>
+                        <div className="flex flex-col items-center justify-center rounded-xl border bg-card py-3 px-2">
+                            <span className="text-3xl font-bold">
+                                {power >= 1000 ? (power / 1000).toFixed(2) : power.toFixed(0)}
+                            </span>
+                            <span className="text-xs text-muted-foreground mt-1">
+                                Power ({power >= 1000 ? "kW" : "W"})
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Temperature section */}
+                    <div className="flex flex-row flex-1 gap-4 rounded-xl border bg-card p-3">
+                        <BatteryHeatmap
+                            tempValues={batteryTemps}
+                            width={256}
+                            height={256}
+                            minTemp={HEATMAP_MIN_TEMP}
+                            maxTemp={HEATMAP_MAX_TEMP}
+                        />
+                        <div className="flex flex-col justify-evenly flex-1">
+                            <div className="flex flex-row justify-between items-center">
+                                <span className="text-sm text-muted-foreground">Average</span>
+                                <span className="text-xl font-semibold">{avgBatteryTemp.toFixed(1)} °C</span>
+                            </div>
+                            <div className="flex flex-row justify-between items-center">
+                                <span className="text-sm text-muted-foreground">Min</span>
+                                <span className="text-xl font-semibold">{minTemp.toFixed(1)} °C</span>
+                            </div>
+                            <div className="flex flex-row justify-between items-center">
+                                <span className="text-sm text-muted-foreground">Max</span>
+                                <span className="text-xl font-semibold">{maxTemp.toFixed(1)} °C</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
         </div>
     );
 }

@@ -21,8 +21,11 @@ import { OutgoingPacket } from "@/data/zonecontrollers/packets";
 import { ThrottleCommands, Zones } from "@/data/zonecontrollers/zonecontrollers";
 import log from "@/lib/logger";
 
+type AdvancedSettingsDialogProps = {
+    trigger?: React.ReactNode;
+};
 
-const AvancedSettingsDialog = () => {
+const AdvancedSettingsDialog = ({ trigger }: AdvancedSettingsDialogProps = {}) => {
 
     const [showBrightnessWarning, setShowBrightnessWarning] = useState(false);
 
@@ -35,7 +38,7 @@ const AvancedSettingsDialog = () => {
         }))
     );
 
-    let handleSliderChange = (value: number) => {
+    const handleSliderChange = (value: number) => {
         setScreenBrightness(value);
         if(value < 25) {
           setShowBrightnessWarning(true);
@@ -47,7 +50,7 @@ const AvancedSettingsDialog = () => {
     return (
     <Dialog>
         <DialogTrigger asChild>
-            <Button>Configure</Button>
+            {trigger ?? <Button variant="outline">Configure</Button>}
         </DialogTrigger>
         <DialogContent>
             <DialogHeader>
@@ -90,4 +93,4 @@ const AvancedSettingsDialog = () => {
     )
 } 
 
-export default AvancedSettingsDialog;
+export default AdvancedSettingsDialog;

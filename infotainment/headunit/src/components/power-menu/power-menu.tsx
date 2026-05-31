@@ -9,17 +9,22 @@ import {
   } from "@/components/ui/dialog"
 import { Button } from "../ui/button";
 import { Power, X, Minimize, Maximize } from "lucide-react";
-  
 
-const PowerMenu = () => {
+type PowerMenuProps = {
+    trigger?: React.ReactNode;
+};
+
+const PowerMenu = ({ trigger }: PowerMenuProps = {}) => {
 
     return (
         <Dialog>
-        <DialogTrigger>
-            <Button>
-                <Power size={24} className="mr-3" />
-                Power Menu
-            </Button>
+        <DialogTrigger asChild>
+            {trigger ?? (
+                <Button variant="outline">
+                    <Power size={20} className="mr-2" />
+                    Power Menu
+                </Button>
+            )}
         </DialogTrigger>
         <DialogContent>
             <DialogHeader>

@@ -9,6 +9,7 @@ import os from "os";
 import { getStoredMac, setStoredMac, getCurrentInterface, resolveInterfaceByMac } from "./network-config";
 import { restartWebSocketServer } from "@/helpers/ipc/websocket/ws-server";
 import { restartSeroService } from "@/helpers/ipc/sero/sero-service";
+import { restartFirmwareServer } from "@/helpers/ipc/firmware/firmware-server";
 
 export function registerHardwareListeners() {
     ipcMain.handle(GET_AVAILABLE_NETWORK_INTERFACES_CHANNEL, async () => {
@@ -35,6 +36,7 @@ export function registerHardwareListeners() {
 
         await restartWebSocketServer();
         restartSeroService();
+        await restartFirmwareServer();
 
         log.info(`[hardware] Services restarted on interface ${resolved.name} (${resolved.address})`);
         return getCurrentInterface();

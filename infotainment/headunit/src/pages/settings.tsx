@@ -1,27 +1,45 @@
-import LabeledSwitch from "@/components/shared/labeled-switch";
-import TabsSelector from "@/components/shared/tabs-selector";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button"
-import { Slider } from "@/components/ui/slider"
-
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useStore } from "@/stores/useStore";
 import { useShallow } from "zustand/react/shallow";
-import { DriveModes, tabsSelectorStates } from "@/data/controlling_models/drivetrain";
+import { DriveModes } from "@/data/controlling_models/drivetrain";
 import { HeaderBar } from "@/components/shared/header-bar";
 import { toast } from "sonner";
-import AvancedSettingsDialog from "@/components/shared/advanced-settings/advanced-settings-dialog";
+import AdvancedSettingsDialog from "@/components/shared/advanced-settings/advanced-settings-dialog";
 import AdminSettingsDialog from "@/components/admin-mode/admin-settings-dialog";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import PowerMenu from "@/components/power-menu/power-menu";
 import log, { setRendererLogLevel, type LogLevel } from "@/lib/logger";
 import { AnalyticsBackendDialog } from "@/components/settings/analytics-backend-dialog";
 import { AdminAuthDialog } from "@/components/admin-mode/admin-auth-dialog";
 import { NetworkInterfaceDialog } from "@/components/settings/network-interface-dialog";
+import { useNavigate } from "react-router-dom";
+import { Lock, Unlock } from "lucide-react";
 
 const SettingsPage = () => {
-
-  const { driveMode, speedLimit, minSettableSpeed, maxSettableSpeed, appVersion, analyticsEnabled, logLevel, setDriveMode, setSpeedLimit, setAppVersion, setAnalyticsEnabled, setLogLevel } = useStore(
+  const {
+    driveMode,
+    speedLimit,
+    minSettableSpeed,
+    maxSettableSpeed,
+    appVersion,
+    analyticsEnabled,
+    logLevel,
+    adminMode,
+    setDriveMode,
+    setSpeedLimit,
+    setAppVersion,
+    setAnalyticsEnabled,
+    setLogLevel,
+    setAdminMode,
+    setAdminPin,
+  } = useStore(
     useShallow((state) => ({
       driveMode: state.driveMode,
       speedLimit: state.speedLimit,
@@ -30,18 +48,23 @@ const SettingsPage = () => {
       appVersion: state.appVersion,
       analyticsEnabled: state.analyticsEnabled,
       logLevel: state.logLevel,
+      adminMode: state.adminMode,
       setDriveMode: state.setDriveMode,
       setSpeedLimit: state.setSpeedLimit,
       setAppVersion: state.setAppVersion,
       setAnalyticsEnabled: state.setAnalyticsEnabled,
       setLogLevel: state.setLogLevel,
+      setAdminMode: state.setAdminMode,
+      setAdminPin: state.setAdminPin,
     }))
   );
 
-  const [analyticsDialogOpen, setAnalyticsDialogOpen] = React.useState(false);
-  const [networkInterfaceDialogOpen, setNetworkInterfaceDialogOpen] = React.useState(false);
+  const navigate = useNavigate();
+  const [liveSpeed, setLiveSpeed] = useState(speedLimit);
 
-//  const [speedLimitUiLabel, setSpeedLimitUiLabel] = React.useState(speedLimit);
+  useEffect(() => {
+    setLiveSpeed(speedLimit);
+  }, [speedLimit]);
 
   useEffect(() => {
     const fetchAppVersion = async () => {
@@ -49,12 +72,12 @@ const SettingsPage = () => {
         const version = await window.app.getVersion();
         setAppVersion(version);
       } catch (e) {
-      log.error(e);
+        log.error(e);
       }
     };
     const fetchLogLevel = async () => {
       try {
-        const level = await window.app.getLogLevel() as LogLevel;
+        const level = (await window.app.getLogLevel()) as LogLevel;
         setLogLevel(level);
         setRendererLogLevel(level);
       } catch (e) {
@@ -63,131 +86,195 @@ const SettingsPage = () => {
     };
     fetchAppVersion();
     fetchLogLevel();
-  }, []);
+  }, [setAppVersion, setLogLevel]);
 
-  let handleToggleAnalytics = (enabled: boolean) => {
-    window.app.toggleAnalytics(enabled)
-      .then((result) => {
-        setAnalyticsEnabled(result);
-        toast(`Cloud Analytics ${result ? "enabled" : "disabled"}!`);
-      });
-  }
+  const handleToggleAnalytics = (enabled: boolean) => {
+    window.app.toggleAnalytics(enabled).then((result) => {
+      setAnalyticsEnabled(result);
+      toast(`Cloud Analytics ${result ? "enabled" : "disabled"}!`);
+    });
+  };
 
-  // let handleAnalyticsDialogOpenChange = (open: boolean) => {
-  //   setAnalyticsDialogOpen(open);
-  //   if (open) {
-  //     setUrlInput(analyticsBackendUrl);
-  //     setConnectionStatus("idle");
-  //   }
-  // }
-
-  let handleLogLevelChange = async (level: LogLevel) => {
+  const handleLogLevelChange = async (level: LogLevel) => {
     setLogLevel(level);
     setRendererLogLevel(level);
     await window.app.setLogLevel(level);
     toast(`Log level set to ${level}`);
     log.info(`Log level changed to: ${level}`);
-  }
+  };
 
-
+  const handleAdminLogout = () => {
+    setAdminMode(false);
+    setAdminPin("");
+    toast("Admin mode disabled!");
+  };
 
   return (
     <div className="w-full h-full flex flex-col">
-      <HeaderBar />
+      <div className="sticky top-0 z-10 bg-background">
+        <HeaderBar />
+      </div>
+      <div className="flex-1 overflow-y-auto flex flex-col">
 
-      {/* ### "Tabelle" mit Rows ### */}
-      <div className="flex flex-row justify-between items-start px-2 py-1 pt-10">
-        {/* ### 1. Einstellungsblock ### */}
-        <div className="flex flex-col items-left justify-center gap-y-2 pl-7">
-          <LabeledSwitch 
-            id="analytics-enabled" 
-            label="Cloud Analytics" 
-            defaultValue={analyticsEnabled} 
-            onChange={(v) => handleToggleAnalytics(v)}
-            />
-          <LabeledSwitch id="airplane-mode" label="Airplane Mode" defaultValue={false} />
-          <LabeledSwitch id="on-by-default" label="On by Default" defaultValue={true} />
-          <div className="flex flex-row justify-between items-center space-x-4">
-              <Label htmlFor="analytics-backend" className="text-base mr-5">Analytics Backend</Label>
-              <AnalyticsBackendDialog
-                trigger={<Button variant="outline">Configure</Button>}
-                open={analyticsDialogOpen}
-                onOpenChange={(open) => {
-                  setAnalyticsDialogOpen(open);
-                }}
-              />
-          </div>
-          <div className="flex flex-row justify-between items-center space-x-4">
-              <Label htmlFor="network-interface" className="text-base mr-5">Network Interface</Label>
-              <NetworkInterfaceDialog
-                trigger={<Button variant="outline">Configure</Button>}
-                open={networkInterfaceDialogOpen}
-                onOpenChange={(open) => {
-                  setNetworkInterfaceDialogOpen(open);
-                }}
-              />
-          </div>
-          <div className="flex flex-row justify-between items-center space-x-4">
-            <Label htmlFor="log-level" className="text-base mr-5">Log Level</Label>
-            <Tabs value={logLevel} onValueChange={(v) => handleLogLevelChange(v as LogLevel)}>
-              <TabsList>
-                <TabsTrigger value="error">Error</TabsTrigger>
-                <TabsTrigger value="warn">Warn</TabsTrigger>
-                <TabsTrigger value="info">Info</TabsTrigger>
-                <TabsTrigger value="debug">Debug</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
+      <div className="flex flex-col px-8 py-3 gap-y-0.5 flex-1">
+
+        {/* ── Driver Controls ── */}
+        <p className="text-xs uppercase tracking-widest text-muted-foreground pb-1 pt-2">Driver Controls</p>
+        <Separator />
+
+        {/* Drive Mode */}
+        <div className="flex flex-row items-center justify-between min-h-13">
+          <Label className="text-base">Drive Mode</Label>
+          <ToggleGroup
+            type="single"
+            value={driveMode}
+            onValueChange={(v) => { if (v) setDriveMode(v as DriveModes); }}
+          >
+            <ToggleGroupItem value={DriveModes.eco} className="h-10 px-5">Eco</ToggleGroupItem>
+            <ToggleGroupItem value={DriveModes.comfort} className="h-10 px-5">Comfort</ToggleGroupItem>
+            <ToggleGroupItem value={DriveModes.sport} className="h-10 px-5">Sport</ToggleGroupItem>
+            <ToggleGroupItem value={DriveModes.ludicrous} className="h-10 px-5">Ludicrous</ToggleGroupItem>
+          </ToggleGroup>
         </div>
-        {/* ### 2. Einstellungsblock ### */}
-        <div className="flex flex-col items-left justify-center gap-y-2 ms-16">
-          <TabsSelector 
-            label="Drive Mode" 
-            options={tabsSelectorStates().driveModes}
-            defaultValue={driveMode}
-            onValueChange={(v) => setDriveMode(v as DriveModes)}
-              />
-          <div className="flex flex-row justify-between items-center space-x-4">
-              <Label htmlFor="avanced-settings" className="text-base mr-5">Advanced Settings</Label>
-              <AvancedSettingsDialog />
-          </div>
-          <div className="flex flex-row justify-between items-center space-x-4">
-              <Label htmlFor="admin-mode" className="text-base mr-5">Admin Mode</Label>
-              <AdminAuthDialog 
-                trigger={<Button variant="outline">Authenticate</Button>}
-              />
-          </div>
-          <div className="flex flex-row justify-between items-center space-x-4">
-              <Label htmlFor="avanced-settings" className="text-base mr-5">Admin Settings</Label>
-              <AdminSettingsDialog />
-          </div>
-          <div className="flex flex-row justify-between items-center space-x-4">
-            <Label htmlFor="max-speed" className="text-base mr-5">Max. Speed</Label>
-            <Label htmlFor="max-speed-value" className="text-base text-center font-light mr-5 w-36">
-              { speedLimit } km/h
-            </Label>
-            <Slider 
-              // onValueChange={(v) => setSpeedLimit(Number(v))}  
-              // onValueChange={(v) => setSpeedLimitUiLabel(Number(v))}
-              onValueCommit={(v) => setSpeedLimit(Number(v))}
-              defaultValue={[speedLimit]} 
-              min={minSettableSpeed} 
-              max={maxSettableSpeed} 
-              step={1} />                    
-          </div> 
-          <div className="flex flex-row justify-between items-center space-x-4">
-              <Label htmlFor="power-menu" className="text-base mr-5">Power Menu</Label>
-              <PowerMenu />
-          </div>
 
-        </div>   
-   
+        <Separator />
+
+        {/* Max Speed */}
+        <div className="flex flex-col gap-y-2 py-3">
+          <div className="flex flex-row items-center justify-between">
+            <Label className="text-base">Max Speed</Label>
+            <span className="text-2xl font-mono font-semibold tabular-nums">
+              {liveSpeed} <span className="text-sm font-sans font-normal text-muted-foreground">km/h</span>
+            </span>
+          </div>
+          <Slider
+            value={[liveSpeed]}
+            onValueChange={(v) => setLiveSpeed(v[0])}
+            onValueCommit={(v) => setSpeedLimit(Number(v))}
+            min={minSettableSpeed}
+            max={maxSettableSpeed}
+            step={1}
+          />
+        </div>
+
+        <Separator />
+
+        {/* Cloud Analytics */}
+        <div className="flex flex-row items-center justify-between min-h-13">
+          <Label htmlFor="analytics-enabled" className="text-base">Cloud Analytics</Label>
+          <Switch
+            id="analytics-enabled"
+            checked={analyticsEnabled}
+            onCheckedChange={handleToggleAnalytics}
+          />
+        </div>
+
+        <Separator />
+
+        {/* Network Interface */}
+        <div className="flex flex-row items-center justify-between min-h-13">
+          <Label className="text-base">Network Interface</Label>
+          <NetworkInterfaceDialog trigger={<Button variant="outline">Configure</Button>} />
+        </div>
+
+        <Separator />
+
+        {/* Power Menu */}
+        <div className="flex flex-row items-center justify-between min-h-13">
+          <Label className="text-base">Power Menu</Label>
+          <PowerMenu />
+        </div>
+
+        {/* ── Access / Admin Mode ── */}
+        <p className="text-xs uppercase tracking-widest text-muted-foreground pb-1 pt-5">Access</p>
+        <Separator />
+
+        <div className="flex flex-row items-center justify-between min-h-13">
+          <div className="flex items-center gap-2">
+            {adminMode ? (
+              <Unlock className="w-4 h-4 text-emerald-400" />
+            ) : (
+              <Lock className="w-4 h-4 text-muted-foreground" />
+            )}
+            <span className="text-base">Admin Mode</span>
+            {adminMode && (
+              <Badge variant="outline" className="text-emerald-400 border-emerald-400 text-xs ml-1">
+                Active
+              </Badge>
+            )}
+          </div>
+          {!adminMode ? (
+            <AdminAuthDialog trigger={<Button variant="outline">Authenticate</Button>} />
+          ) : (
+            <Button variant="outline" onClick={handleAdminLogout}>
+              <Lock className="w-4 h-4 mr-2" />
+              Lock
+            </Button>
+          )}
+        </div>
+
+        {/* ── Engineer Panel (admin only) ── */}
+        {adminMode && (
+          <>
+            <p className="text-xs uppercase tracking-widest text-muted-foreground pb-1 pt-5">
+              Engineer Settings
+            </p>
+            <Separator />
+
+            {/* Log Level */}
+            <div className="flex flex-row items-center justify-between min-h-13">
+              <Label className="text-base">Log Level</Label>
+              <Tabs value={logLevel} onValueChange={(v) => handleLogLevelChange(v as LogLevel)}>
+                <TabsList>
+                  <TabsTrigger value="error">Error</TabsTrigger>
+                  <TabsTrigger value="warn">Warn</TabsTrigger>
+                  <TabsTrigger value="info">Info</TabsTrigger>
+                  <TabsTrigger value="debug">Debug</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+
+            <Separator />
+
+            {/* Analytics Backend */}
+            <div className="flex flex-row items-center justify-between min-h-13">
+              <Label className="text-base">Analytics Backend</Label>
+              <AnalyticsBackendDialog trigger={<Button variant="outline">Configure</Button>} />
+            </div>
+
+            <Separator />
+
+            {/* Advanced Settings */}
+            <div className="flex flex-row items-center justify-between min-h-13">
+              <Label className="text-base">Advanced Settings</Label>
+              <AdvancedSettingsDialog trigger={<Button variant="outline">Configure</Button>} />
+            </div>
+
+            <Separator />
+
+            {/* Admin Settings */}
+            <div className="flex flex-row items-center justify-between min-h-13">
+              <Label className="text-base">Admin Settings</Label>
+              <AdminSettingsDialog trigger={<Button variant="outline">Configure</Button>} />
+            </div>
+
+            <Separator />
+
+            {/* ECU Manager */}
+            <div className="flex flex-row items-center justify-between min-h-13">
+              <Label className="text-base">ECU Manager</Label>
+              <Button variant="outline" onClick={() => navigate("/ecu-manager")}>
+                Open
+              </Button>
+            </div>
+          </>
+        )}
       </div>
 
-      <div className="flex flex-row mt-auto justify-center items-start px-2 py-1 pt-10">
+      <div className="flex justify-center py-3 text-lg text-muted-foreground">
         Release {appVersion}
       </div>
-
+    </div>
     </div>
   );
 };

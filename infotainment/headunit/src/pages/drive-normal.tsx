@@ -10,13 +10,28 @@ import {
 import "react-circular-progressbar/dist/styles.css";
 import { HeaderBar } from "@/components/shared/header-bar";
 import ResetDailyDistanceDialog from "@/components/shared/reset-daily-distance-dialog";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { LightsCommands } from "@/data/zonecontrollers/zonecontrollers";
 import { Lightbulb, OctagonAlert, Spotlight, SquareArrowLeft, SquareArrowRight, TriangleAlert } from "lucide-react";
 import { THROTTLE_BOUNDARIES, THROTTLE_SEGMENTS, RPM_SEGMENTS } from "@/data/gauge-config";
 import { interpolateColor } from "@/lib/utils/gauge-utils";
 
 const DriveNormalPage = () => {
+
+  const [isDarkMode, setIsDarkMode] = useState(
+    document.documentElement.classList.contains("dark")
+  );
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDarkMode(document.documentElement.classList.contains("dark"));
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
 
   const { gear, rawThrottle, throttle, showRawThrottle, rpm, speed, rpmBoundaries, batteryPercentage, turnSignalRight, turnSignalLeft, hazardLights, headlights, highBeams } = useStore(
     useShallow((state) => ({
@@ -67,7 +82,7 @@ const DriveNormalPage = () => {
                   ),
                   rotation: 1 / 2 + 1 / 8,
                   strokeLinecap: "butt",
-                  trailColor: "#eee",
+                  trailColor: isDarkMode ? "#374151" : "#eee",
                 })}
               >
                 <p className="font-semibold text-4xl">{((showRawThrottle ? rawThrottle : throttle)*100).toFixed(0)}%</p>
@@ -114,7 +129,7 @@ const DriveNormalPage = () => {
                   ),
                   rotation: 1 / 2 + 1 / 8,
                   strokeLinecap: "butt",
-                  trailColor: "#eee",
+                  trailColor: isDarkMode ? "#374151" : "#eee",
                 })}
               >
                 <p className="font-semibold text-4xl">{rpm}</p>
@@ -155,7 +170,7 @@ const DriveNormalPage = () => {
         </div>
         <div className="w-full flex flex-col items-center justify-center pt-4">
           <p>Battery</p>
-          <Progress className="rounded-md w-[30%] h-[40px]" value={batteryPercentage*100} />
+          <Progress className="rounded-md w-[30%] h-10" value={batteryPercentage*100} />
             <p>{(batteryPercentage*100).toFixed(1)}%</p>
         </div>
       </div>

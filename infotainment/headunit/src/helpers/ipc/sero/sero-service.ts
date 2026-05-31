@@ -8,7 +8,7 @@ import { SERO_SEND_LIGHTS_CHANNEL, SERO_LIGHTS_MESSAGE_CHANNEL, SERO_BATTERY_MES
 import { BatteryCommands, LightsCommands, Zones } from '@/data/zonecontrollers/zonecontrollers';
 import { IncomingPacket } from '@/data/zonecontrollers/packets';
 import { getBindAddress } from '@/helpers/ipc/hardware/network-config';
-import { SERO_UNICAST_PORT, SERO_CLIENT_ID } from '@/data/config';
+import { SERO_UNICAST_PORT, SERO_CLIENT_ID, ZC_OTA_METHOD_ID } from '@/data/config';
 
 const RT_INTERVAL = 10; // Interval in milliseconds for processing SeroRuntime events
 
@@ -82,7 +82,9 @@ export function startSeroService(mainWindow: BrowserWindow) {
     });
 
     runtime.findService(0x0001);
+    runtime.findService(0x0002); // zc_buttons
     runtime.findService(0x0003);
+    // runtime.findService(0x0004); // zc_throttle (placeholder)
 }
 
 // --- zc_lights ---------------------------------------------------------------------------
@@ -182,6 +184,32 @@ function handleZcBatteryTemperatureEvent(mainWindow: BrowserWindow, temps: numbe
 }
 
 // -----------------------------------------------------------------------------------------
+
+// ── OTA ──────────────────────────────────────────────────────────────────────
+
+/**
+ * Send a firmware OTA trigger to a specific zone controller.
+ * Sends the download URL as a Sero REQUEST to the ZC's own service using
+ * the reserved OTA method ID (0x00FF). The ZC responds E_OK immediately,
+ * then begins the update in a FreeRTOS background task and reboots.
+ *
+ * @param serviceId  The Sero service ID of the target ZC (from EcuDefinition.seroServiceId)
+ * @param url        The HTTP URL of the firmware binary served by the in-vehicle file server
+ */
+export async function sendOtaTrigger(serviceId: number, url: string): Promise<void> {
+    if (!rt) {
+        throw new Error('[SERO] Cannot send OTA trigger: SeroRuntime not initialized');
+    }
+    const payload = Buffer.from(url, 'utf-8');
+    log.info(`[SERO] Sending OTA trigger to service 0x${serviceId.toString(16).padStart(4, '0')}: ${url}`);
+    const result = await rt.request(serviceId, ZC_OTA_METHOD_ID, payload);
+    if (result.returnCode !== 0 /* E_OK */) {
+        throw new Error(`[SERO] OTA trigger rejected by ECU (returnCode=${result.returnCode})`);
+    }
+    log.info(`[SERO] OTA trigger acknowledged by service 0x${serviceId.toString(16).padStart(4, '0')}`);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 export function stopSeroService(): void {
     if (rtInterval) {
