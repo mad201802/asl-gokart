@@ -2,7 +2,7 @@ import BatteryHeatmap from "@/components/shared/battery-temp-map/battery-heatmap
 import { HeaderBar } from "@/components/shared/header-bar";
 import { useStore } from "@/stores/useStore";
 import { useShallow } from "zustand/react/shallow";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
     CircularProgressbarWithChildren,
     buildStyles,
@@ -13,6 +13,21 @@ import { FLOW_STATE_DISPLAY } from "@/data/controlling_models/battery";
 import { interpolateColor } from "@/lib/utils/gauge-utils";
 
 const BatteryPage = () => {
+
+    const [isDarkMode, setIsDarkMode] = useState(
+        document.documentElement.classList.contains("dark")
+    );
+
+    useEffect(() => {
+        const observer = new MutationObserver(() => {
+            setIsDarkMode(document.documentElement.classList.contains("dark"));
+        });
+        observer.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ["class"],
+        });
+        return () => observer.disconnect();
+    }, []);
 
     const { batteryTemps, avgBatteryTemp, minTemp, maxTemp, voltage, batteryCurrent, batteryPercentage, flowState } = useStore(
         useShallow((state) => ({
@@ -46,7 +61,7 @@ const BatteryPage = () => {
                             value={socPct}
                             styles={buildStyles({
                                 pathColor: socColor,
-                                trailColor: "#374151",
+                                trailColor: isDarkMode ? "#374151" : "#eee",
                                 strokeLinecap: "round",
                             })}
                         >
