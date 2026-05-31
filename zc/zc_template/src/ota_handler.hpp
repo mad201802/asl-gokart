@@ -22,6 +22,7 @@
 #include "esp_log.h"
 #include "esp_http_client.h"
 #include "esp_https_ota.h"
+#include "esp_idf_version.h"
 #include "esp_ota_ops.h"
 
 static const char* OTA_TAG = "ota";
@@ -43,10 +44,13 @@ static void ota_task(void* pvParams) {
     http_config.url                      = params->url;
     http_config.keep_alive_enable        = true;
 
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
     esp_https_ota_config_t ota_config = {};
     ota_config.http_config            = &http_config;
-
     esp_err_t err = esp_https_ota(&ota_config);
+#else
+    esp_err_t err = esp_https_ota(&http_config);
+#endif
 
     free(params);
 
