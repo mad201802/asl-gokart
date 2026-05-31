@@ -99,13 +99,13 @@ const SettingsPage = () => {
           <div className="flex flex-row justify-between items-center space-x-4">
               <Label htmlFor="analytics-backend" className="text-base mr-5">Analytics Backend</Label>
               <AnalyticsBackendDialog
-                trigger={<Button variant="outline">Configure</Button>}
+                trigger={<Button>Configure</Button>}
               />
           </div>
           <div className="flex flex-row justify-between items-center space-x-4">
               <Label htmlFor="network-interface" className="text-base mr-5">Network Interface</Label>
               <NetworkInterfaceDialog
-                trigger={<Button variant="outline">Configure</Button>}
+                trigger={<Button>Configure</Button>}
               />
           </div>
           <div className="flex flex-row justify-between items-center space-x-4">
