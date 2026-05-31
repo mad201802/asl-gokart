@@ -4,6 +4,7 @@
 #include <Bounce2.h>
 #include <sero.hpp>
 #include <udp_transport_esp32.hpp>
+#include "ota_handler.hpp"
 
 const char* FIRMWARE_VERSION = "0.2.0";
 
@@ -19,11 +20,46 @@ const char* FIRMWARE_VERSION = "0.2.0";
 using Runtime = sero::Runtime<esp32_app::UdpTransportEsp32, Esp32Config>;
 using Addr    = sero::Address<Esp32Config>;
 
+// --- Buttons OTA service ----------------------------------------
+// Minimal provider-side service that accepts the OTA trigger method
+// from the headunit and delegates to ota_handler.hpp.
+
+class ButtonsOtaService : public sero::IService<ButtonsOtaService> {
+public:
+    bool impl_is_ready() const { return true; }
+
+    sero::ReturnCode impl_on_request(
+        uint16_t       method_id,
+        const uint8_t* payload,      std::size_t payload_length,
+        uint8_t*       /*response*/, std::size_t& response_length)
+    {
+        response_length = 0;
+        if (method_id != Esp32ServiceConfig::ZC_BUTTONS_OTA_METHOD_ID) {
+            return sero::ReturnCode::E_UNKNOWN_METHOD;
+        }
+        if (payload_length == 0 || payload_length >= 512) {
+            Serial.println("[ota] Invalid URL length");
+            return sero::ReturnCode::E_NOT_OK;
+        }
+        char url[512];
+        memcpy(url, payload, payload_length);
+        url[payload_length] = '\0';
+        Serial.printf("[ota] Received URL: %s\n", url);
+        // Acknowledge immediately — OTA task runs in background,
+        // device will reboot automatically on success.
+        if (!start_ota(url)) {
+            return sero::ReturnCode::E_NOT_OK;
+        }
+        return sero::ReturnCode::E_OK;
+    }
+};
+
 // --- Global Objects ---------------------------------------------
 
 // Transport
 static esp32_app::UdpTransportEsp32 transport;
 static Runtime* runtime_ptr = nullptr;
+static ButtonsOtaService buttons_ota_svc;
 
 // Bounce2 Button instances
 Bounce2::Button button1 = Bounce2::Button();
@@ -165,6 +201,20 @@ void setup() {
     sd.subscription_ack_ctx = nullptr;
     
     uint32_t now = millis();
+
+    // ── Provider: zc_buttons own service (exposes OTA trigger to headunit) ──
+    if (!rt.register_service(
+            Esp32ServiceConfig::ZC_BUTTONS_ID,
+            buttons_ota_svc,
+            /*major=*/1, /*minor=*/0,
+            /*auth_required=*/false)) {
+        Serial.println("[ERROR] register_service(ZC_BUTTONS_ID) failed!");
+    }
+    if (!rt.offer_service(Esp32ServiceConfig::ZC_BUTTONS_ID, /*ttl_s=*/30, now)) {
+        Serial.println("[ERROR] offer_service(ZC_BUTTONS_ID) failed!");
+    }
+
+    // ── Consumer: discover lights service ──────────────────────
     rt.find_service(Esp32ServiceConfig::ZC_LIGHTS_ID, 1, now);
 }
 

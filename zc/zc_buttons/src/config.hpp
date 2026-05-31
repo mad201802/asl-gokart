@@ -9,7 +9,7 @@
 
 struct Esp32Config {
     static constexpr std::size_t MaxPayloadSize         = 512;
-    static constexpr std::size_t MaxServices            = 1;
+    static constexpr std::size_t MaxServices            = 2;
     static constexpr std::size_t MaxMethods             = 4;
     static constexpr std::size_t MaxEvents              = 2;
     static constexpr std::size_t MaxSubscribers          = 4;
@@ -33,10 +33,19 @@ struct Esp32Config {
 
 struct Esp32ServiceConfig {
     static constexpr uint16_t ESP32_UNICAST_PORT        = 30491;
+
+    // zc_lights service (consumer side — buttons call these methods)
     static constexpr uint16_t ZC_LIGHTS_ID              = 0x0001;
     static constexpr uint16_t ZC_LIGHTS_LEFT_ID         = 0x0002;
     static constexpr uint16_t ZC_LIGHTS_RIGHT_ID        = 0x0003;
     static constexpr uint16_t ZC_LIGHTS_HAZARD_ID       = 0x0004;
     static constexpr uint16_t ZC_LIGHTS_HEADLIGHTS_ID   = 0x0005;
     static constexpr uint16_t ZC_LIGHTS_HIGH_BEAMS_ID   = 0x0006;
+
+    // zc_buttons own service (provider side — exposes OTA method to headunit)
+    static constexpr uint16_t ZC_BUTTONS_ID             = 0x0002;
+
+    // Reserved OTA trigger method present on every ZC (bit 15 = 0).
+    // Payload: UTF-8 URL string of the firmware binary served by the headunit.
+    static constexpr uint16_t ZC_BUTTONS_OTA_METHOD_ID  = 0x00FF;
 };

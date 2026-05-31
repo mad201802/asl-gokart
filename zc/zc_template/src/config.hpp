@@ -48,6 +48,10 @@ struct Esp32ServiceConfig {
     // Method callable by remote nodes (bit 15 = 0).
     static constexpr uint16_t ZC_TEMPLATE_METHOD_EXAMPLE_ID = 0x0001;
 
+    // Reserved OTA trigger method (present on every ZC, bit 15 = 0).
+    // Payload: UTF-8 URL string of the firmware binary served by the headunit.
+    static constexpr uint16_t ZC_TEMPLATE_OTA_METHOD_ID = 0x00FF;
+
     // Event emitted periodically to subscribers (bit 15 = 1).
     static constexpr uint16_t ZC_TEMPLATE_EVENT_EXAMPLE_ID = 0x8001;
 };
