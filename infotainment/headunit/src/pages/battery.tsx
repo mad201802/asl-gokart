@@ -86,8 +86,8 @@ const BatteryPage = () => {
                     <div className="flex flex-row flex-1 gap-4 rounded-xl border bg-card p-3">
                         <BatteryHeatmap
                             tempValues={batteryTemps}
-                            width={180}
-                            height={180}
+                            width={256}
+                            height={256}
                             minTemp={HEATMAP_MIN_TEMP}
                             maxTemp={HEATMAP_MAX_TEMP}
                         />
