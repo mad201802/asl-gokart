@@ -1,4 +1,4 @@
-import { Lock, Unlock } from "lucide-react";
+import { Lock, Unlock, CloudCheck, CloudAlert, CloudOff, EthernetPort, Unplug } from "lucide-react";
 import DigitalClock from "./clock";
 import DriveModeIndicator from "./drive-mode-indicator";
 import BatteryIndicator from "./battery-indicator";
@@ -11,11 +11,14 @@ import log from "@/lib/logger";
 
 export const HeaderBar = () => {
 
-    const { adminMode, batteryPercentage, setBatteryVoltage } = useStore(
+    const { adminMode, batteryPercentage, setBatteryVoltage, analyticsEnabled, analyticsConnected, gokartLanConnected } = useStore(
         useShallow((state) => ({
             adminMode: state.adminMode,
             batteryPercentage: state.batteryPercentage,
             setBatteryVoltage: state.setBatteryVoltage,
+            analyticsEnabled: state.analyticsEnabled,
+            analyticsConnected: state.analyticsConnected,
+            gokartLanConnected: state.gokartLanConnected,
         }))
     );
 
@@ -34,8 +37,16 @@ export const HeaderBar = () => {
 
     return (
         <div className="flex flex-row items-center justify-between px-2 py-1">
-            <div className="min-w-28">
+            <div className="flex flex-row items-center gap-4 min-w-28">
                 <DriveModeIndicator />
+                <div className="flex flex-row items-center gap-2 text-muted-foreground">
+                    {gokartLanConnected ? <EthernetPort className="w-6 h-6 text-green-500" /> : <Unplug className="w-6 h-6 text-red-500" />}
+                    {analyticsEnabled ? (
+                        analyticsConnected ? <CloudCheck className="w-6 h-6 text-green-500" /> : <CloudAlert className="w-6 h-6 text-yellow-500" />
+                    ) : (
+                        <CloudOff className="w-6 h-6" />
+                    )}
+                </div>
             </div>
             <DigitalClock />
             <div className="flex min-w-28 justify-end items-center">

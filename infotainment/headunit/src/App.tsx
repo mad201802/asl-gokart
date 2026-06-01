@@ -19,6 +19,7 @@ import { ErrorBoundary } from "@/components/shared/error-boundary";
 import { useThrottleData } from "./hooks/useThrottleData";
 import { useBatteryData } from "./hooks/useBatteryData";
 import { useLightsData } from "./hooks/useLightsData";
+import { useConnectionData } from "./hooks/useConnectionData";
 import { initHardwareCommandSubscriber } from "./services/hardware-command-subscriber";
 
 export default function App() {
@@ -27,6 +28,7 @@ export default function App() {
     useThrottleData();
     useBatteryData();
     useLightsData();
+    useConnectionData();
 
     useEffect(() => {
         syncThemeWithLocal();
