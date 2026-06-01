@@ -4,7 +4,7 @@ import { syncThemeWithLocal } from "./helpers/theme-helpers";
 import { useTranslation } from "react-i18next";
 import "./localization/i18n";
 import { updateAppLanguage } from "./helpers/language-helpers";
-import { Routes, Route, BrowserRouter } from "react-router-dom";
+import { Routes, Route, HashRouter } from "react-router-dom";
 import { Battery, Car, Gauge, LifeBuoy, Settings } from "lucide-react";
 import { NavBarItemData } from "./data/models";
 import NavBar from "./components/navbar/navbar";
@@ -87,7 +87,7 @@ export default function App() {
 
 const root = createRoot(document.getElementById("root")!);
 root.render(
-    <BrowserRouter>
+    <HashRouter>
         <App />
-    </BrowserRouter>
+    </HashRouter>
 );
