@@ -6,11 +6,15 @@ export interface LightsSlice {
     hazardLights: boolean;
     headlights: [boolean, boolean]; // [left, right]
     highBeams: [boolean, boolean];  // [left, right]
+    underglowColor: string;
+    welcomeLightColor: string;
     setTurnSignalLeft: (value: boolean) => void;
     setTurnSignalRight: (value: boolean) => void;
     setHazardLights: (value: boolean) => void;
     setHeadlights: (value: [boolean, boolean]) => void;
     setHighBeams: (value: [boolean, boolean]) => void;
+    setUnderglowColor: (value: string) => void;
+    setWelcomeLightColor: (value: string) => void;
   }
   
 export const createLightsSlice: StateCreator<
@@ -24,9 +28,13 @@ export const createLightsSlice: StateCreator<
   hazardLights: false,
   headlights: [false, false],
   highBeams: [false, false],
+  underglowColor: '#00f9ff',
+  welcomeLightColor: '#ff0055',
   setTurnSignalLeft: (value: boolean) => set({ turnSignalLeft: value }),
   setTurnSignalRight: (value: boolean) => set({ turnSignalRight: value }),
   setHazardLights: (value: boolean) => set({ hazardLights: value }),
   setHeadlights: (value: [boolean, boolean]) => set({ headlights: value }),
   setHighBeams: (value: [boolean, boolean]) => set({ highBeams: value }),
+  setUnderglowColor: (value: string) => set({ underglowColor: value }),
+  setWelcomeLightColor: (value: string) => set({ welcomeLightColor: value }),
   })
