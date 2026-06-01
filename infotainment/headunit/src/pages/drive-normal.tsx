@@ -15,6 +15,7 @@ import { LightsCommands } from "@/data/zonecontrollers/zonecontrollers";
 import { Lightbulb, OctagonAlert, Spotlight, SquareArrowLeft, SquareArrowRight, TriangleAlert } from "lucide-react";
 import { THROTTLE_BOUNDARIES, THROTTLE_SEGMENTS, RPM_SEGMENTS } from "@/data/gauge-config";
 import { interpolateColor } from "@/lib/utils/gauge-utils";
+import TemperatureBox from "@/components/shared/temperature-scale/temperature-box";
 
 const DriveNormalPage = () => {
 
@@ -33,7 +34,7 @@ const DriveNormalPage = () => {
     return () => observer.disconnect();
   }, []);
 
-  const { gear, rawThrottle, throttle, showRawThrottle, rpm, speed, rpmBoundaries, batteryPercentage, turnSignalRight, turnSignalLeft, hazardLights, headlights, highBeams } = useStore(
+  const { gear, rawThrottle, throttle, showRawThrottle, rpm, speed, rpmBoundaries, batteryPercentage, turnSignalRight, turnSignalLeft, hazardLights, headlights, highBeams, avgBatteryTemp } = useStore(
     useShallow((state) => ({
       gear: state.gear,
       rawThrottle: state.rawThrottle,
@@ -48,6 +49,7 @@ const DriveNormalPage = () => {
       hazardLights: state.hazardLights,
       headlights: state.headlights,
       highBeams: state.highBeams,
+      avgBatteryTemp: state.avgBatteryTemp,
     }))
   );
 
@@ -114,7 +116,7 @@ const DriveNormalPage = () => {
             <p className="font">km/h</p>
           </div>
           <div className="flex flex-col items-center justify-center">
-            <div className="w-[200px]">
+            <div className="w-50">
               <CircularProgressbarWithChildren
                 value={rpm}
                 circleRatio={0.75}
@@ -168,10 +170,20 @@ const DriveNormalPage = () => {
                 <OctagonAlert size={36} className="text-gray-700" />
           </div>
         </div>
-        <div className="w-full flex flex-col items-center justify-center pt-4">
-          <p>Battery</p>
-          <Progress className="rounded-md w-[30%] h-10" value={batteryPercentage*100} />
-            <p>{(batteryPercentage*100).toFixed(1)}%</p>
+        <div className="w-full flex flex-row justify-center gap-x-4 pt-8">
+          <div className="w-1/3 flex flex-col justify-center">
+            <TemperatureBox label="Battery" currentTemp={avgBatteryTemp} minTemp={-10} maxTemp={45}></TemperatureBox>
+            <TemperatureBox label="Motor" currentTemp={33} minTemp={0} maxTemp={100}></TemperatureBox>
+          </div>
+          <div className="w-1/3 flex flex-col items-center justify-center pt-4">
+            <p>Battery</p>
+            <Progress className="rounded-md w-full h-10" value={batteryPercentage*100} />
+              <p>{(batteryPercentage*100).toFixed(1)}%</p>
+          </div>
+          <div className="w-1/3 flex flex-col justify-center">
+            <TemperatureBox label="Controller 1" currentTemp={21} minTemp={0} maxTemp={100}></TemperatureBox>
+            <TemperatureBox label="Controller 2" currentTemp={24} minTemp={0} maxTemp={100}></TemperatureBox>
+          </div>
         </div>
       </div>
     </div>
