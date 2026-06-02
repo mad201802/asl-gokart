@@ -64,9 +64,9 @@ const CarPage = () => {
     return (
         <div className="flex flex-col h-screen overflow-hidden bg-background">
             <HeaderBar />
-            <div className="flex-1 flex flex-col items-center justify-start p-8 pt-24 overflow-y-auto">
-                <div className="flex flex-col items-center justify-center gap-12 w-full max-w-5xl">
-                    <div className="flex flex-col md:flex-row w-full gap-12">
+            <div className="flex-1 flex flex-col items-center justify-start p-8 overflow-y-auto">
+                <div className="flex flex-col items-center justify-center gap-2 w-full max-w-5xl">
+                    <div className="flex flex-col md:flex-row w-full gap-8">
                     
                     {/* Underglow Control Card */}
                     <Card className="w-1/2">
