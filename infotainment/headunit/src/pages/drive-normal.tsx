@@ -145,9 +145,9 @@ const DriveNormalPage = () => {
                 {/* Use color text-red-500 if critical or text-orange-400 if warning */}
 
                 {(headlights[0] || headlights[1]) ?
-                  <Lightbulb size={36} className="text-green-600" onClick={() => window.sero.sendLightsCommand(LightsCommands.SET_TOGGLE_HEADLIGHTS)} />
+                  <Lightbulb size={36} className="text-green-600" onClick={() => window.sero.sendLightsCommand(LightsCommands.SET_TOGGLE_DRL)} />
                   :
-                  <Lightbulb size={36} className="text-gray-700" onClick={() => window.sero.sendLightsCommand(LightsCommands.SET_TOGGLE_HEADLIGHTS)} />
+                  <Lightbulb size={36} className="text-gray-700" onClick={() => window.sero.sendLightsCommand(LightsCommands.SET_TOGGLE_DRL)} />
                 }
                 {(highBeams[0] || highBeams[1]) ?
                   <Spotlight size={36} className="text-blue-600" onClick={() => window.sero.sendLightsCommand(LightsCommands.SET_TOGGLE_HIGH_BEAMS)} />

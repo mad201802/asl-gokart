@@ -43,10 +43,11 @@ export function startSeroService(mainWindow: BrowserWindow) {
                 log.debug(`[SERO] LED state event: left=${payload[0]}, right=${payload[1]}`);
                 handleTurnsignalEvent(mainWindow, payload);
             });
-            // Subscribe to headlight state change events (event ID 0x8002: [left, right])
-            runtime.subscribeEvent(0x0001, 0x8002, (svcId, evtId, payload) => {
-                log.debug(`[SERO] Headlight state event: left=${payload[0]}, right=${payload[1]}`);
-                handleHeadlightsEvent(mainWindow, payload);
+            // Subscribe to DRL state change events (event ID 0x8006: [on])
+            runtime.subscribeEvent(0x0001, 0x8006, (svcId, evtId, payload) => {
+                log.debug(`[SERO] DRL state event: on=${payload[0]}`);
+                // Pass [on, on] so existing UI expecting [left, right] still works
+                handleHeadlightsEvent(mainWindow, Buffer.from([payload[0], payload[0]]));
             });
             // Subscribe to high beam state change events (event ID 0x8003: [left, right])
             runtime.subscribeEvent(0x0001, 0x8003, (svcId, evtId, payload) => {
