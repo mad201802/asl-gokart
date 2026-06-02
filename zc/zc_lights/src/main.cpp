@@ -3,16 +3,21 @@
 #include <ETH.h>
 #include <sero.hpp>
 #include <udp_transport_esp32.hpp>
-#include <blinker_controller.hpp>
-#include <headlights_controller.hpp>
+#include <rear_light_bar_controller.hpp>
+#include <front_drl_controller.hpp>
+#include <high_beam_controller.hpp>
 #include <lights_service.hpp>
 
-const char* FIRMWARE_VERSION = "0.1.0";
+const char* FIRMWARE_VERSION = "0.2.0";
 
 // --- Type Aliases -----------------------------------------------
 
 using Runtime = sero::Runtime<esp32_app::UdpTransportEsp32, Esp32Config>;
 using Addr    = sero::Address<Esp32Config>;
+
+// Front DRL strip types (each on a separate RMT channel)
+using FrontLeftMethod  = NeoEsp32Rmt1Ws2812xMethod;
+using FrontRightMethod = NeoEsp32Rmt2Ws2812xMethod;
 
 // --- Global Objects ---------------------------------------------
 
@@ -20,8 +25,19 @@ using Addr    = sero::Address<Esp32Config>;
 static esp32_app::UdpTransportEsp32 transport;
 static Runtime* runtime_ptr = nullptr;
 
-static BlinkerController blinker;
-static HeadlightsController headlights;
+// Controllers
+static RearLightBarController rear_light_bar;
+static FrontDrlController<FrontLeftMethod>  front_drl_left(
+        Esp32HwConfig::LED_PIN_ARGB_FRONT_LEFT,
+        FrontDrlConfig::NUM_LEDS,
+        /*sweep_forward=*/false,   // left strip sweeps right-to-left (outward)
+        "drl_left");
+static FrontDrlController<FrontRightMethod> front_drl_right(
+        Esp32HwConfig::LED_PIN_ARGB_FRONT_RIGHT,
+        FrontDrlConfig::NUM_LEDS,
+        /*sweep_forward=*/true,    // right strip sweeps left-to-right (outward)
+        "drl_right");
+static HighBeamController high_beams;
 
 // --- Function Declarations ----------------------------------------------
 void WiFiEvent(WiFiEvent_t event);
@@ -90,8 +106,17 @@ void connect_ethernet() {
 
 void setup() {
     connect_ethernet();
-    blinker.begin(); // initialises GPIO pins and starts blink task
-    headlights.begin(); // initialises GPIO pins for headlights
+
+    // ── Initialise hardware controllers ────────────────────────────
+    rear_light_bar.begin();
+    front_drl_left.begin();
+    front_drl_right.begin();
+    high_beams.begin();
+
+    // Enable default lighting states
+    rear_light_bar.set_tail(true);      // dim red tail light always on
+    front_drl_left.set_drl(true);       // white DRL always on
+    front_drl_right.set_drl(true);
 
     // ── Transport ───────────────────────────────────────────────
     if (!transport.init(Esp32ServiceConfig::ESP32_UNICAST_PORT)) {
@@ -106,28 +131,44 @@ void setup() {
     
     uint32_t now = millis();
 
-    rt.register_event(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_EVENT_STATE_ID);
-    rt.register_event(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_EVENT_HEADLIGHT_STATE_ID);
+    // ── Register events ─────────────────────────────────────────
+    rt.register_event(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_EVENT_TURN_STATE_ID);
     rt.register_event(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_EVENT_HIGH_BEAM_STATE_ID);
+    rt.register_event(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_EVENT_BRAKE_STATE_ID);
+    rt.register_event(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_EVENT_REVERSE_STATE_ID);
+    rt.register_event(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_EVENT_DRL_STATE_ID);
 
+    // ── Wire up callbacks ───────────────────────────────────────
 
-    blinker.set_led_callback([](uint8_t left, uint8_t right) {
+    // Rear light bar: turn signal state
+    rear_light_bar.set_turn_callback([](uint8_t left, uint8_t right) {
         if (!runtime_ptr) return;
         uint8_t payload[2] = { left, right };
         runtime_ptr->notify_event(Esp32ServiceConfig::ZC_LIGHTS_ID,
-                                  Esp32ServiceConfig::ZC_LIGHTS_EVENT_STATE_ID,
+                                  Esp32ServiceConfig::ZC_LIGHTS_EVENT_TURN_STATE_ID,
                                   payload, 2);
     });
 
-    headlights.set_headlight_callback([](uint8_t left, uint8_t right) {
+    // Rear light bar: brake state
+    rear_light_bar.set_brake_callback([](uint8_t on) {
         if (!runtime_ptr) return;
-        uint8_t payload[2] = { left, right };
+        uint8_t payload[1] = { on };
         runtime_ptr->notify_event(Esp32ServiceConfig::ZC_LIGHTS_ID,
-                                  Esp32ServiceConfig::ZC_LIGHTS_EVENT_HEADLIGHT_STATE_ID,
-                                  payload, 2);
+                                  Esp32ServiceConfig::ZC_LIGHTS_EVENT_BRAKE_STATE_ID,
+                                  payload, 1);
     });
 
-    headlights.set_high_beam_callback([](uint8_t left, uint8_t right) {
+    // Rear light bar: reverse state
+    rear_light_bar.set_reverse_callback([](uint8_t on) {
+        if (!runtime_ptr) return;
+        uint8_t payload[1] = { on };
+        runtime_ptr->notify_event(Esp32ServiceConfig::ZC_LIGHTS_ID,
+                                  Esp32ServiceConfig::ZC_LIGHTS_EVENT_REVERSE_STATE_ID,
+                                  payload, 1);
+    });
+
+    // High beams
+    high_beams.set_callback([](uint8_t left, uint8_t right) {
         if (!runtime_ptr) return;
         uint8_t payload[2] = { left, right };
         runtime_ptr->notify_event(Esp32ServiceConfig::ZC_LIGHTS_ID,
@@ -135,15 +176,16 @@ void setup() {
                                   payload, 2);
     });
 
-    static LightsService lights_svc(blinker, headlights);
+    // ── Register and offer LightsService ────────────────────────
+
+    static LightsService<FrontLeftMethod, FrontRightMethod> lights_svc(
+            rear_light_bar, front_drl_left, front_drl_right, high_beams);
 
     rt.register_service(Esp32ServiceConfig::ZC_LIGHTS_ID, lights_svc,
                         1, 0,
                         /*auth_required=*/false);
     rt.offer_service(Esp32ServiceConfig::ZC_LIGHTS_ID, /*ttl=*/30, now);
     std::printf("[server] LightsService 0x%04X offered\n", Esp32ServiceConfig::ZC_LIGHTS_ID);
-
-
 }
 
 void loop() {
@@ -153,4 +195,3 @@ void loop() {
     // ── Process protocol (poll transport, dispatch, housekeeping) ──
     rt.process(now);
 }
-
