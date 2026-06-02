@@ -35,7 +35,7 @@ interface AppContext {
 
 interface SeroContext {
     // zc_lights
-    sendLightsCommand: (command: LightsCommands, value?: boolean | boolean[]) => void;
+    sendLightsCommand: (command: LightsCommands, value?: any) => void;
     onLightsMessage: (callback: (lightsMessage: string) => void) => () => void;
     // zc_battery
     sendBatteryCommand: (command: BatteryCommands, value?: boolean | boolean[]) => void;

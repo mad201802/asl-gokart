@@ -43,10 +43,11 @@ export function startSeroService(mainWindow: BrowserWindow) {
                 log.debug(`[SERO] LED state event: left=${payload[0]}, right=${payload[1]}`);
                 handleTurnsignalEvent(mainWindow, payload);
             });
-            // Subscribe to headlight state change events (event ID 0x8002: [left, right])
-            runtime.subscribeEvent(0x0001, 0x8002, (svcId, evtId, payload) => {
-                log.debug(`[SERO] Headlight state event: left=${payload[0]}, right=${payload[1]}`);
-                handleHeadlightsEvent(mainWindow, payload);
+            // Subscribe to DRL state change events (event ID 0x8006: [on])
+            runtime.subscribeEvent(0x0001, 0x8006, (svcId, evtId, payload) => {
+                log.debug(`[SERO] DRL state event: on=${payload[0]}`);
+                // Pass [on, on] so existing UI expecting [left, right] still works
+                handleHeadlightsEvent(mainWindow, Buffer.from([payload[0], payload[0]]));
             });
             // Subscribe to high beam state change events (event ID 0x8003: [left, right])
             runtime.subscribeEvent(0x0001, 0x8003, (svcId, evtId, payload) => {
@@ -89,7 +90,7 @@ export function startSeroService(mainWindow: BrowserWindow) {
 
 // --- zc_lights ---------------------------------------------------------------------------
 
-function toggleLights(command: LightsCommands) {
+function handleLightsCommand(command: LightsCommands, value?: any) {
     if (!rt) {
         log.error('[SERO] Cannot toggle lights: SeroRuntime not initialized');
         return;
@@ -109,6 +110,32 @@ function toggleLights(command: LightsCommands) {
             break;
         case LightsCommands.SET_TOGGLE_HIGH_BEAMS:
             rt.fireAndForget(0x0001, 0x0006);
+            break;
+        case LightsCommands.SET_TOGGLE_BRAKE:
+            rt.fireAndForget(0x0001, 0x0007);
+            break;
+        case LightsCommands.SET_TOGGLE_REVERSE:
+            rt.fireAndForget(0x0001, 0x0008);
+            break;
+        case LightsCommands.SET_TOGGLE_DRL:
+            rt.fireAndForget(0x0001, 0x0009);
+            break;
+        case LightsCommands.TRIGGER_WELCOME_LIGHT:
+            rt.fireAndForget(0x0001, 0x000A);
+            break;
+        case LightsCommands.SET_BRIGHTNESS:
+            if (Array.isArray(value) && value.length === 2) {
+                rt.fireAndForget(0x0001, 0x000B, Buffer.from(value));
+            } else {
+                log.error('[SERO] Invalid payload for SET_BRIGHTNESS:', value);
+            }
+            break;
+        case LightsCommands.SET_WELCOME_LIGHT_COLOR:
+            if (Array.isArray(value) && value.length === 3) {
+                rt.fireAndForget(0x0001, 0x000C, Buffer.from(value));
+            } else {
+                log.error('[SERO] Invalid payload for SET_WELCOME_LIGHT_COLOR:', value);
+            }
             break;
     }
 }
@@ -236,10 +263,7 @@ export function registerSeroHandlers() {
     // Listen for commands to control turn signals
     ipcMain.on(SERO_SEND_LIGHTS_CHANNEL, (_, args) => {
         log.debug(`[SERO_SEND_LIGHTS_CHANNEL] Received command: ${JSON.stringify(args)}`);
-        const { command } = args;
-        switch (command) {
-
-        }
-        toggleLights(command);
+        const { command, value } = args;
+        handleLightsCommand(command, value);
     });
 }
