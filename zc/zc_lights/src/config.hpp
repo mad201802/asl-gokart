@@ -8,11 +8,19 @@
 #include <sero/core/log.hpp>
 #include <NeoPixelBus.h>
 
+/// Unified enum for turn signal / hazard states.
+enum class BlinkerState : uint8_t {
+    OFF = 0,
+    LEFT = 1,
+    RIGHT = 2,
+    HAZARD = 3
+};
+
 struct Esp32Config {
     static constexpr std::size_t MaxPayloadSize         = 512;
     static constexpr std::size_t MaxServices            = 4;
-    static constexpr std::size_t MaxMethods             = 8;
-    static constexpr std::size_t MaxEvents              = 4;
+    static constexpr std::size_t MaxMethods             = 16;
+    static constexpr std::size_t MaxEvents              = 8;
     static constexpr std::size_t MaxSubscribers          = 4;
     static constexpr std::size_t MaxPendingRequests      = 8;
     static constexpr std::size_t MaxKnownServices        = 8;
@@ -34,61 +42,116 @@ struct Esp32Config {
 
 struct Esp32ServiceConfig {
     static constexpr uint16_t ESP32_UNICAST_PORT     = 30491;
-    // Methods
+
+    // ── Service ID ──────────────────────────────────────────────
     static constexpr uint16_t ZC_LIGHTS_ID           = 0x0001;
-    static constexpr uint16_t ZC_LIGHTS_LEFT_ID      = 0x0002;
-    static constexpr uint16_t ZC_LIGHTS_RIGHT_ID     = 0x0003;
-    static constexpr uint16_t ZC_LIGHTS_HAZARD_ID    = 0x0004;
-    static constexpr uint16_t ZC_LIGHTS_HEADLIGHTS_ID = 0x0005;
-    static constexpr uint16_t ZC_LIGHTS_HIGH_BEAMS_ID = 0x0006;
-    // Events (bit 15 must be set, and IDs must be >= 0x8000)
-    static constexpr uint16_t ZC_LIGHTS_EVENT_STATE_ID = 0x8001; // Event: blinker state changed [left, hazard, right] — bit 15 must be set for NOTIFICATION messages
-    static constexpr uint16_t ZC_LIGHTS_EVENT_HEADLIGHT_STATE_ID = 0x8002;
-    static constexpr uint16_t ZC_LIGHTS_EVENT_HIGH_BEAM_STATE_ID = 0x8003;  
+
+    // ── Method IDs (bit 15 = 0, range 0x0000–0x7FFF) ───────────
+    static constexpr uint16_t ZC_LIGHTS_LEFT_ID              = 0x0002;  // Toggle left turn signal
+    static constexpr uint16_t ZC_LIGHTS_RIGHT_ID             = 0x0003;  // Toggle right turn signal
+    static constexpr uint16_t ZC_LIGHTS_HAZARD_ID            = 0x0004;  // Toggle hazard lights
+    static constexpr uint16_t ZC_LIGHTS_HIGH_BEAMS_ID        = 0x0006;  // Toggle high beams (relay)
+    static constexpr uint16_t ZC_LIGHTS_BRAKE_ID             = 0x0007;  // Toggle brake light
+    static constexpr uint16_t ZC_LIGHTS_REVERSE_ID           = 0x0008;  // Toggle reverse light
+    static constexpr uint16_t ZC_LIGHTS_DRL_ID               = 0x0009;  // Toggle front DRLs on/off
+    static constexpr uint16_t ZC_LIGHTS_WELCOME_ID           = 0x000A;  // Trigger welcome light animation
+    static constexpr uint16_t ZC_LIGHTS_SET_BRIGHTNESS_ID    = 0x000B;  // Set brightness [target, value]
+    static constexpr uint16_t ZC_LIGHTS_SET_WELCOME_COLOR_ID = 0x000C;  // Set welcome color [R, G, B]
+
+    // ── Event IDs (bit 15 = 1, range 0x8000–0xFFFF) ────────────
+    static constexpr uint16_t ZC_LIGHTS_EVENT_TURN_STATE_ID    = 0x8001;  // Turn signal state [left, right]
+    static constexpr uint16_t ZC_LIGHTS_EVENT_HIGH_BEAM_STATE_ID = 0x8003;  // High beam state [left, right]
+    static constexpr uint16_t ZC_LIGHTS_EVENT_BRAKE_STATE_ID   = 0x8004;  // Brake state [on]
+    static constexpr uint16_t ZC_LIGHTS_EVENT_REVERSE_STATE_ID = 0x8005;  // Reverse state [on]
+    static constexpr uint16_t ZC_LIGHTS_EVENT_DRL_STATE_ID     = 0x8006;  // DRL state [on]
 };
 
+// ── Hardware Pin Assignments ────────────────────────────────────
 struct Esp32HwConfig {
-    // Define any hardware-specific configuration parameters here, such as GPIO pins.
-    static constexpr int LED_PIN_HEADLIGHT_LEFT = GPIO_NUM_32;
-    static constexpr int LED_PIN_HEADLIGHT_RIGHT = GPIO_NUM_33;
-    static constexpr int LED_PIN_HIGH_BEAM_LEFT = GPIO_NUM_3;
-    static constexpr int LED_PIN_HIGH_BEAM_RIGHT = GPIO_NUM_4; 
-    static constexpr int LED_PIN_ARGB_STRIP = GPIO_NUM_2;
+    // High beam relays (binary on/off)
+    static constexpr int LED_PIN_HIGH_BEAM_LEFT  = GPIO_NUM_3;
+    static constexpr int LED_PIN_HIGH_BEAM_RIGHT = GPIO_NUM_4;
 
+    // ARGB strip data pins (NeoPixelBus via RMT)
+    static constexpr int LED_PIN_ARGB_REAR        = GPIO_NUM_2;
+    static constexpr int LED_PIN_ARGB_FRONT_LEFT  = GPIO_NUM_32;
+    static constexpr int LED_PIN_ARGB_FRONT_RIGHT = GPIO_NUM_33;
 };
 
-struct Esp32LightsConfig {
-    // Color for the ARGB strip
-    static constexpr uint32_t ARGB_STRIP_COLOR = 0xFF0000; // Red color in ARGB format
-    // Brightness for the ARGB strip (0-255)
-    static constexpr uint8_t ARGB_STRIP_BRIGHTNESS = 128; // 50% brightness
-    // Start LED index left blinker (0-based)
-    static constexpr uint8_t ARGB_STRIP_LEFT_START = 0;
-    static constexpr uint8_t ARGB_STRIP_LEFT_LENGTH= 10;
-    // Start LED index right blinker (0-based)
-    static constexpr uint8_t ARGB_STRIP_RIGHT_START = 10;
-    static constexpr uint8_t ARGB_STRIP_RIGHT_LENGTH= 10;
+// ── Rear Light Bar Configuration ────────────────────────────────
+//
+//  Zone layout (per row of 144 columns):
+//  ┌─────────────┬───────┬──────────┬───────┬─────────────┐
+//  │ TURN LEFT   │ REV L │  BRAKE   │ REV R │ TURN RIGHT  │
+//  │ cols  0–35  │ 36–53 │  54–89   │ 90–107│ cols 108–143│
+//  └─────────────┴───────┴──────────┴───────┴─────────────┘
+//
+struct RearLightBarConfig {
+    // Matrix dimensions
+    static constexpr uint16_t WIDTH    = 144;
+    static constexpr uint16_t HEIGHT   = 4;
+    static constexpr uint16_t NUM_LEDS = WIDTH * HEIGHT; // 576
 
-    // Total number of LEDs on the ARGB strip
-    static constexpr uint16_t ARGB_STRIP_NUM_LEDS = 20;
+    // ── Zone boundaries (column indices) ────────────────────────
+    // Turn signal zones: 36 columns from each end
+    static constexpr uint16_t TURN_SIGNAL_WIDTH = 36;
 
-    // ── Blinker sweep animation settings ──
-    // Sweep duration: time for the running animation to fill all LEDs (ms)
-    static constexpr uint32_t BLINK_SWEEP_DURATION_LEFT_MS  = 400;
-    static constexpr uint32_t BLINK_SWEEP_DURATION_RIGHT_MS = 400;
-    // Off duration: pause with all LEDs off between blink cycles (ms)
-    static constexpr uint32_t BLINK_OFF_DURATION_LEFT_MS    = 300;
-    static constexpr uint32_t BLINK_OFF_DURATION_RIGHT_MS   = 300;
-    // Sweep direction: true = from start index toward end, false = from end toward start.
-    // Defaults: left sweeps outward (end→start), right sweeps outward (start→end).
-    static constexpr bool BLINK_SWEEP_FORWARD_LEFT  = false;
-    static constexpr bool BLINK_SWEEP_FORWARD_RIGHT = true;
+    // Derived zone boundaries
+    static constexpr uint16_t TURN_LEFT_START  = 0;
+    static constexpr uint16_t TURN_LEFT_END    = TURN_SIGNAL_WIDTH;             // 36 (exclusive)
+    static constexpr uint16_t TURN_RIGHT_START = WIDTH - TURN_SIGNAL_WIDTH;     // 108
+    static constexpr uint16_t TURN_RIGHT_END   = WIDTH;                         // 144 (exclusive)
 
-    // NeoPixelBus RgbColor constants — use inline static const (C++17) because
-    // RgbColor constructors are not constexpr in NeoPixelBus.
-    inline static const RgbColor COLOR_OFF          = RgbColor(  0,   0,   0);
-    inline static const RgbColor COLOR_RED          = RgbColor(255,   0,   0);
-    inline static const RgbColor COLOR_WHITE        = RgbColor(255, 255, 255);
-    inline static const RgbColor COLOR_WARM_WHITE   = RgbColor(255, 255, 200);
-    inline static const RgbColor COLOR_ORANGE       = RgbColor(255, 40,   0);
+    // Center zone = cols 36–107 (72 columns)
+    static constexpr uint16_t CENTER_START = TURN_LEFT_END;                     // 36
+    static constexpr uint16_t CENTER_END   = TURN_RIGHT_START;                  // 108
+
+    // Reverse zones: 18 columns inside center, bordering turn zones
+    static constexpr uint16_t REVERSE_ZONE_WIDTH = 18;
+    static constexpr uint16_t REVERSE_LEFT_START  = CENTER_START;               // 36
+    static constexpr uint16_t REVERSE_LEFT_END    = CENTER_START + REVERSE_ZONE_WIDTH; // 54
+    static constexpr uint16_t REVERSE_RIGHT_START = CENTER_END - REVERSE_ZONE_WIDTH;   // 90
+    static constexpr uint16_t REVERSE_RIGHT_END   = CENTER_END;                // 108
+
+    // Brake zone: between reverse zones (cols 54–89, 36 columns)
+    static constexpr uint16_t BRAKE_START = REVERSE_LEFT_END;                   // 54
+    static constexpr uint16_t BRAKE_END   = REVERSE_RIGHT_START;                // 90
+
+    // ── Sweep animation settings ────────────────────────────────
+    static constexpr uint32_t BLINK_SWEEP_DURATION_MS = 400;
+    static constexpr uint32_t BLINK_OFF_DURATION_MS   = 300;
+
+    // ── Brightness defaults (0–255) ─────────────────────────────
+    static constexpr uint8_t BRIGHTNESS_TAIL    = 80;
+    static constexpr uint8_t BRIGHTNESS_BRAKE   = 255;
+    static constexpr uint8_t BRIGHTNESS_REVERSE = 200;
+    static constexpr uint8_t BRIGHTNESS_TURN    = 255;
+
+    // ── Colors ──────────────────────────────────────────────────
+    inline static const RgbColor COLOR_OFF     = RgbColor(  0,   0,   0);
+    inline static const RgbColor COLOR_TAIL    = RgbColor(255,   0,   0);
+    inline static const RgbColor COLOR_BRAKE   = RgbColor(255,   0,   0);
+    inline static const RgbColor COLOR_TURN    = RgbColor(255,  40,   0);
+    inline static const RgbColor COLOR_REVERSE = RgbColor(255, 255, 255);
+};
+
+// ── Front DRL Strip Configuration ───────────────────────────────
+struct FrontDrlConfig {
+    // Strip dimensions (1D)
+    static constexpr uint16_t NUM_LEDS = 36;
+
+    // ── Animation timing ────────────────────────────────────────
+    static constexpr uint32_t BLINK_SWEEP_DURATION_MS  = 400;
+    static constexpr uint32_t BLINK_OFF_DURATION_MS    = 300;
+    static constexpr uint32_t WELCOME_GLOW_DURATION_MS = 1500;
+
+    // ── Brightness defaults ─────────────────────────────────────
+    static constexpr uint8_t BRIGHTNESS_DRL  = 200;
+    static constexpr uint8_t BRIGHTNESS_TURN = 255;
+
+    // ── Colors ──────────────────────────────────────────────────
+    inline static const RgbColor COLOR_OFF     = RgbColor(  0,   0,   0);
+    inline static const RgbColor COLOR_DRL     = RgbColor(255, 255, 255);
+    inline static const RgbColor COLOR_TURN    = RgbColor(255,  40,   0);
+    inline static const RgbColor COLOR_WELCOME = RgbColor(  0, 100, 255); // default blue
 };
