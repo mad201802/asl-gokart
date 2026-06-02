@@ -43,6 +43,7 @@ static void ota_task(void* pvParams) {
     esp_http_client_config_t http_config = {};
     http_config.url                      = params->url;
     http_config.keep_alive_enable        = true;
+    http_config.use_global_ca_store      = true;
 
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
     esp_https_ota_config_t ota_config = {};
