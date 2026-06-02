@@ -7,7 +7,7 @@ export function exposeSeroContext()  {
     
     contextBridge.exposeInMainWorld('sero', {
         // Send commands to the SERO zone controller for lights control
-        sendLightsCommand: (command: LightsCommands, value?: boolean | boolean[]) => {
+        sendLightsCommand: (command: LightsCommands, value?: any) => {
             ipcRenderer.send(SERO_SEND_LIGHTS_CHANNEL, { command, value });
         },
         // Listen for lights status updates from SERO

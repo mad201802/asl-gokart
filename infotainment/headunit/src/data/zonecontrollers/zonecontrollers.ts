@@ -49,6 +49,12 @@ export enum LightsCommands {
     SET_TOGGLE_HEADLIGHTS = "setToggleHeadlights",
     GET_HIGH_BEAMS = "getHighBeams",
     SET_TOGGLE_HIGH_BEAMS = "setToggleHighBeams",
+    TRIGGER_WELCOME_LIGHT = "triggerWelcomeLight",
+    SET_WELCOME_LIGHT_COLOR = "setWelcomeLightColor",
+    SET_BRIGHTNESS = "setBrightness",
+    SET_TOGGLE_BRAKE = "setToggleBrake",
+    SET_TOGGLE_REVERSE = "setToggleReverse",
+    SET_TOGGLE_DRL = "setToggleDrl",
 }
 
 export class ZoneController{

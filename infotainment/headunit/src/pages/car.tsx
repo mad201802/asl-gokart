@@ -6,6 +6,11 @@ import { ColorPicker } from "@/components/color-picker";
 import { CirclePicker } from "react-color";
 import { PRESET_COLORS } from "@/data/lighting/color-definitions";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
+import { LightsCommands } from "@/data/zonecontrollers/zonecontrollers";
+import { hexToRgb } from "@/lib/utils";
+
+
 
 import {
   Card,
@@ -47,11 +52,21 @@ const CarPage = () => {
         setWelcomeLightOn: state.setWelcomeLightOn,
     })));
 
+    React.useEffect(() => {
+        const rgb = hexToRgb(welcomeLightColor);
+        window.sero.sendLightsCommand(LightsCommands.SET_WELCOME_LIGHT_COLOR, rgb);
+    }, [welcomeLightColor]);
+
+    React.useEffect(() => {
+        window.sero.sendLightsCommand(LightsCommands.SET_BRIGHTNESS, [0xFF, welcomeLightBrightness]);
+    }, [welcomeLightBrightness]);
+
     return (
         <div className="flex flex-col h-screen overflow-hidden bg-background">
             <HeaderBar />
-            <div className="flex-1 flex flex-col items-center justify-center p-8 overflow-y-auto">
-                <div className="flex flex-col md:flex-row items-center justify-center gap-12 w-full max-w-5xl">
+            <div className="flex-1 flex flex-col items-center justify-start p-8 pt-24 overflow-y-auto">
+                <div className="flex flex-col items-center justify-center gap-12 w-full max-w-5xl">
+                    <div className="flex flex-col md:flex-row w-full gap-12">
                     
                     {/* Underglow Control Card */}
                     <Card className="w-1/2">
@@ -114,6 +129,7 @@ const CarPage = () => {
                                         className="ml-4" 
                                         checked={welcomeLightOn}
                                         onCheckedChange={setWelcomeLightOn}
+                                        disabled={true}
                                     />
                                 </div>
                             </CardTitle>
@@ -146,6 +162,28 @@ const CarPage = () => {
                             </div>
                         </CardContent>
                     </Card>
+                    </div>
+
+                    {/* Lights Tester Panel */}
+                    <Card className="w-full">
+                        <CardHeader>
+                            <CardTitle>Lights Tester</CardTitle>
+                            <CardDescription>Manually trigger lighting elements for testing</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex flex-wrap gap-4">
+                                <Button onClick={() => window.sero.sendLightsCommand(LightsCommands.TRIGGER_WELCOME_LIGHT)}>Trigger Welcome</Button>
+                                <Button onClick={() => window.sero.sendLightsCommand(LightsCommands.SET_TOGGLE_TURN_SIGNAL_LEFT)}>Toggle Left Turn</Button>
+                                <Button onClick={() => window.sero.sendLightsCommand(LightsCommands.SET_TOGGLE_TURN_SIGNAL_RIGHT)}>Toggle Right Turn</Button>
+                                <Button onClick={() => window.sero.sendLightsCommand(LightsCommands.SET_TOGGLE_HAZARD_LIGHTS)}>Toggle Hazards</Button>
+                                <Button onClick={() => window.sero.sendLightsCommand(LightsCommands.SET_TOGGLE_HIGH_BEAMS)}>Toggle High Beams</Button>
+                                <Button onClick={() => window.sero.sendLightsCommand(LightsCommands.SET_TOGGLE_BRAKE)}>Toggle Brake</Button>
+                                <Button onClick={() => window.sero.sendLightsCommand(LightsCommands.SET_TOGGLE_REVERSE)}>Toggle Reverse</Button>
+                                <Button onClick={() => window.sero.sendLightsCommand(LightsCommands.SET_TOGGLE_DRL)}>Toggle DRL</Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+
                 </div>
             </div>
         </div>
