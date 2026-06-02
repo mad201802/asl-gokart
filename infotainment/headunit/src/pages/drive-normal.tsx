@@ -71,7 +71,7 @@ const DriveNormalPage = () => {
         </div>
         <div className="grid grid-cols-3 w-full">
           <div className="flex flex-col items-center justify-center">
-            <div className="w-[200px]">
+            <div className="w-50">
               <CircularProgressbarWithChildren
                 value={((showRawThrottle ? rawThrottle : throttle)*100)}
                 circleRatio={0.75}
