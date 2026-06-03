@@ -1,5 +1,5 @@
 import React from "react";
-import { auth } from "@/server/auth";
+import { getSession as auth } from "@/server/auth";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

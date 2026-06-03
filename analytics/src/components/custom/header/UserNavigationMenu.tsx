@@ -5,8 +5,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { auth } from "@/server/auth";
-import Link from "next/link";
+import { getSession as auth } from "@/server/auth";
+import { SignOutButton } from "@/components/custom/auth/AuthButtons";
 import { Button } from "@/components/ui/button";
 
 export async function UserNavigationMenu() {
@@ -21,11 +21,11 @@ export async function UserNavigationMenu() {
         </Avatar>
       </PopoverTrigger>
       <PopoverContent className="w-32">
-        <Link href="/api/auth/signout/">
+        <SignOutButton>
         <Button variant="destructive">
             Log Out
         </Button>
-        </Link>
+        </SignOutButton>
       </PopoverContent>
     </Popover>
   )
