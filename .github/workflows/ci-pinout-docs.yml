@@ -1,0 +1,18 @@
+name: CI — Pinout Docs
+
+on:
+    push:
+        branches: [main]
+        paths:
+            - 'zc/tools/gen_pinout_docs.py'
+            - 'zc/**/pins*'
+            - '.github/workflows/_pinout-docs.yml'
+            - '.github/workflows/ci-pinout-docs.yml'
+
+jobs:
+    pinout-docs:
+        uses: ./.github/workflows/_pinout-docs.yml
+        permissions:
+            pages: write
+            id-token: write
+            contents: read

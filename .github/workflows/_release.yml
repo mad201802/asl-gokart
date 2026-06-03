@@ -1,0 +1,48 @@
+# Reusable workflow — GitHub Release
+# Called by ci-release.yml (after headunit + ZC builds)
+
+name: Release
+
+on:
+    workflow_call:
+
+jobs:
+    create-release:
+        name: Create GitHub Release
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+
+            - name: Verify headunit version matches tag
+              run: |
+                  PKG_VERSION=$(jq -r '.version' infotainment/headunit/package.json)
+                  TAG_VERSION="${GITHUB_REF_NAME#v}"
+                  if [ "$PKG_VERSION" != "$TAG_VERSION" ]; then
+                    echo "::error::headunit package.json version ($PKG_VERSION) does not match tag ($GITHUB_REF_NAME)"
+                    exit 1
+                  fi
+                  echo "Version check passed: $PKG_VERSION == $TAG_VERSION"
+
+            - name: Download headunit arm64 artifact
+              uses: actions/download-artifact@v8
+              with:
+                  name: headunit-deb-arm64
+                  path: release-assets/
+
+            - name: Download headunit x86_64 artifact
+              uses: actions/download-artifact@v8
+              with:
+                  name: headunit-deb-x86
+                  path: release-assets/
+
+            - name: Download ZC firmware artifacts
+              uses: actions/download-artifact@v8
+              with:
+                  name: zc-firmware
+                  path: release-assets/
+
+            - name: Create GitHub Release
+              uses: softprops/action-gh-release@v3
+              with:
+                  files: release-assets/**
+                  generate_release_notes: true

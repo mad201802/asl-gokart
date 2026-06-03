@@ -1,0 +1,21 @@
+name: CI — Headunit
+
+on:
+    pull_request:
+        paths:
+            - 'infotainment/headunit/**'
+            - '.github/workflows/_headunit.yml'
+            - '.github/workflows/ci-headunit.yml'
+    push:
+        branches: [main]
+        paths:
+            - 'infotainment/headunit/**'
+            - '.github/workflows/_headunit.yml'
+            - '.github/workflows/ci-headunit.yml'
+
+jobs:
+    headunit:
+        uses: ./.github/workflows/_headunit.yml
+        with:
+            is-tag: false
+            is-pr: ${{ github.event_name == 'pull_request' }}

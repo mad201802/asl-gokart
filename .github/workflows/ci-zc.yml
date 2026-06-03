@@ -1,0 +1,20 @@
+name: CI — Zone Controllers
+
+on:
+    pull_request:
+        paths:
+            - 'zc/**'
+            - '.github/workflows/_zc.yml'
+            - '.github/workflows/ci-zc.yml'
+    push:
+        branches: [main]
+        paths:
+            - 'zc/**'
+            - '.github/workflows/_zc.yml'
+            - '.github/workflows/ci-zc.yml'
+
+jobs:
+    zc:
+        uses: ./.github/workflows/_zc.yml
+        with:
+            is-tag: false
