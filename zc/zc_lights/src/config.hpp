@@ -93,8 +93,8 @@ struct Esp32HwConfig {
 struct RearLightBarConfig {
     // Matrix dimensions
     static constexpr uint16_t WIDTH    = 144;
-    static constexpr uint16_t HEIGHT   = 4;
-    static constexpr uint16_t NUM_LEDS = WIDTH * HEIGHT; // 576
+    static constexpr uint16_t HEIGHT   = 3;
+    static constexpr uint16_t NUM_LEDS = WIDTH * HEIGHT; // 432
 
     // ── Zone boundaries (column indices) ────────────────────────
     // Turn signal zones: 36 columns from each end
@@ -133,16 +133,16 @@ struct RearLightBarConfig {
 
     // ── Colors ──────────────────────────────────────────────────
     inline static const RgbColor COLOR_OFF     = RgbColor(  0,   0,   0);
-    inline static const RgbColor COLOR_TAIL    = RgbColor(255,   0,   0);
-    inline static const RgbColor COLOR_BRAKE   = RgbColor(255,   0,   0);
-    inline static const RgbColor COLOR_TURN    = RgbColor(255,  40,   0);
+    inline static const RgbColor COLOR_TAIL    = RgbColor(  0, 255,   0);
+    inline static const RgbColor COLOR_BRAKE   = RgbColor(  0, 255,   0);
+    inline static const RgbColor COLOR_TURN    = RgbColor(40,  255,   0);
     inline static const RgbColor COLOR_REVERSE = RgbColor(255, 255, 255);
 };
 
 // ── Front DRL Strip Configuration ───────────────────────────────
 struct FrontDrlConfig {
     // Strip dimensions (1D)
-    static constexpr uint16_t NUM_LEDS = 36;
+    static constexpr uint16_t NUM_LEDS = 10;
 
     // ── Animation timing ────────────────────────────────────────
     static constexpr uint32_t BLINK_SWEEP_DURATION_MS  = 400;
@@ -150,8 +150,8 @@ struct FrontDrlConfig {
     static constexpr uint32_t WELCOME_GLOW_DURATION_MS = 1500;
 
     // ── Brightness defaults ─────────────────────────────────────
-    static constexpr uint8_t BRIGHTNESS_DRL  = 200;
-    static constexpr uint8_t BRIGHTNESS_TURN = 255;
+    static constexpr uint8_t BRIGHTNESS_DRL  = 128;
+    static constexpr uint8_t BRIGHTNESS_TURN = 128;
 
     // ── Colors ──────────────────────────────────────────────────
     inline static const RgbColor COLOR_OFF     = RgbColor(  0,   0,   0);
