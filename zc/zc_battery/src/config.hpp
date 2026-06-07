@@ -10,7 +10,7 @@
 struct Esp32Config {
     static constexpr std::size_t MaxPayloadSize         = 512;
     static constexpr std::size_t MaxServices            = 1;
-    static constexpr std::size_t MaxMethods             = 2;
+    static constexpr std::size_t MaxMethods             = 4;
     static constexpr std::size_t MaxEvents              = 8;
     static constexpr std::size_t MaxSubscribers          = 2;
     static constexpr std::size_t MaxPendingRequests      = 8;
@@ -34,6 +34,11 @@ struct Esp32Config {
 struct Esp32ServiceConfig {
     static constexpr uint16_t ESP32_UNICAST_PORT            = 30491;
     static constexpr uint16_t ZC_BATTERY_ID                 = 0x0003;
+
+    // Reserved OTA trigger method (present on every ZC, bit 15 = 0).
+    // Payload: UTF-8 URL string of the firmware binary served by the headunit.
+    static constexpr uint16_t ZC_BATTERY_OTA_METHOD_ID      = 0x00FF;
+
     // bit 15 must be set for NOTIFICATION messages
     static constexpr uint16_t ZC_BATTERY_EVENT_VOLTAGE_ID   = 0x8001; // Event: pack voltage changed | float
     static constexpr uint16_t ZC_BATTERY_EVENT_CURRENT_ID   = 0x8002; // Event: current changed | float

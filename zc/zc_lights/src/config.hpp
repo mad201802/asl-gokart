@@ -58,6 +58,10 @@ struct Esp32ServiceConfig {
     static constexpr uint16_t ZC_LIGHTS_SET_BRIGHTNESS_ID    = 0x000B;  // Set brightness [target, value]
     static constexpr uint16_t ZC_LIGHTS_SET_WELCOME_COLOR_ID = 0x000C;  // Set welcome color [R, G, B]
 
+    // Reserved OTA trigger method (present on every ZC, bit 15 = 0).
+    // Payload: UTF-8 URL string of the firmware binary served by the headunit.
+    static constexpr uint16_t ZC_LIGHTS_OTA_METHOD_ID        = 0x00FF;
+
     // ── Event IDs (bit 15 = 1, range 0x8000–0xFFFF) ────────────
     static constexpr uint16_t ZC_LIGHTS_EVENT_TURN_STATE_ID    = 0x8001;  // Turn signal state [left, right]
     static constexpr uint16_t ZC_LIGHTS_EVENT_HIGH_BEAM_STATE_ID = 0x8003;  // High beam state [left, right]

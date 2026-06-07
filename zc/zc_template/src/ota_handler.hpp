@@ -20,10 +20,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
-#include "esp_http_client.h"
-#include "esp_https_ota.h"
-#include "esp_idf_version.h"
-#include "esp_ota_ops.h"
+#include <HTTPClient.h>
+#include <Update.h>
 
 static const char* OTA_TAG = "ota";
 
@@ -38,29 +36,41 @@ struct OtaParams {
 static void ota_task(void* pvParams) {
     OtaParams* params = static_cast<OtaParams*>(pvParams);
 
+    // Give the main task some time to send the UDP acknowledgement
+    vTaskDelay(pdMS_TO_TICKS(500));
+
     ESP_LOGI(OTA_TAG, "Starting OTA from: %s", params->url);
 
-    esp_http_client_config_t http_config = {};
-    http_config.url                      = params->url;
-    http_config.keep_alive_enable        = true;
+    HTTPClient http;
+    http.begin(params->url);
+    int httpCode = http.GET();
 
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
-    esp_https_ota_config_t ota_config = {};
-    ota_config.http_config            = &http_config;
-    esp_err_t err = esp_https_ota(&ota_config);
-#else
-    esp_err_t err = esp_https_ota(&http_config);
-#endif
-
-    free(params);
-
-    if (err == ESP_OK) {
-        ESP_LOGI(OTA_TAG, "OTA succeeded — rebooting");
-        esp_restart();
+    if (httpCode == HTTP_CODE_OK) {
+        int contentLength = http.getSize();
+        bool canBegin = Update.begin(contentLength);
+        if (canBegin) {
+            WiFiClient *client = http.getStreamPtr();
+            size_t written = Update.writeStream(*client);
+            if (written == contentLength) {
+                if (Update.end()) {
+                    ESP_LOGI(OTA_TAG, "OTA succeeded — rebooting");
+                    free(params);
+                    esp_restart();
+                } else {
+                    ESP_LOGE(OTA_TAG, "Update end failed: %s", Update.errorString());
+                }
+            } else {
+                ESP_LOGE(OTA_TAG, "Written only %d / %d bytes", written, contentLength);
+            }
+        } else {
+            ESP_LOGE(OTA_TAG, "Not enough space to begin OTA");
+        }
     } else {
-        ESP_LOGE(OTA_TAG, "OTA failed: %s", esp_err_to_name(err));
+        ESP_LOGE(OTA_TAG, "HTTP GET failed, code: %d", httpCode);
     }
-
+    
+    http.end();
+    free(params);
     vTaskDelete(nullptr);
 }
 
