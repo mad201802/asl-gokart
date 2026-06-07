@@ -1,0 +1,24 @@
+name: Release
+
+on:
+    push:
+        tags:
+            - 'v*'
+
+jobs:
+    headunit:
+        uses: ./.github/workflows/_headunit.yml
+        with:
+            is-tag: true
+            is-pr: false
+
+    zc:
+        uses: ./.github/workflows/_zc.yml
+        with:
+            is-tag: true
+
+    release:
+        uses: ./.github/workflows/_release.yml
+        needs: [headunit, zc]
+        permissions:
+            contents: write

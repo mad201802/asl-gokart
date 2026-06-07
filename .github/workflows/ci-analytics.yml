@@ -1,0 +1,24 @@
+# CI — Analytics
+# Currently disabled. Uncomment the trigger below to enable.
+
+name: CI — Analytics
+
+# on:
+#     pull_request:
+#         paths:
+#             - 'analytics/**'
+#             - '.github/workflows/_analytics.yml'
+#             - '.github/workflows/ci-analytics.yml'
+#     push:
+#         branches: [main]
+#         paths:
+#             - 'analytics/**'
+#             - '.github/workflows/_analytics.yml'
+#             - '.github/workflows/ci-analytics.yml'
+
+on:
+    workflow_dispatch: # Manual trigger only — remove this and uncomment above to enable
+
+jobs:
+    analytics:
+        uses: ./.github/workflows/_analytics.yml

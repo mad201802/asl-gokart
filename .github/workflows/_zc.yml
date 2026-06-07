@@ -1,0 +1,68 @@
+# Reusable workflow — Zone Controllers build
+# Called by ci-zc.yml and ci-release.yml
+
+name: Zone Controllers
+
+on:
+    workflow_call:
+        inputs:
+            is-tag:
+                description: Whether this run was triggered by a version tag
+                type: boolean
+                required: true
+
+jobs:
+    build:
+        name: Build
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+
+            - uses: actions/setup-python@v6
+              with:
+                  python-version: '3.x'
+
+            # Cache the full PlatformIO home directory (toolchains, libs, etc.)
+            # Key includes a hash of all platformio.ini files so the cache is
+            # invalidated whenever any ZC project changes its dependencies.
+            - name: Cache PlatformIO
+              uses: actions/cache@v5
+              with:
+                  path: ~/.platformio
+                  key: platformio-${{ hashFiles('zc/**/platformio.ini') }}
+                  restore-keys: platformio-
+
+            - name: Install PlatformIO
+              run: pip install platformio
+
+            # Recursively discovers all zc_* directories and builds them,
+            # excluding zc_throttle (not yet ported to PlatformIO) and
+            # zc_simulator (Python, no PlatformIO project).
+            - name: Build all zone controllers
+              run: |
+                  find zc -maxdepth 1 -mindepth 1 -type d -name 'zc_*' \
+                    | grep -Ev 'zc_throttle|zc_simulator' \
+                    | sort \
+                    | while read dir; do
+                        echo "::group::Building $dir"
+                        pio run -d "$dir"
+                        echo "::endgroup::"
+                      done
+
+            # Collect firmware binaries and rename to avoid collisions
+            - name: Collect firmware binaries
+              if: inputs.is-tag
+              run: |
+                  mkdir -p firmware-artifacts
+                  find zc -maxdepth 5 -path '*/.pio/build/*/firmware.bin' \
+                    | while read bin; do
+                        project=$(basename $(dirname $(dirname $(dirname $(dirname "$bin")))))
+                        cp "$bin" "firmware-artifacts/firmware_${project}.bin"
+                      done
+
+            - name: Upload firmware artifacts
+              if: inputs.is-tag
+              uses: actions/upload-artifact@v7
+              with:
+                  name: zc-firmware
+                  path: firmware-artifacts/*.bin

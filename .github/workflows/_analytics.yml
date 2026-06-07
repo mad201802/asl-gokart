@@ -1,0 +1,44 @@
+# Reusable workflow — Analytics build & check
+# Called by ci-analytics.yml (currently disabled)
+
+name: Analytics
+
+on:
+    workflow_call:
+
+jobs:
+    build-and-check:
+        name: Build & Check
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: analytics
+        steps:
+            - uses: actions/checkout@v6
+
+            - uses: actions/setup-node@v6.2.0
+              with:
+                  node-version: 22
+
+            # Cache node_modules — keyed by package.json since there is no lockfile
+            - name: Cache node_modules
+              uses: actions/cache@v5
+              with:
+                  path: analytics/node_modules
+                  key: analytics-node-modules-${{ hashFiles('analytics/package.json') }}
+                  restore-keys: analytics-node-modules-
+
+            - name: Install dependencies
+              run: npm install
+
+            # SKIP_ENV_VALIDATION bypasses t3-oss/env-nextjs runtime validation
+            # so the build does not require live secrets (InfluxDB, Auth, etc.)
+            - name: Build
+              run: npm run build
+              env:
+                  SKIP_ENV_VALIDATION: '1'
+
+            - name: Lint & typecheck
+              run: npm run check
+              env:
+                  SKIP_ENV_VALIDATION: '1'
