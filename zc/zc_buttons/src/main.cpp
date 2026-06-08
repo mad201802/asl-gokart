@@ -249,7 +249,7 @@ void loop() {
         }
         if (button4.pressed()) {
             uint8_t payload[1] = {0x04};
-            rt.request(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_HEADLIGHTS_ID,
+            rt.request(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_DRL_ID,
                        payload, sizeof(payload), on_lights_response, nullptr, 2000, now);
             Serial.println("Button 4 pressed - method call sent");
         }

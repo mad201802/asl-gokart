@@ -40,6 +40,9 @@ public:
     /// Callback fired when the turn-signal state changes: 1 = on, 0 = off.
     using TurnStateFn = std::function<void(uint8_t on)>;
 
+    /// Callback fired when the DRL state changes: 1 = on, 0 = off.
+    using DrlStateFn = std::function<void(uint8_t on)>;
+
     /// @param pin           GPIO data-line for this strip.
     /// @param num_leds      LED count (default from config).
     /// @param sweep_forward true = sweep left-to-right (right strip),
@@ -83,9 +86,13 @@ public:
     /// If a turn signal is active the visual change is deferred until it ends.
     void set_drl(bool on) {
         xSemaphoreTake(mutex_, portMAX_DELAY);
+        const bool changed = (drl_on_ != on);
         drl_on_ = on;
-        Serial.printf("[%s] DRL %s\n", task_name_, on ? "ON" : "OFF");
         xSemaphoreGive(mutex_);
+        if (changed && drl_callback_) {
+            drl_callback_(on ? 1 : 0);
+        }
+        Serial.printf("[%s] DRL %s\n", task_name_, on ? "ON" : "OFF");
         notify_task();
     }
 
@@ -141,6 +148,9 @@ public:
     /// Register a callback that fires whenever the turn-signal state changes.
     void set_turn_callback(TurnStateFn fn) { turn_callback_ = std::move(fn); }
 
+    /// Register a callback that fires whenever the DRL state changes.
+    void set_drl_callback(DrlStateFn fn) { drl_callback_ = std::move(fn); }
+
 private:
     // ── Constants ───────────────────────────────────────────────────────────
     static constexpr uint32_t FRAME_INTERVAL_MS  = 20;  // ~50 fps
@@ -169,6 +179,7 @@ private:
     // ── Callback ────────────────────────────────────────────────────────────
     TurnStateFn  turn_callback_;
     uint8_t      last_turn_state_;
+    DrlStateFn   drl_callback_;
 
     // ── Mode resolution ─────────────────────────────────────────────────────
     /// Determine the current visual mode according to priority rules.

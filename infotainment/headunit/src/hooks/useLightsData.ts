@@ -17,9 +17,9 @@ export function useLightsData() {
             const parsed: IncomingPacket = JSON.parse(incomingPacket);
             switch (parsed.command) {
                 case LightsCommands.GET_TURN_SIGNAL_LIGHTS:
-                    setTurnSignalLeft(parsed.value[0]);
+                    setTurnSignalLeft(parsed.value[0] === 1);
                     setHazardLights(parsed.value[0] === 1 && parsed.value[1] === 1);
-                    setTurnSignalRight(parsed.value[1]);
+                    setTurnSignalRight(parsed.value[1] === 1);
                     break;
                 case LightsCommands.GET_HEADLIGHTS:
                     setHeadlights([parsed.value[0] === 1, parsed.value[1] === 1]);

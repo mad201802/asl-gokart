@@ -176,6 +176,15 @@ void setup() {
                                   payload, 2);
     });
 
+    // Front DRL: DRL state
+    front_drl_left.set_drl_callback([](uint8_t on) {
+        if (!runtime_ptr) return;
+        uint8_t payload[1] = { on };
+        runtime_ptr->notify_event(Esp32ServiceConfig::ZC_LIGHTS_ID,
+                                  Esp32ServiceConfig::ZC_LIGHTS_EVENT_DRL_STATE_ID,
+                                  payload, 1);
+    });
+
     // ── Register and offer LightsService ────────────────────────
 
     static LightsService<FrontLeftMethod, FrontRightMethod> lights_svc(

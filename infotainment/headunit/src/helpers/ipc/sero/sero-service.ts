@@ -106,7 +106,7 @@ function handleLightsCommand(command: LightsCommands, value?: any) {
             rt.fireAndForget(0x0001, 0x0004);
             break;
         case LightsCommands.SET_TOGGLE_HEADLIGHTS:
-            rt.fireAndForget(0x0001, 0x0005);
+            rt.fireAndForget(0x0001, 0x0009);
             break;
         case LightsCommands.SET_TOGGLE_HIGH_BEAMS:
             rt.fireAndForget(0x0001, 0x0006);

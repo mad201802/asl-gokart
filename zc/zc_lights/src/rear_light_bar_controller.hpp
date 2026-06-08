@@ -247,9 +247,14 @@ private:
 
     /// Emit turn callback only when the logical state actually changes.
     void maybe_emit_turn(uint8_t left, uint8_t right) {
-        if (turn_cb_ && (left != last_turn_left_ || right != last_turn_right_)) {
+        xSemaphoreTake(mutex_, portMAX_DELAY);
+        const bool changed = (left != last_turn_left_ || right != last_turn_right_);
+        if (changed) {
             last_turn_left_  = left;
             last_turn_right_ = right;
+        }
+        xSemaphoreGive(mutex_);
+        if (changed && turn_cb_) {
             turn_cb_(left, right);
         }
     }
@@ -416,6 +421,7 @@ private:
             if (snap.turn == BlinkerState::OFF) {
                 self->render_frame(snap, /*sweep_active=*/false, 0);
                 self->strip_->Show();
+                self->maybe_emit_turn(0, 0);
 
                 // Sleep until state changes.
                 xTaskNotifyWait(0, ULONG_MAX, nullptr, portMAX_DELAY);
@@ -425,6 +431,10 @@ private:
             // ── Animated mode (turn / hazard active) ────────────────────
             const uint32_t sweep_ms = Cfg::BLINK_SWEEP_DURATION_MS;
             const uint32_t off_ms   = Cfg::BLINK_OFF_DURATION_MS;
+
+            const bool do_left  = (snap.turn == BlinkerState::LEFT  || snap.turn == BlinkerState::HAZARD);
+            const bool do_right = (snap.turn == BlinkerState::RIGHT || snap.turn == BlinkerState::HAZARD);
+            self->maybe_emit_turn(do_left ? 1 : 0, do_right ? 1 : 0);
 
             // ── Sweep ON phase ──────────────────────────────────────────
             const uint32_t sweep_start = millis();
@@ -471,6 +481,8 @@ private:
             // ── OFF phase ───────────────────────────────────────────────
             snap = self->snapshot_state();
             if (snap.turn == BlinkerState::OFF) continue;
+
+            self->maybe_emit_turn(0, 0);
 
             // Render with sweep_active=false so turn zones show underlying
             // state (or off if nothing else is active).
