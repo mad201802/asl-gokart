@@ -186,8 +186,8 @@ private:
     /// Must be called with the mutex held (or via snapshot values).
     FrontDrlMode resolve_mode() const {
         if (turn_on_)        return FrontDrlMode::TURN;
-        if (drl_on_)         return FrontDrlMode::DRL;
         if (welcome_active_) return FrontDrlMode::WELCOME;
+        if (drl_on_)         return FrontDrlMode::DRL;
         return FrontDrlMode::OFF;
     }
 
@@ -297,13 +297,14 @@ private:
                                                 FrontDrlConfig::BRIGHTNESS_TURN);
         const uint32_t sweep_ms = FrontDrlConfig::BLINK_SWEEP_DURATION_MS;
         const uint32_t off_ms   = FrontDrlConfig::BLINK_OFF_DURATION_MS;
+        const uint32_t total_cycle_ms = sweep_ms + off_ms;
 
         // ── Sweep ON phase ──────────────────────────────────────────────
-        const uint32_t sweep_start = millis();
+        const uint32_t cycle_start = millis();
         bool aborted = false;
 
         while (true) {
-            const uint32_t elapsed = millis() - sweep_start;
+            const uint32_t elapsed = millis() - cycle_start;
             if (elapsed >= sweep_ms) break;
 
             float progress = std::min(1.0f, static_cast<float>(elapsed) / sweep_ms);
@@ -327,11 +328,20 @@ private:
         set_sweep(num_leds_, color);
         strip_->Show();
 
+        // Brief hold at full illumination (one frame) to match rear light bar.
+        if (xTaskNotifyWait(0, ULONG_MAX, nullptr,
+                            pdMS_TO_TICKS(FRAME_INTERVAL_MS)) == pdTRUE) {
+            return;
+        }
+
         // ── OFF phase ───────────────────────────────────────────────────
         clear_all();
 
+        uint32_t time_since_start = millis() - cycle_start;
+        uint32_t remaining = (total_cycle_ms > time_since_start) ? (total_cycle_ms - time_since_start) : 1;
+
         if (xTaskNotifyWait(0, ULONG_MAX, nullptr,
-                            pdMS_TO_TICKS(off_ms)) == pdTRUE) {
+                            pdMS_TO_TICKS(remaining)) == pdTRUE) {
             return;  // state changed — restart from top
         }
     }

@@ -431,17 +431,18 @@ private:
             // ── Animated mode (turn / hazard active) ────────────────────
             const uint32_t sweep_ms = Cfg::BLINK_SWEEP_DURATION_MS;
             const uint32_t off_ms   = Cfg::BLINK_OFF_DURATION_MS;
+            const uint32_t total_cycle_ms = sweep_ms + off_ms;
 
             const bool do_left  = (snap.turn == BlinkerState::LEFT  || snap.turn == BlinkerState::HAZARD);
             const bool do_right = (snap.turn == BlinkerState::RIGHT || snap.turn == BlinkerState::HAZARD);
             self->maybe_emit_turn(do_left ? 1 : 0, do_right ? 1 : 0);
 
             // ── Sweep ON phase ──────────────────────────────────────────
-            const uint32_t sweep_start = millis();
+            const uint32_t cycle_start = millis();
             bool aborted = false;
 
             while (true) {
-                const uint32_t elapsed = millis() - sweep_start;
+                const uint32_t elapsed = millis() - cycle_start;
                 if (elapsed >= sweep_ms) break;
 
                 const float progress = std::min(
@@ -489,8 +490,11 @@ private:
             self->render_frame(snap, /*sweep_active=*/false, 0);
             self->strip_->Show();
 
+            uint32_t time_since_start = millis() - cycle_start;
+            uint32_t remaining = (total_cycle_ms > time_since_start) ? (total_cycle_ms - time_since_start) : 1;
+
             if (xTaskNotifyWait(0, ULONG_MAX, nullptr,
-                                pdMS_TO_TICKS(off_ms)) == pdTRUE) {
+                                pdMS_TO_TICKS(remaining)) == pdTRUE) {
                 continue;  // state changed — restart
             }
         }
