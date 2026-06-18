@@ -413,9 +413,16 @@ private:
     /// cycle and restarts immediately.
     static void rear_light_task(void* arg) {
         auto* self = static_cast<RearLightBarController*>(arg);
+        TickType_t next_cycle_tick = xTaskGetTickCount();
+        BlinkerState last_turn = BlinkerState::OFF;
 
         while (true) {
             State snap = self->snapshot_state();
+
+            if (snap.turn != last_turn) {
+                next_cycle_tick = xTaskGetTickCount();
+            }
+            last_turn = snap.turn;
 
             // ── Static mode (no turn signals) ───────────────────────────
             if (snap.turn == BlinkerState::OFF) {
@@ -438,11 +445,12 @@ private:
             self->maybe_emit_turn(do_left ? 1 : 0, do_right ? 1 : 0);
 
             // ── Sweep ON phase ──────────────────────────────────────────
-            const uint32_t cycle_start = millis();
+            const TickType_t cycle_start = next_cycle_tick;
             bool aborted = false;
 
             while (true) {
-                const uint32_t elapsed = millis() - cycle_start;
+                TickType_t now = xTaskGetTickCount();
+                uint32_t elapsed = pdTICKS_TO_MS(now - cycle_start);
                 if (elapsed >= sweep_ms) break;
 
                 const float progress = std::min(
@@ -463,7 +471,10 @@ private:
                 }
             }
 
-            if (aborted) continue;  // state changed — restart immediately
+            if (aborted) {
+                next_cycle_tick = xTaskGetTickCount();
+                continue;  // state changed — restart immediately
+            }
 
             // Ensure fully-lit final frame.
             snap = self->snapshot_state();
@@ -476,6 +487,7 @@ private:
             // Brief hold at full illumination (one frame).
             if (xTaskNotifyWait(0, ULONG_MAX, nullptr,
                                 pdMS_TO_TICKS(FRAME_INTERVAL_MS)) == pdTRUE) {
+                next_cycle_tick = xTaskGetTickCount();
                 continue;
             }
 
@@ -490,11 +502,12 @@ private:
             self->render_frame(snap, /*sweep_active=*/false, 0);
             self->strip_->Show();
 
-            uint32_t time_since_start = millis() - cycle_start;
-            uint32_t remaining = (total_cycle_ms > time_since_start) ? (total_cycle_ms - time_since_start) : 1;
+            next_cycle_tick += pdMS_TO_TICKS(total_cycle_ms);
+            TickType_t now_tick = xTaskGetTickCount();
+            TickType_t remaining = (next_cycle_tick > now_tick) ? (next_cycle_tick - now_tick) : 1;
 
-            if (xTaskNotifyWait(0, ULONG_MAX, nullptr,
-                                pdMS_TO_TICKS(remaining)) == pdTRUE) {
+            if (xTaskNotifyWait(0, ULONG_MAX, nullptr, remaining) == pdTRUE) {
+                next_cycle_tick = xTaskGetTickCount();
                 continue;  // state changed — restart
             }
         }

@@ -73,13 +73,13 @@ struct Esp32ServiceConfig {
 // ── Hardware Pin Assignments ────────────────────────────────────
 struct Esp32HwConfig {
     // High beam relays (binary on/off)
-    static constexpr int LED_PIN_HIGH_BEAM_LEFT  = GPIO_NUM_3;
-    static constexpr int LED_PIN_HIGH_BEAM_RIGHT = GPIO_NUM_4;
+    static constexpr int LED_PIN_HIGH_BEAM_LEFT  = GPIO_NUM_32;
+    static constexpr int LED_PIN_HIGH_BEAM_RIGHT = GPIO_NUM_33;
 
     // ARGB strip data pins (NeoPixelBus via RMT)
-    static constexpr int LED_PIN_ARGB_REAR        = GPIO_NUM_2;
-    static constexpr int LED_PIN_ARGB_FRONT_LEFT  = GPIO_NUM_32;
-    static constexpr int LED_PIN_ARGB_FRONT_RIGHT = GPIO_NUM_33;
+    static constexpr int LED_PIN_ARGB_REAR        = GPIO_NUM_4;
+    static constexpr int LED_PIN_ARGB_FRONT_LEFT  = GPIO_NUM_16;
+    static constexpr int LED_PIN_ARGB_FRONT_RIGHT = GPIO_NUM_13;
 };
 
 // ── Rear Light Bar Configuration ────────────────────────────────
@@ -142,7 +142,7 @@ struct RearLightBarConfig {
 // ── Front DRL Strip Configuration ───────────────────────────────
 struct FrontDrlConfig {
     // Strip dimensions (1D)
-    static constexpr uint16_t NUM_LEDS = 10;
+    static constexpr uint16_t NUM_LEDS = 15;
 
     // ── Animation timing ────────────────────────────────────────
     static constexpr uint32_t BLINK_SWEEP_DURATION_MS  = 400;

@@ -249,9 +249,16 @@ private:
     /// otherwise blocks on xTaskNotifyWait until a state change occurs.
     static void drl_task(void* arg) {
         auto* self = static_cast<FrontDrlController*>(arg);
+        FrontDrlMode last_mode = FrontDrlMode::OFF;
+        TickType_t next_cycle_tick = xTaskGetTickCount();
 
         while (true) {
             const FrontDrlMode mode = self->get_mode();
+
+            if (mode == FrontDrlMode::TURN && last_mode != FrontDrlMode::TURN) {
+                next_cycle_tick = xTaskGetTickCount();
+            }
+            last_mode = mode;
 
             switch (mode) {
                 // ── OFF ─────────────────────────────────────────────────────
@@ -270,7 +277,7 @@ private:
 
                 // ── TURN (sweeping orange) ──────────────────────────────────
                 case FrontDrlMode::TURN:
-                    self->run_turn_cycle();
+                    self->run_turn_cycle(next_cycle_tick);
                     break;
 
                 // ── WELCOME (one-shot glow-up) ──────────────────────────────
@@ -292,7 +299,7 @@ private:
 
     /// Execute one full turn-signal blink cycle: sweep ON → hold → OFF → pause.
     /// Returns immediately if the state changes mid-cycle.
-    void run_turn_cycle() {
+    void run_turn_cycle(TickType_t& next_cycle_tick) {
         const RgbColor color = apply_brightness(FrontDrlConfig::COLOR_TURN,
                                                 FrontDrlConfig::BRIGHTNESS_TURN);
         const uint32_t sweep_ms = FrontDrlConfig::BLINK_SWEEP_DURATION_MS;
@@ -300,11 +307,12 @@ private:
         const uint32_t total_cycle_ms = sweep_ms + off_ms;
 
         // ── Sweep ON phase ──────────────────────────────────────────────
-        const uint32_t cycle_start = millis();
+        const TickType_t cycle_start = next_cycle_tick;
         bool aborted = false;
 
         while (true) {
-            const uint32_t elapsed = millis() - cycle_start;
+            TickType_t now = xTaskGetTickCount();
+            uint32_t elapsed = pdTICKS_TO_MS(now - cycle_start);
             if (elapsed >= sweep_ms) break;
 
             float progress = std::min(1.0f, static_cast<float>(elapsed) / sweep_ms);
@@ -321,6 +329,7 @@ private:
 
         if (aborted || get_mode() != FrontDrlMode::TURN) {
             clear_all();
+            next_cycle_tick = xTaskGetTickCount();
             return;
         }
 
@@ -331,17 +340,19 @@ private:
         // Brief hold at full illumination (one frame) to match rear light bar.
         if (xTaskNotifyWait(0, ULONG_MAX, nullptr,
                             pdMS_TO_TICKS(FRAME_INTERVAL_MS)) == pdTRUE) {
+            next_cycle_tick = xTaskGetTickCount();
             return;
         }
 
         // ── OFF phase ───────────────────────────────────────────────────
         clear_all();
 
-        uint32_t time_since_start = millis() - cycle_start;
-        uint32_t remaining = (total_cycle_ms > time_since_start) ? (total_cycle_ms - time_since_start) : 1;
+        next_cycle_tick += pdMS_TO_TICKS(total_cycle_ms);
+        TickType_t now_tick = xTaskGetTickCount();
+        TickType_t remaining = (next_cycle_tick > now_tick) ? (next_cycle_tick - now_tick) : 1;
 
-        if (xTaskNotifyWait(0, ULONG_MAX, nullptr,
-                            pdMS_TO_TICKS(remaining)) == pdTRUE) {
+        if (xTaskNotifyWait(0, ULONG_MAX, nullptr, remaining) == pdTRUE) {
+            next_cycle_tick = xTaskGetTickCount();
             return;  // state changed — restart from top
         }
     }
