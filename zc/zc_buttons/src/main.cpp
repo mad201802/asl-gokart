@@ -5,15 +5,26 @@
 #include <sero.hpp>
 #include <udp_transport_esp32.hpp>
 #include "ota_handler.hpp"
+#include "config.hpp"
 
 const char* FIRMWARE_VERSION = "0.2.0";
 
 // Button pins
-#define BUTTON_PIN_1 GPIO_NUM_14
-#define BUTTON_PIN_2 GPIO_NUM_15
-#define BUTTON_PIN_3 GPIO_NUM_32
-#define BUTTON_PIN_4 GPIO_NUM_33
-#define BUTTON_PIN_5 GPIO_NUM_4
+#define BUTTON_PIN_1 GPIO_NUM_16    // Green Cable, Top Right Button
+#define BUTTON_PIN_2 GPIO_NUM_5     // White Cable, Top Left Button
+#define BUTTON_PIN_3 GPIO_NUM_13    // Yellow Cable, Bottom Right Button
+#define BUTTON_PIN_4 GPIO_NUM_4     // Violet Cable, Bottom Left Button 
+#define BUTTON_PIN_5 GPIO_NUM_32    // Orange Cable, unused
+#define BUTTON_PIN_6 GPIO_NUM_33    // Blue Cable, unused
+
+// Connector pinout reference:
+// Pin 1: Black (GND or VCC, depending on button board wiring)
+// Pin 2: Violet
+// Pin 3: White
+// Pin 4: Yellow
+// Pin 5: Green
+// Pin 6: Orange
+// Pin 7: Blue
 
 // --- Type Aliases -----------------------------------------------
 
@@ -67,6 +78,7 @@ Bounce2::Button button2 = Bounce2::Button();
 Bounce2::Button button3 = Bounce2::Button();
 Bounce2::Button button4 = Bounce2::Button();
 Bounce2::Button button5 = Bounce2::Button();
+Bounce2::Button button6 = Bounce2::Button();
 
 struct AppState {
     bool lights_found = false;
@@ -229,38 +241,30 @@ void loop() {
 
     // Call method for button presses on ZC_LIGHTS_ID service
     if (app.lights_found) {
-        if (button1.pressed()) {
+        if (button2.pressed()) {
             uint8_t payload[1] = {0x01};
             rt.request(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_LEFT_ID,
                        payload, sizeof(payload), on_lights_response, nullptr, 2000, now);
-            Serial.println("Button 1 pressed - method call sent");
+            Serial.println("Button 2 (Top Left) pressed - Left Turn Signal sent");
         }
-        if (button2.pressed()) {
-            uint8_t payload[1] = {0x02};
+        if (button1.pressed()) {
+            uint8_t payload[1] = {0x01};
             rt.request(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_RIGHT_ID,
                        payload, sizeof(payload), on_lights_response, nullptr, 2000, now);
-            Serial.println("Button 2 pressed - method call sent");
-        }
-        if (button3.pressed()) {
-            uint8_t payload[1] = {0x03};
-            rt.request(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_HAZARD_ID,
-                       payload, sizeof(payload), on_lights_response, nullptr, 2000, now);
-            Serial.println("Button 3 pressed - method call sent");
+            Serial.println("Button 1 (Top Right) pressed - Right Turn Signal sent");
         }
         if (button4.pressed()) {
-            uint8_t payload[1] = {0x04};
-            rt.request(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_DRL_ID,
-                       payload, sizeof(payload), on_lights_response, nullptr, 2000, now);
-            Serial.println("Button 4 pressed - method call sent");
-        }
-        if (button5.pressed()) {
-            uint8_t payload[1] = {0x05};
+            uint8_t payload[1] = {0x01};
             rt.request(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_HIGH_BEAMS_ID,
                        payload, sizeof(payload), on_lights_response, nullptr, 2000, now);
-            Serial.println("Button 5 pressed - method call sent");
+            Serial.println("Button 4 (Bottom Left) pressed - High Beams ON sent");
         }
-        // Add more buttons and method calls here for headlight control
-        //
+        if (button4.released()) {
+            uint8_t payload[1] = {0x00};
+            rt.request(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_HIGH_BEAMS_ID,
+                       payload, sizeof(payload), on_lights_response, nullptr, 2000, now);
+            Serial.println("Button 4 (Bottom Left) released - High Beams OFF sent");
+        }
     }
 }
 
@@ -268,19 +272,19 @@ void loop() {
 
 void initializeButtons() {
     button1.attach(BUTTON_PIN_1, INPUT_PULLDOWN);
-    button1.setPressedState(HIGH);
+    button1.setPressedState(ButtonConfig::INVERT_1 ? LOW : HIGH);
     button1.interval(50);
     button2.attach(BUTTON_PIN_2, INPUT_PULLDOWN);
-    button2.setPressedState(HIGH);
+    button2.setPressedState(ButtonConfig::INVERT_2 ? LOW : HIGH);
     button2.interval(50);
     button3.attach(BUTTON_PIN_3, INPUT_PULLDOWN);
-    button3.setPressedState(HIGH);
+    button3.setPressedState(ButtonConfig::INVERT_3 ? LOW : HIGH);
     button3.interval(50);
     button4.attach(BUTTON_PIN_4, INPUT_PULLDOWN);
-    button4.setPressedState(HIGH);
+    button4.setPressedState(ButtonConfig::INVERT_4 ? LOW : HIGH);
     button4.interval(50);
     button5.attach(BUTTON_PIN_5, INPUT_PULLDOWN);
-    button5.setPressedState(HIGH);
+    button5.setPressedState(ButtonConfig::INVERT_5 ? LOW : HIGH);
     button5.interval(50);
 }
 

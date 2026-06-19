@@ -30,12 +30,12 @@ static RearLightBarController rear_light_bar;
 static FrontDrlController<FrontLeftMethod>  front_drl_left(
         Esp32HwConfig::LED_PIN_ARGB_FRONT_LEFT,
         FrontDrlConfig::NUM_LEDS,
-        /*sweep_forward=*/false,   // left strip sweeps right-to-left (outward)
+        /*sweep_forward=*/true,    // left strip sweeps forward (strips mounted mirrored)
         "drl_left");
 static FrontDrlController<FrontRightMethod> front_drl_right(
         Esp32HwConfig::LED_PIN_ARGB_FRONT_RIGHT,
         FrontDrlConfig::NUM_LEDS,
-        /*sweep_forward=*/true,    // right strip sweeps left-to-right (outward)
+        /*sweep_forward=*/true,    // right strip sweeps forward (strips mounted mirrored)
         "drl_right");
 static HighBeamController high_beams;
 
@@ -118,6 +118,10 @@ void setup() {
     front_drl_left.set_drl(true);       // white DRL always on
     front_drl_right.set_drl(true);
 
+    // Play welcome animation on boot
+    front_drl_left.trigger_welcome(FrontDrlConfig::COLOR_WELCOME);
+    front_drl_right.trigger_welcome(FrontDrlConfig::COLOR_WELCOME);
+
     // ── Transport ───────────────────────────────────────────────
     if (!transport.init(Esp32ServiceConfig::ESP32_UNICAST_PORT)) {
         Serial.println("[ERROR] Transport init failed!");
@@ -142,6 +146,9 @@ void setup() {
 
     // Rear light bar: turn signal state
     rear_light_bar.set_turn_callback([](uint8_t left, uint8_t right) {
+        front_drl_left.set_turn_signal(left != 0);
+        front_drl_right.set_turn_signal(right != 0);
+
         if (!runtime_ptr) return;
         uint8_t payload[2] = { left, right };
         runtime_ptr->notify_event(Esp32ServiceConfig::ZC_LIGHTS_ID,

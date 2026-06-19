@@ -96,10 +96,14 @@ public:
         notify_task();
     }
 
-    /// Toggle the turn signal on/off.
-    void toggle_turn_signal() {
+    /// Set the turn signal state explicitly.
+    void set_turn_signal(bool on) {
         xSemaphoreTake(mutex_, portMAX_DELAY);
-        turn_on_ = !turn_on_;
+        if (turn_on_ == on) {
+            xSemaphoreGive(mutex_);
+            return;
+        }
+        turn_on_ = on;
         Serial.printf("[%s] TURN %s\n", task_name_, turn_on_ ? "ON" : "OFF");
         xSemaphoreGive(mutex_);
         emit_turn_state(turn_on_ ? 1 : 0);

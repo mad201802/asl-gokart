@@ -23,20 +23,20 @@ public:
 
     /// Toggle both high beams together.
     void toggle() {
-        bool left_on  = digitalRead(Esp32HwConfig::LED_PIN_HIGH_BEAM_LEFT) == HIGH;
+        bool left_on  = is_on();
         // Toggle both in sync
-        set(! left_on, ! left_on);
+        set(!left_on, !left_on);
     }
 
     /// Explicitly set high beam state.
     void set(bool left_on, bool right_on) {
-        digitalWrite(Esp32HwConfig::LED_PIN_HIGH_BEAM_LEFT,  left_on  ? HIGH : LOW);
-        digitalWrite(Esp32HwConfig::LED_PIN_HIGH_BEAM_RIGHT, right_on ? HIGH : LOW);
+        digitalWrite(Esp32HwConfig::LED_PIN_HIGH_BEAM_LEFT,  left_on  ? LOW : HIGH);
+        digitalWrite(Esp32HwConfig::LED_PIN_HIGH_BEAM_RIGHT, right_on ? LOW : HIGH);
         maybe_emit(left_on ? 1 : 0, right_on ? 1 : 0);
     }
 
     bool is_on() const {
-        return digitalRead(Esp32HwConfig::LED_PIN_HIGH_BEAM_LEFT) == HIGH;
+        return digitalRead(Esp32HwConfig::LED_PIN_HIGH_BEAM_LEFT) == LOW;
     }
 
     void set_callback(HighBeamStateFn fn) { cb_ = std::move(fn); }
@@ -47,8 +47,8 @@ private:
     HighBeamStateFn cb_;
 
     void all_off() {
-        digitalWrite(Esp32HwConfig::LED_PIN_HIGH_BEAM_LEFT,  LOW);
-        digitalWrite(Esp32HwConfig::LED_PIN_HIGH_BEAM_RIGHT, LOW);
+        digitalWrite(Esp32HwConfig::LED_PIN_HIGH_BEAM_LEFT,  HIGH);
+        digitalWrite(Esp32HwConfig::LED_PIN_HIGH_BEAM_RIGHT, HIGH);
         last_left_  = 0;
         last_right_ = 0;
     }
