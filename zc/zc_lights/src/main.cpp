@@ -118,6 +118,10 @@ void setup() {
     front_drl_left.set_drl(true);       // white DRL always on
     front_drl_right.set_drl(true);
 
+    // Play welcome animation on boot
+    front_drl_left.trigger_welcome(FrontDrlConfig::COLOR_WELCOME);
+    front_drl_right.trigger_welcome(FrontDrlConfig::COLOR_WELCOME);
+
     // ── Transport ───────────────────────────────────────────────
     if (!transport.init(Esp32ServiceConfig::ESP32_UNICAST_PORT)) {
         Serial.println("[ERROR] Transport init failed!");
