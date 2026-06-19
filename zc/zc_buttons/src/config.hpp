@@ -51,10 +51,10 @@ struct Esp32ServiceConfig {
 };
 
 struct ButtonConfig {
-    static constexpr bool INVERT_1 = false; // Top Right
-    static constexpr bool INVERT_2 = false; // Top Left
-    static constexpr bool INVERT_3 = false; // Bottom Right
-    static constexpr bool INVERT_4 = false; // Bottom Left
-    static constexpr bool INVERT_5 = false;
-    static constexpr bool INVERT_6 = false;
+    static constexpr bool INVERT_1 = true; // Top Right
+    static constexpr bool INVERT_2 = true; // Top Left
+    static constexpr bool INVERT_3 = true;  // Bottom Right
+    static constexpr bool INVERT_4 = true;  // Bottom Left
+    static constexpr bool INVERT_5 = true;
+    static constexpr bool INVERT_6 = true;
 };
