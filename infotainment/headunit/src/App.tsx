@@ -81,7 +81,7 @@ export default function App() {
                         </Routes>
                     </>
                 </div>
-                {<div className="w-[80px] border-l-2">
+                {<div className="w-20 border-l-2">
                     <NavBar items={navBarItems} />
                 </div>}
                 <Toaster />
