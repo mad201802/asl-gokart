@@ -24,10 +24,8 @@ export enum BatteryCommands {
 
 export enum MotorCommands {
     GET_RPM = "getRpm",
-    GET_SPEED = "getSpeed",
-    GET_THROTTLE = "getThrottle",
-    GET_BRAKE_PEDAL = "getBrakePedal",
-    GET_REVERSE = "getReverse",
+    GET_LEFT_MOTOR_DATA = "getLeftMotorData",
+    GET_RIGHT_MOTOR_DATA = "getRightMotorData",
 }
 
 export enum ThrottleCommands {

@@ -4,6 +4,7 @@ import { BatterySlice } from './batterySlice'
 import { FlowState, calculateFlowState } from '@/lib/utils/flow-state'
 
 export { FlowState } from '@/lib/utils/flow-state'
+import { KellyTelemetry } from '@/data/controlling_models/motor'
 
 export interface MotorSlice {
     gear: Gears
@@ -23,6 +24,8 @@ export interface MotorSlice {
     pedalMultiplier: number
     flowState: FlowState
     debugFlowStateOverride: FlowState | null
+    leftMotorData: KellyTelemetry | null
+    rightMotorData: KellyTelemetry | null
     setGear: (gear: Gears) => void
     setDriveMode: (driveMode: DriveModes) => void
     setRawThrottle: (rawThrottle: number) => void
@@ -38,6 +41,8 @@ export interface MotorSlice {
     setMinSettableSpeed: (minSettableSpeed: number) => void
     setPedalMultiplier: (pedalMultiplier: number) => void
     setDebugFlowStateOverride: (flowState: FlowState | null) => void
+    setLeftMotorData: (data: KellyTelemetry) => void
+    setRightMotorData: (data: KellyTelemetry) => void
   }
 
 export const createMotorSlice: StateCreator<
@@ -63,6 +68,8 @@ export const createMotorSlice: StateCreator<
   pedalMultiplier: 100,
   flowState: FlowState.IDLE,
   debugFlowStateOverride: null,
+  leftMotorData: null,
+  rightMotorData: null,
   setGear: (gear: Gears) => set({ gear }),
   setDriveMode: (driveMode: DriveModes) => set({ driveMode }),
   setRawThrottle: (rawThrottle: number) => set({ rawThrottle }),
@@ -104,4 +111,6 @@ export const createMotorSlice: StateCreator<
       flowState: flowState ?? calculateFlowState(batteryCurrent, throttle, rpm)
     });
   },
+  setLeftMotorData: (data: KellyTelemetry) => set({ leftMotorData: data }),
+  setRightMotorData: (data: KellyTelemetry) => set({ rightMotorData: data }),
   })

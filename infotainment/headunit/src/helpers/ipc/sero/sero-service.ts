@@ -226,10 +226,21 @@ function handleZcMotorEvent(mainWindow: BrowserWindow, payload: any) {
         log.error(`[SERO] Invalid payload size for motor event: ${payload.length}`);
         return;
     }
-    const leftRpm = payload.readUInt16BE(0);
-    const rightRpm = payload.readUInt16BE(8);
-    // Take the average RPM
-    const rpm = Math.round((leftRpm + rightRpm) / 2);
+    const parseKellyData = (offset: number) => ({
+        rpm: payload.readUInt16BE(offset),
+        throttle: payload[offset + 2],
+        brakePedal: payload[offset + 3],
+        switches: payload[offset + 4],
+        batteryVoltage: payload[offset + 5],
+        motorTemp: payload[offset + 6],
+        controllerTemp: payload[offset + 7],
+    });
+
+    const leftData = parseKellyData(0);
+    const rightData = parseKellyData(8);
+
+    // Take the average RPM for general logic
+    const rpm = Math.round((leftData.rpm + rightData.rpm) / 2);
     
     // RPM
     const rpmPacket: IncomingPacket = {
@@ -238,6 +249,22 @@ function handleZcMotorEvent(mainWindow: BrowserWindow, payload: any) {
         value: rpm,
     };
     mainWindow.webContents.send(SERO_MOTOR_MESSAGE_CHANNEL, JSON.stringify(rpmPacket));
+
+    // Left Motor Data
+    const leftPacket: IncomingPacket = {
+        zone: Zones.MOTOR,
+        command: MotorCommands.GET_LEFT_MOTOR_DATA,
+        value: leftData,
+    };
+    mainWindow.webContents.send(SERO_MOTOR_MESSAGE_CHANNEL, JSON.stringify(leftPacket));
+
+    // Right Motor Data
+    const rightPacket: IncomingPacket = {
+        zone: Zones.MOTOR,
+        command: MotorCommands.GET_RIGHT_MOTOR_DATA,
+        value: rightData,
+    };
+    mainWindow.webContents.send(SERO_MOTOR_MESSAGE_CHANNEL, JSON.stringify(rightPacket));
 }
 
 // -----------------------------------------------------------------------------------------
