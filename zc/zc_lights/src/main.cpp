@@ -142,6 +142,9 @@ void setup() {
 
     // Rear light bar: turn signal state
     rear_light_bar.set_turn_callback([](uint8_t left, uint8_t right) {
+        front_drl_left.set_turn_signal(left != 0);
+        front_drl_right.set_turn_signal(right != 0);
+
         if (!runtime_ptr) return;
         uint8_t payload[2] = { left, right };
         runtime_ptr->notify_event(Esp32ServiceConfig::ZC_LIGHTS_ID,

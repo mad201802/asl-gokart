@@ -43,18 +43,14 @@ public:
 
             case Esp32ServiceConfig::ZC_LIGHTS_LEFT_ID:
                 rear_.toggle_left();
-                front_left_.toggle_turn_signal();
                 return sero::ReturnCode::E_OK;
 
             case Esp32ServiceConfig::ZC_LIGHTS_RIGHT_ID:
                 rear_.toggle_right();
-                front_right_.toggle_turn_signal();
                 return sero::ReturnCode::E_OK;
 
             case Esp32ServiceConfig::ZC_LIGHTS_HAZARD_ID:
                 rear_.toggle_hazard();
-                front_left_.toggle_turn_signal();
-                front_right_.toggle_turn_signal();
                 return sero::ReturnCode::E_OK;
 
             // ── High beam relay ─────────────────────────────────────────────
