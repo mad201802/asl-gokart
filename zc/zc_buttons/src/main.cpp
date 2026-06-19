@@ -5,6 +5,7 @@
 #include <sero.hpp>
 #include <udp_transport_esp32.hpp>
 #include "ota_handler.hpp"
+#include "config.hpp"
 
 const char* FIRMWARE_VERSION = "0.2.0";
 
@@ -252,12 +253,6 @@ void loop() {
                        payload, sizeof(payload), on_lights_response, nullptr, 2000, now);
             Serial.println("Button 1 (Top Right) pressed - Right Turn Signal sent");
         }
-        if (button3.pressed()) {
-            uint8_t payload[1] = {0x01};
-            rt.request(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_HAZARD_ID,
-                       payload, sizeof(payload), on_lights_response, nullptr, 2000, now);
-            Serial.println("Button 3 (Bottom Right) pressed - Hazard sent");
-        }
         if (button4.pressed()) {
             uint8_t payload[1] = {0x01};
             rt.request(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_HIGH_BEAMS_ID,
@@ -270,12 +265,6 @@ void loop() {
                        payload, sizeof(payload), on_lights_response, nullptr, 2000, now);
             Serial.println("Button 4 (Bottom Left) released - High Beams OFF sent");
         }
-        if (button5.pressed()) {
-            uint8_t payload[1] = {0x01};
-            rt.request(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_DRL_ID,
-                       payload, sizeof(payload), on_lights_response, nullptr, 2000, now);
-            Serial.println("Button 5 pressed - DRL toggle sent");
-        }
     }
 }
 
@@ -283,19 +272,19 @@ void loop() {
 
 void initializeButtons() {
     button1.attach(BUTTON_PIN_1, INPUT_PULLDOWN);
-    button1.setPressedState(HIGH);
+    button1.setPressedState(ButtonConfig::INVERT_1 ? LOW : HIGH);
     button1.interval(50);
     button2.attach(BUTTON_PIN_2, INPUT_PULLDOWN);
-    button2.setPressedState(HIGH);
+    button2.setPressedState(ButtonConfig::INVERT_2 ? LOW : HIGH);
     button2.interval(50);
     button3.attach(BUTTON_PIN_3, INPUT_PULLDOWN);
-    button3.setPressedState(HIGH);
+    button3.setPressedState(ButtonConfig::INVERT_3 ? LOW : HIGH);
     button3.interval(50);
     button4.attach(BUTTON_PIN_4, INPUT_PULLDOWN);
-    button4.setPressedState(HIGH);
+    button4.setPressedState(ButtonConfig::INVERT_4 ? LOW : HIGH);
     button4.interval(50);
     button5.attach(BUTTON_PIN_5, INPUT_PULLDOWN);
-    button5.setPressedState(HIGH);
+    button5.setPressedState(ButtonConfig::INVERT_5 ? LOW : HIGH);
     button5.interval(50);
 }
 

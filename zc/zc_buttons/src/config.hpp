@@ -49,3 +49,12 @@ struct Esp32ServiceConfig {
     // Payload: UTF-8 URL string of the firmware binary served by the headunit.
     static constexpr uint16_t ZC_BUTTONS_OTA_METHOD_ID  = 0x00FF;
 };
+
+struct ButtonConfig {
+    static constexpr bool INVERT_1 = false; // Top Right
+    static constexpr bool INVERT_2 = false; // Top Left
+    static constexpr bool INVERT_3 = false; // Bottom Right
+    static constexpr bool INVERT_4 = false; // Bottom Left
+    static constexpr bool INVERT_5 = false;
+    static constexpr bool INVERT_6 = false;
+};
