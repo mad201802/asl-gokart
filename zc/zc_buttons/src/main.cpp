@@ -9,11 +9,21 @@
 const char* FIRMWARE_VERSION = "0.2.0";
 
 // Button pins
-#define BUTTON_PIN_1 GPIO_NUM_14
-#define BUTTON_PIN_2 GPIO_NUM_15
-#define BUTTON_PIN_3 GPIO_NUM_32
-#define BUTTON_PIN_4 GPIO_NUM_33
-#define BUTTON_PIN_5 GPIO_NUM_4
+#define BUTTON_PIN_1 GPIO_NUM_16    // Green Cable, Top Right Button
+#define BUTTON_PIN_2 GPIO_NUM_5     // White Cable, Top Left Button
+#define BUTTON_PIN_3 GPIO_NUM_13    // Yellow Cable, Bottom Right Button
+#define BUTTON_PIN_4 GPIO_NUM_4     // Violet Cable, Bottom Left Button 
+#define BUTTON_PIN_5 GPIO_NUM_32    // Orange Cable, unused
+#define BUTTON_PIN_6 GPIO_NUM_33    // Blue Cable, unused
+
+// Connector pinout reference:
+// Pin 1: Black (GND or VCC, depending on button board wiring)
+// Pin 2: Violet
+// Pin 3: White
+// Pin 4: Yellow
+// Pin 5: Green
+// Pin 6: Orange
+// Pin 7: Blue
 
 // --- Type Aliases -----------------------------------------------
 
@@ -67,6 +77,7 @@ Bounce2::Button button2 = Bounce2::Button();
 Bounce2::Button button3 = Bounce2::Button();
 Bounce2::Button button4 = Bounce2::Button();
 Bounce2::Button button5 = Bounce2::Button();
+Bounce2::Button button6 = Bounce2::Button();
 
 struct AppState {
     bool lights_found = false;
