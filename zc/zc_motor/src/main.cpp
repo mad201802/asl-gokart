@@ -69,10 +69,8 @@ void connect_ethernet() {
     WiFi.onEvent(WiFiEvent);
     ETH.begin();
 
-    // TODO: Assign a static IP from the project's address registry and update
-    //       the gateway/netmask if needed.
     ETH.config(
-        IPAddress(192, 168, 1, 0),   // TODO: replace with real address
+        IPAddress(192, 168, 1, 7),
         IPAddress(192, 168, 1, 1),
         IPAddress(255, 255, 255, 0)
     );
