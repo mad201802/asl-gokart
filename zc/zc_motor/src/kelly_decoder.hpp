@@ -119,8 +119,8 @@ public:
     /// `timeout_ms` parameter only governs ESP32's auto-baud-detection
     /// window — it is unrelated to `read_timeout_ms` here, which bounds
     /// readBytes() below via Stream::setTimeout().
-    void begin(uint32_t baud_rate, int8_t rx_pin, int8_t tx_pin, uint32_t read_timeout_ms) {
-        serial_.begin(baud_rate, SERIAL_8N1, rx_pin, tx_pin);
+    void begin(uint32_t baud_rate, int8_t rx_pin, int8_t tx_pin, uint32_t read_timeout_ms, bool invert = false) {
+        serial_.begin(baud_rate, SERIAL_8N1, rx_pin, tx_pin, invert);
         serial_.setTimeout(read_timeout_ms);
     }
 
@@ -154,6 +154,9 @@ private:
                     kelly::parse_packet_b(buf, b);
                     rpm_ = static_cast<uint16_t>(b.rpm / 4U);
                 }
+            } else {
+                Serial.printf("[motor] Validation failed! type=%d, checksum_ok=%d\n", 
+                    (int)type, kelly::validate_checksum(buf));
             }
         }
         if (!ok) {
@@ -171,7 +174,37 @@ private:
         flush_stale_input();
         const std::array<uint8_t, 3> command{ cmd, static_cast<uint8_t>(0x00), cmd };
         serial_.write(command.data(), command.size());
-        return serial_.readBytes(out.data(), out.size()) == out.size();
+        serial_.flush(); // Wait for TX to complete
+        
+        unsigned long start_time = millis();
+        int bytes_read = 0;
+        bool synced = false;
+        
+        Serial.printf("[motor] RX (cmd %02X): ", cmd);
+        
+        while (millis() - start_time < serial_.getTimeout()) {
+            if (serial_.available() > 0) {
+                uint8_t b = serial_.read();
+                Serial.printf("%02X ", b);
+                
+                if (!synced) {
+                    if (b == cmd) {
+                        out[0] = b;
+                        synced = true;
+                        bytes_read = 1;
+                    }
+                } else {
+                    out[bytes_read++] = b;
+                    if (bytes_read == out.size()) {
+                        Serial.println();
+                        return true;
+                    }
+                }
+            }
+        }
+        
+        Serial.printf(" | Timeout! bytes_read=%d\n", bytes_read);
+        return false;
     }
 
     void flush_stale_input() {

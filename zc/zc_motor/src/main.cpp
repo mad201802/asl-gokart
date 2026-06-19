@@ -95,11 +95,13 @@ void setup() {
     motor_left.begin(Esp32HwConfig::KELLY_BAUD_RATE,
                       Esp32HwConfig::KELLY_LEFT_RX_PIN,
                       Esp32HwConfig::KELLY_LEFT_TX_PIN,
-                      Esp32HwConfig::KELLY_READ_TIMEOUT_MS);
+                      Esp32HwConfig::KELLY_READ_TIMEOUT_MS,
+                      false); // set to true to invert UART
     motor_right.begin(Esp32HwConfig::KELLY_BAUD_RATE,
                        Esp32HwConfig::KELLY_RIGHT_RX_PIN,
                        Esp32HwConfig::KELLY_RIGHT_TX_PIN,
-                       Esp32HwConfig::KELLY_READ_TIMEOUT_MS);
+                       Esp32HwConfig::KELLY_READ_TIMEOUT_MS,
+                       false); // set to true to invert UART
 
     // ── Transport ────────────────────────────────────────────────────────────
     if (!transport.init(Esp32ServiceConfig::ESP32_UNICAST_PORT)) {
@@ -142,7 +144,7 @@ void setup() {
 // ── loop ──────────────────────────────────────────────────────────────────────
 
 // Number of poll iterations between published RPM events (matches rust_impl).
-static constexpr uint8_t PUBLISH_EVERY_N_POLLS = 10;
+static constexpr uint8_t PUBLISH_EVERY_N_POLLS = 1;
 
 void loop() {
     Runtime& rt = *runtime_ptr;
