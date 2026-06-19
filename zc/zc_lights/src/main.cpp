@@ -30,12 +30,12 @@ static RearLightBarController rear_light_bar;
 static FrontDrlController<FrontLeftMethod>  front_drl_left(
         Esp32HwConfig::LED_PIN_ARGB_FRONT_LEFT,
         FrontDrlConfig::NUM_LEDS,
-        /*sweep_forward=*/false,   // left strip sweeps right-to-left (outward)
+        /*sweep_forward=*/true,    // left strip sweeps forward (strips mounted mirrored)
         "drl_left");
 static FrontDrlController<FrontRightMethod> front_drl_right(
         Esp32HwConfig::LED_PIN_ARGB_FRONT_RIGHT,
         FrontDrlConfig::NUM_LEDS,
-        /*sweep_forward=*/true,    // right strip sweeps left-to-right (outward)
+        /*sweep_forward=*/true,    // right strip sweeps forward (strips mounted mirrored)
         "drl_right");
 static HighBeamController high_beams;
 
