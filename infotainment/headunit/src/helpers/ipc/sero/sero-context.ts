@@ -1,5 +1,5 @@
-import { SERO_BATTERY_MESSAGE_CHANNEL, SERO_LIGHTS_MESSAGE_CHANNEL, SERO_SEND_BATTERY_CHANNEL, SERO_SEND_LIGHTS_CHANNEL } from "./sero-channels";
-import { BatteryCommands, LightsCommands } from "@/data/zonecontrollers/zonecontrollers";
+import { SERO_BATTERY_MESSAGE_CHANNEL, SERO_LIGHTS_MESSAGE_CHANNEL, SERO_SEND_BATTERY_CHANNEL, SERO_SEND_LIGHTS_CHANNEL, SERO_MOTOR_MESSAGE_CHANNEL, SERO_SEND_MOTOR_CHANNEL } from "./sero-channels";
+import { BatteryCommands, LightsCommands, MotorCommands } from "@/data/zonecontrollers/zonecontrollers";
 require('@asl-gokart/sero-node');
 
 export function exposeSeroContext()  {
@@ -26,6 +26,17 @@ export function exposeSeroContext()  {
             const listener = (_: unknown, message: string) => callback(message);
             ipcRenderer.on(SERO_BATTERY_MESSAGE_CHANNEL, listener);
             return () => ipcRenderer.removeListener(SERO_BATTERY_MESSAGE_CHANNEL, listener);
+        },
+
+        // Send commands to the SERO zone controller for motor control
+        sendMotorCommand: (command: MotorCommands, value?: any) => {
+            ipcRenderer.send(SERO_SEND_MOTOR_CHANNEL, { command, value });
+        },
+        // Listen for motor status updates from SERO
+        onMotorMessage: (callback: (motorMessage: string) => void) => {
+            const listener = (_: unknown, message: string) => callback(message);
+            ipcRenderer.on(SERO_MOTOR_MESSAGE_CHANNEL, listener);
+            return () => ipcRenderer.removeListener(SERO_MOTOR_MESSAGE_CHANNEL, listener);
         },
     });
 }

@@ -1,5 +1,5 @@
 import { OutgoingPacket } from "../../data/zonecontrollers/packets";
-import { BatteryCommands, LightsCommands, Zones } from "../../data/zonecontrollers/zonecontrollers";
+import { BatteryCommands, LightsCommands, MotorCommands, Zones } from "../../data/zonecontrollers/zonecontrollers";
 import { ResolvedInterface } from "../../helpers/ipc/hardware/network-config";
 
 interface ThemeModeContext {
@@ -40,6 +40,9 @@ interface SeroContext {
     // zc_battery
     sendBatteryCommand: (command: BatteryCommands, value?: boolean | boolean[]) => void;
     onBatteryMessage: (callback: (batteryMessage: string) => void) => () => void;
+    // zc_motor
+    sendMotorCommand: (command: MotorCommands, value?: any) => void;
+    onMotorMessage: (callback: (motorMessage: string) => void) => () => void;
 }
 
 interface HardwareContext {

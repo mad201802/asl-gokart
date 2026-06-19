@@ -4,8 +4,8 @@ import {
 } from '@asl-gokart/sero-node';
 import { BrowserWindow, ipcMain, ipcRenderer } from 'electron';
 import log from 'electron-log/main';
-import { SERO_SEND_LIGHTS_CHANNEL, SERO_LIGHTS_MESSAGE_CHANNEL, SERO_BATTERY_MESSAGE_CHANNEL } from './sero-channels';
-import { BatteryCommands, LightsCommands, Zones } from '@/data/zonecontrollers/zonecontrollers';
+import { SERO_SEND_LIGHTS_CHANNEL, SERO_LIGHTS_MESSAGE_CHANNEL, SERO_BATTERY_MESSAGE_CHANNEL, SERO_MOTOR_MESSAGE_CHANNEL } from './sero-channels';
+import { BatteryCommands, LightsCommands, MotorCommands, Zones } from '@/data/zonecontrollers/zonecontrollers';
 import { IncomingPacket } from '@/data/zonecontrollers/packets';
 import { getBindAddress } from '@/helpers/ipc/hardware/network-config';
 import { SERO_UNICAST_PORT, SERO_CLIENT_ID, ZC_OTA_METHOD_ID } from '@/data/config';
@@ -72,6 +72,13 @@ export function startSeroService(mainWindow: BrowserWindow) {
                 handleZcBatteryTemperatureEvent(mainWindow, tempValues);
             });
         }
+        if(serviceId == 0x0004) {
+            // Subscribe to motor RPM events (event ID 0x8001: 16 bytes)
+            runtime.subscribeEvent(0x0004, 0x8001, (svcId, evtId, payload) => {
+                log.debug(`[SERO] Motor event: payload size=${payload.length}`);
+                handleZcMotorEvent(mainWindow, payload);
+            });
+        }
     });
     
     runtime.onServiceLost((service) => {
@@ -85,7 +92,7 @@ export function startSeroService(mainWindow: BrowserWindow) {
     runtime.findService(0x0001);
     runtime.findService(0x0002); // zc_buttons
     runtime.findService(0x0003);
-    // runtime.findService(0x0004); // zc_throttle (placeholder)
+    runtime.findService(0x0004); // zc_motor
 }
 
 // --- zc_lights ---------------------------------------------------------------------------
@@ -208,6 +215,29 @@ function handleZcBatteryTemperatureEvent(mainWindow: BrowserWindow, temps: numbe
     };
 
     mainWindow.webContents.send(SERO_BATTERY_MESSAGE_CHANNEL, JSON.stringify(incomingPacket));
+}
+
+// -----------------------------------------------------------------------------------------
+
+// --- zc_motor ---------------------------------------------------------------------------
+
+function handleZcMotorEvent(mainWindow: BrowserWindow, payload: any) {
+    if (payload.length < 16) {
+        log.error(`[SERO] Invalid payload size for motor event: ${payload.length}`);
+        return;
+    }
+    const leftRpm = payload.readUInt16BE(0);
+    const rightRpm = payload.readUInt16BE(8);
+    // Take the average RPM
+    const rpm = Math.round((leftRpm + rightRpm) / 2);
+    
+    // RPM
+    const rpmPacket: IncomingPacket = {
+        zone: Zones.MOTOR,
+        command: MotorCommands.GET_RPM,
+        value: rpm,
+    };
+    mainWindow.webContents.send(SERO_MOTOR_MESSAGE_CHANNEL, JSON.stringify(rpmPacket));
 }
 
 // -----------------------------------------------------------------------------------------

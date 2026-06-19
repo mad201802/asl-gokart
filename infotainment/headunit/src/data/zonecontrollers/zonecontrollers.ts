@@ -22,6 +22,14 @@ export enum BatteryCommands {
     GET_HEALTH = "getHealth",
 }
 
+export enum MotorCommands {
+    GET_RPM = "getRpm",
+    GET_SPEED = "getSpeed",
+    GET_THROTTLE = "getThrottle",
+    GET_BRAKE_PEDAL = "getBrakePedal",
+    GET_REVERSE = "getReverse",
+}
+
 export enum ThrottleCommands {
     GET_THROTTLE = "getThrottle",
     GET_RPM = "getRpm",
