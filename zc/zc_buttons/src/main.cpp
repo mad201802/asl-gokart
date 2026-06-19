@@ -240,38 +240,42 @@ void loop() {
 
     // Call method for button presses on ZC_LIGHTS_ID service
     if (app.lights_found) {
-        if (button1.pressed()) {
+        if (button2.pressed()) {
             uint8_t payload[1] = {0x01};
             rt.request(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_LEFT_ID,
                        payload, sizeof(payload), on_lights_response, nullptr, 2000, now);
-            Serial.println("Button 1 pressed - method call sent");
+            Serial.println("Button 2 (Top Left) pressed - Left Turn Signal sent");
         }
-        if (button2.pressed()) {
-            uint8_t payload[1] = {0x02};
+        if (button1.pressed()) {
+            uint8_t payload[1] = {0x01};
             rt.request(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_RIGHT_ID,
                        payload, sizeof(payload), on_lights_response, nullptr, 2000, now);
-            Serial.println("Button 2 pressed - method call sent");
+            Serial.println("Button 1 (Top Right) pressed - Right Turn Signal sent");
         }
         if (button3.pressed()) {
-            uint8_t payload[1] = {0x03};
+            uint8_t payload[1] = {0x01};
             rt.request(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_HAZARD_ID,
                        payload, sizeof(payload), on_lights_response, nullptr, 2000, now);
-            Serial.println("Button 3 pressed - method call sent");
+            Serial.println("Button 3 (Bottom Right) pressed - Hazard sent");
         }
         if (button4.pressed()) {
-            uint8_t payload[1] = {0x04};
-            rt.request(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_DRL_ID,
-                       payload, sizeof(payload), on_lights_response, nullptr, 2000, now);
-            Serial.println("Button 4 pressed - method call sent");
-        }
-        if (button5.pressed()) {
-            uint8_t payload[1] = {0x05};
+            uint8_t payload[1] = {0x01};
             rt.request(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_HIGH_BEAMS_ID,
                        payload, sizeof(payload), on_lights_response, nullptr, 2000, now);
-            Serial.println("Button 5 pressed - method call sent");
+            Serial.println("Button 4 (Bottom Left) pressed - High Beams ON sent");
         }
-        // Add more buttons and method calls here for headlight control
-        //
+        if (button4.released()) {
+            uint8_t payload[1] = {0x00};
+            rt.request(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_HIGH_BEAMS_ID,
+                       payload, sizeof(payload), on_lights_response, nullptr, 2000, now);
+            Serial.println("Button 4 (Bottom Left) released - High Beams OFF sent");
+        }
+        if (button5.pressed()) {
+            uint8_t payload[1] = {0x01};
+            rt.request(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_DRL_ID,
+                       payload, sizeof(payload), on_lights_response, nullptr, 2000, now);
+            Serial.println("Button 5 pressed - DRL toggle sent");
+        }
     }
 }
 

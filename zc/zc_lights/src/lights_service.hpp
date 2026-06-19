@@ -60,7 +60,12 @@ public:
             // ── High beam relay ─────────────────────────────────────────────
 
             case Esp32ServiceConfig::ZC_LIGHTS_HIGH_BEAMS_ID:
-                high_beams_.toggle();
+                if (payload_length > 0) {
+                    bool on = payload[0] != 0;
+                    high_beams_.set(on, on);
+                } else {
+                    high_beams_.toggle();
+                }
                 return sero::ReturnCode::E_OK;
 
             // ── Rear light bar ──────────────────────────────────────────────
