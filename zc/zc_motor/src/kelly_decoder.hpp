@@ -135,7 +135,8 @@ public:
     }
 
     uint16_t rpm() const noexcept { return rpm_; }
-    bool reverse() const noexcept { return reverse_; }
+    bool reverse() const noexcept { return packet_a_.reverse; }
+    const kelly::PacketA& packet_a() const noexcept { return packet_a_; }
     uint32_t fault_count() const noexcept { return fault_count_; }
 
 private:
@@ -147,9 +148,7 @@ private:
             ok = (type != kelly::PacketType::Unknown) && kelly::validate_checksum(buf);
             if (ok) {
                 if (type == kelly::PacketType::PacketA) {
-                    kelly::PacketA a{};
-                    kelly::parse_packet_a(buf, a);
-                    reverse_ = a.reverse;
+                    kelly::parse_packet_a(buf, packet_a_);
                 } else {
                     kelly::PacketB b{};
                     kelly::parse_packet_b(buf, b);
@@ -160,7 +159,7 @@ private:
         if (!ok) {
             ++fault_count_;
             if (cmd == kelly::CMD_PACKET_A) {
-                reverse_ = false;
+                packet_a_ = kelly::PacketA{};
             } else {
                 rpm_ = 0;
             }
@@ -184,7 +183,7 @@ private:
     }
 
     HardwareSerial& serial_;
-    uint16_t rpm_        = 0;
-    bool     reverse_    = false;
-    uint32_t fault_count_ = 0;
+    uint16_t       rpm_         = 0;
+    kelly::PacketA packet_a_{};
+    uint32_t       fault_count_ = 0;
 };

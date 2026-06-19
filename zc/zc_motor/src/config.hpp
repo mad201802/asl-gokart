@@ -48,10 +48,9 @@ struct Esp32ServiceConfig {
     // Payload: UTF-8 URL string of the firmware binary served by the headunit.
     static constexpr uint16_t ZC_MOTOR_OTA_METHOD_ID = 0x00FF;
 
-    // Event: both motor values | [left_rpm u16 BE][left_reverse u8]
-    //                            [right_rpm u16 BE][right_reverse u8]
+    // Event: [Motor L/R] each 8 bytes: [rpm u16 BE][throttle u8][brake_pedal u8][switches bitfield][bat_v u8][mot_temp u8][ctrl_temp u8]
     static constexpr uint16_t    ZC_MOTOR_EVENT_RPM_ID            = 0x8001;
-    static constexpr std::size_t ZC_MOTOR_EVENT_RPM_PAYLOAD_SIZE  = 6;
+    static constexpr std::size_t ZC_MOTOR_EVENT_RPM_PAYLOAD_SIZE  = 16;
 };
 
 // ── Hardware pin assignments ─────────────────────────────────────────────────

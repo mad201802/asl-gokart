@@ -161,18 +161,43 @@ void loop() {
     if (poll_count >= PUBLISH_EVERY_N_POLLS) {
         poll_count = 0;
 
+        const kelly::PacketA& left_a  = motor_left.packet_a();
+        const kelly::PacketA& right_a = motor_right.packet_a();
+
         const uint16_t left_rpm   = motor_left.rpm();
         const uint16_t right_rpm  = motor_right.rpm();
-        const uint8_t  left_rev   = static_cast<uint8_t>(motor_left.reverse() ? 1 : 0);
-        const uint8_t  right_rev  = static_cast<uint8_t>(motor_right.reverse() ? 1 : 0);
+
+        auto pack_switches = [](const kelly::PacketA& a) -> uint8_t {
+            return static_cast<uint8_t>(
+                (a.brake_switch   ? (1 << 0) : 0) |
+                (a.foot_switch    ? (1 << 1) : 0) |
+                (a.forward_switch ? (1 << 2) : 0) |
+                (a.reverse        ? (1 << 3) : 0) |
+                (a.setting_dir    ? (1 << 4) : 0) |
+                (a.actual_dir     ? (1 << 5) : 0)
+            );
+        };
 
         std::array<uint8_t, Esp32ServiceConfig::ZC_MOTOR_EVENT_RPM_PAYLOAD_SIZE> payload{};
+        // Left motor
         payload[0] = static_cast<uint8_t>(left_rpm >> 8);
         payload[1] = static_cast<uint8_t>(left_rpm);
-        payload[2] = left_rev;
-        payload[3] = static_cast<uint8_t>(right_rpm >> 8);
-        payload[4] = static_cast<uint8_t>(right_rpm);
-        payload[5] = right_rev;
+        payload[2] = left_a.throttle;
+        payload[3] = left_a.brake_pedal;
+        payload[4] = pack_switches(left_a);
+        payload[5] = left_a.battery_voltage;
+        payload[6] = left_a.motor_temp;
+        payload[7] = left_a.controller_temp;
+
+        // Right motor
+        payload[8]  = static_cast<uint8_t>(right_rpm >> 8);
+        payload[9]  = static_cast<uint8_t>(right_rpm);
+        payload[10] = right_a.throttle;
+        payload[11] = right_a.brake_pedal;
+        payload[12] = pack_switches(right_a);
+        payload[13] = right_a.battery_voltage;
+        payload[14] = right_a.motor_temp;
+        payload[15] = right_a.controller_temp;
 
         if (!rt.notify_event(
                 Esp32ServiceConfig::ZC_MOTOR_ID,
@@ -181,8 +206,8 @@ void loop() {
             Serial.println("[motor] notify_event failed (no subscribers?)");
         }
 
-        Serial.printf("[motor] left rpm=%u reverse=%u faults=%lu | right rpm=%u reverse=%u faults=%lu\n",
-                      left_rpm, left_rev, static_cast<unsigned long>(motor_left.fault_count()),
-                      right_rpm, right_rev, static_cast<unsigned long>(motor_right.fault_count()));
+        Serial.printf("[motor] left rpm=%u thr=%u brk=%u rev=%u faults=%lu | right rpm=%u thr=%u brk=%u rev=%u faults=%lu\n",
+                      left_rpm, left_a.throttle, left_a.brake_pedal, left_a.reverse ? 1 : 0, static_cast<unsigned long>(motor_left.fault_count()),
+                      right_rpm, right_a.throttle, right_a.brake_pedal, right_a.reverse ? 1 : 0, static_cast<unsigned long>(motor_right.fault_count()));
     }
 }
