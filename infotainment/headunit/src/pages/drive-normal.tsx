@@ -59,6 +59,11 @@ const DriveNormalPage = () => {
   const rightMotorTemp = rightMotorData?.motorTemp ?? 0;
   const avgMotorTemp = leftMotorData && rightMotorData ? (leftMotorTemp + rightMotorTemp) / 2 : (leftMotorTemp || rightMotorTemp || 0);
 
+  const leftThrottle = leftMotorData?.throttle ?? 0;
+  const rightThrottle = rightMotorData?.throttle ?? 0;
+  const avgThrottleRaw = leftMotorData && rightMotorData ? (leftThrottle + rightThrottle) / 2 : (leftThrottle || rightThrottle || 0);
+  const displayThrottle = (avgThrottleRaw / 255) * 100;
+
   const controller1Temp = leftMotorData?.controllerTemp ?? 0;
   const controller2Temp = rightMotorData?.controllerTemp ?? 0;
 
@@ -82,11 +87,11 @@ const DriveNormalPage = () => {
           <div className="flex flex-col items-center justify-center">
             <div className="w-50">
               <CircularProgressbarWithChildren
-                value={((showRawThrottle ? rawThrottle : throttle)*100)}
+                value={displayThrottle}
                 circleRatio={0.75}
                 styles={buildStyles({
                   pathColor: interpolateColor(
-                    ((showRawThrottle ? rawThrottle : throttle)*100),
+                    displayThrottle,
                     THROTTLE_BOUNDARIES[0],
                     THROTTLE_BOUNDARIES[1],
                     THROTTLE_SEGMENTS
@@ -96,7 +101,7 @@ const DriveNormalPage = () => {
                   trailColor: isDarkMode ? "#374151" : "#eee",
                 })}
               >
-                <p className="font-semibold text-4xl">{((showRawThrottle ? rawThrottle : throttle)*100).toFixed(0)}%</p>
+                <p className="font-semibold text-4xl">{displayThrottle.toFixed(0)}%</p>
                 <p>Throttle</p>
               </CircularProgressbarWithChildren>
             </div>
