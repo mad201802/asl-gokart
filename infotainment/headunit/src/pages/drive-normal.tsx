@@ -34,7 +34,7 @@ const DriveNormalPage = () => {
     return () => observer.disconnect();
   }, []);
 
-  const { gear, rawThrottle, throttle, showRawThrottle, rpm, speed, rpmBoundaries, batteryPercentage, turnSignalRight, turnSignalLeft, hazardLights, headlights, highBeams, avgBatteryTemp } = useStore(
+  const { gear, rawThrottle, throttle, showRawThrottle, rpm, speed, rpmBoundaries, batteryPercentage, turnSignalRight, turnSignalLeft, hazardLights, headlights, highBeams, avgBatteryTemp, leftMotorData, rightMotorData } = useStore(
     useShallow((state) => ({
       gear: state.gear,
       rawThrottle: state.rawThrottle,
@@ -50,8 +50,22 @@ const DriveNormalPage = () => {
       headlights: state.headlights,
       highBeams: state.highBeams,
       avgBatteryTemp: state.avgBatteryTemp,
+      leftMotorData: state.leftMotorData,
+      rightMotorData: state.rightMotorData,
     }))
   );
+
+  const leftMotorTemp = leftMotorData?.motorTemp ?? 0;
+  const rightMotorTemp = rightMotorData?.motorTemp ?? 0;
+  const avgMotorTemp = leftMotorData && rightMotorData ? (leftMotorTemp + rightMotorTemp) / 2 : (leftMotorTemp || rightMotorTemp || 0);
+
+  const leftThrottle = leftMotorData?.throttle ?? 0;
+  const rightThrottle = rightMotorData?.throttle ?? 0;
+  const avgThrottleRaw = leftMotorData && rightMotorData ? (leftThrottle + rightThrottle) / 2 : (leftThrottle || rightThrottle || 0);
+  const displayThrottle = (avgThrottleRaw / 255) * 100;
+
+  const controller1Temp = leftMotorData?.controllerTemp ?? 0;
+  const controller2Temp = rightMotorData?.controllerTemp ?? 0;
 
   // TODO: Convert colors to tailwind-css colors
   // TODO: Transfer color scaling boundaries to individual states (or only max. value) and multiply times 0.75 or 0.5 for the scale.
@@ -73,11 +87,11 @@ const DriveNormalPage = () => {
           <div className="flex flex-col items-center justify-center">
             <div className="w-50">
               <CircularProgressbarWithChildren
-                value={((showRawThrottle ? rawThrottle : throttle)*100)}
+                value={displayThrottle}
                 circleRatio={0.75}
                 styles={buildStyles({
                   pathColor: interpolateColor(
-                    ((showRawThrottle ? rawThrottle : throttle)*100),
+                    displayThrottle,
                     THROTTLE_BOUNDARIES[0],
                     THROTTLE_BOUNDARIES[1],
                     THROTTLE_SEGMENTS
@@ -87,7 +101,7 @@ const DriveNormalPage = () => {
                   trailColor: isDarkMode ? "#374151" : "#eee",
                 })}
               >
-                <p className="font-semibold text-4xl">{((showRawThrottle ? rawThrottle : throttle)*100).toFixed(0)}%</p>
+                <p className="font-semibold text-4xl">{displayThrottle.toFixed(0)}%</p>
                 <p>Throttle</p>
               </CircularProgressbarWithChildren>
             </div>
@@ -173,7 +187,7 @@ const DriveNormalPage = () => {
         <div className="w-full flex flex-row justify-center gap-x-4 pt-8">
           <div className="w-1/3 flex flex-col justify-center">
             <TemperatureBox label="Battery" currentTemp={avgBatteryTemp} minTemp={-10} maxTemp={45}></TemperatureBox>
-            <TemperatureBox label="Motor" currentTemp={33} minTemp={0} maxTemp={100}></TemperatureBox>
+            <TemperatureBox label="Motor" currentTemp={avgMotorTemp} minTemp={-20} maxTemp={50}></TemperatureBox>
           </div>
           <div className="w-1/3 flex flex-col items-center justify-center pt-4">
             <p>Battery</p>
@@ -181,8 +195,8 @@ const DriveNormalPage = () => {
               <p>{(batteryPercentage*100).toFixed(1)}%</p>
           </div>
           <div className="w-1/3 flex flex-col justify-center">
-            <TemperatureBox label="Controller 1" currentTemp={21} minTemp={0} maxTemp={100}></TemperatureBox>
-            <TemperatureBox label="Controller 2" currentTemp={24} minTemp={0} maxTemp={100}></TemperatureBox>
+            <TemperatureBox label="Controller 1" currentTemp={controller1Temp} minTemp={-10} maxTemp={50}></TemperatureBox>
+            <TemperatureBox label="Controller 2" currentTemp={controller2Temp} minTemp={-10} maxTemp={50}></TemperatureBox>
           </div>
         </div>
       </div>

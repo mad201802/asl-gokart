@@ -1,4 +1,4 @@
-export type EcuId = 'zc_buttons' | 'zc_lights' | 'zc_battery' | 'zc_throttle';
+export type EcuId = 'zc_buttons' | 'zc_lights' | 'zc_battery' | 'zc_motor';
 
 
 /**

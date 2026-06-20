@@ -16,6 +16,7 @@ import EcuManagerPage from "./pages/ecu-manager";
 import { Toaster } from "@/components/ui/sonner"
 import MotorPage from "./pages/motor";
 import { ErrorBoundary } from "@/components/shared/error-boundary";
+import { useMotorData } from "./hooks/useMotorData";
 import { useThrottleData } from "./hooks/useThrottleData";
 import { useBatteryData } from "./hooks/useBatteryData";
 import { useLightsData } from "./hooks/useLightsData";
@@ -25,6 +26,7 @@ import { initHardwareCommandSubscriber } from "./services/hardware-command-subsc
 export default function App() {
     const { i18n } = useTranslation();
 
+    useMotorData();
     useThrottleData();
     useBatteryData();
     useLightsData();
@@ -79,7 +81,7 @@ export default function App() {
                         </Routes>
                     </>
                 </div>
-                {<div className="w-[80px] border-l-2">
+                {<div className="w-20 border-l-2">
                     <NavBar items={navBarItems} />
                 </div>}
                 <Toaster />
