@@ -57,6 +57,7 @@ struct Esp32ServiceConfig {
     static constexpr uint16_t ZC_LIGHTS_WELCOME_ID           = 0x000A;  // Trigger welcome light animation
     static constexpr uint16_t ZC_LIGHTS_SET_BRIGHTNESS_ID    = 0x000B;  // Set brightness [target, value]
     static constexpr uint16_t ZC_LIGHTS_SET_WELCOME_COLOR_ID = 0x000C;  // Set welcome color [R, G, B]
+    static constexpr uint16_t ZC_LIGHTS_TAIL_ID              = 0x000D;  // Toggle rear tail light
 
     // Reserved OTA trigger method (present on every ZC, bit 15 = 0).
     // Payload: UTF-8 URL string of the firmware binary served by the headunit.
@@ -68,6 +69,7 @@ struct Esp32ServiceConfig {
     static constexpr uint16_t ZC_LIGHTS_EVENT_BRAKE_STATE_ID   = 0x8004;  // Brake state [on]
     static constexpr uint16_t ZC_LIGHTS_EVENT_REVERSE_STATE_ID = 0x8005;  // Reverse state [on]
     static constexpr uint16_t ZC_LIGHTS_EVENT_DRL_STATE_ID     = 0x8006;  // DRL state [on]
+    static constexpr uint16_t ZC_LIGHTS_EVENT_TAIL_STATE_ID    = 0x8007;  // Tail state [on]
 };
 
 // ── Hardware Pin Assignments ────────────────────────────────────

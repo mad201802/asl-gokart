@@ -12,6 +12,7 @@ export interface LightsSlice {
     welcomeLightBrightness: number;
     underglowOn: boolean;
     welcomeLightOn: boolean;
+    tailLights: boolean;
     setTurnSignalLeft: (value: boolean) => void;
     setTurnSignalRight: (value: boolean) => void;
     setHazardLights: (value: boolean) => void;
@@ -23,6 +24,7 @@ export interface LightsSlice {
     setWelcomeLightBrightness: (value: number) => void;
     setUnderglowOn: (value: boolean) => void;
     setWelcomeLightOn: (value: boolean) => void;
+    setTailLights: (value: boolean) => void;
   }
   
 export const createLightsSlice: StateCreator<
@@ -42,6 +44,7 @@ export const createLightsSlice: StateCreator<
   welcomeLightBrightness: 50,
   underglowOn: false,
   welcomeLightOn: true,
+  tailLights: true,
   setTurnSignalLeft: (value: boolean) => set({ turnSignalLeft: value }),
   setTurnSignalRight: (value: boolean) => set({ turnSignalRight: value }),
   setHazardLights: (value: boolean) => set({ hazardLights: value }),
@@ -53,4 +56,5 @@ export const createLightsSlice: StateCreator<
   setWelcomeLightBrightness: (value: number) => set({ welcomeLightBrightness: value }),
   setUnderglowOn: (value: boolean) => set({ underglowOn: value }),
   setWelcomeLightOn: (value: boolean) => set({ welcomeLightOn: value }),
+  setTailLights: (value: boolean) => set({ tailLights: value }),
   })

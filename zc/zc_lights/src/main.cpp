@@ -141,6 +141,7 @@ void setup() {
     rt.register_event(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_EVENT_BRAKE_STATE_ID);
     rt.register_event(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_EVENT_REVERSE_STATE_ID);
     rt.register_event(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_EVENT_DRL_STATE_ID);
+    rt.register_event(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_EVENT_TAIL_STATE_ID);
 
     // ── Wire up callbacks ───────────────────────────────────────
 
@@ -174,6 +175,15 @@ void setup() {
         uint8_t payload[1] = { on };
         runtime_ptr->notify_event(Esp32ServiceConfig::ZC_LIGHTS_ID,
                                   Esp32ServiceConfig::ZC_LIGHTS_EVENT_REVERSE_STATE_ID,
+                                  payload, 1);
+    });
+
+    // Rear light bar: tail state
+    rear_light_bar.set_tail_callback([](uint8_t on) {
+        if (!runtime_ptr) return;
+        uint8_t payload[1] = { on };
+        runtime_ptr->notify_event(Esp32ServiceConfig::ZC_LIGHTS_ID,
+                                  Esp32ServiceConfig::ZC_LIGHTS_EVENT_TAIL_STATE_ID,
                                   payload, 1);
     });
 

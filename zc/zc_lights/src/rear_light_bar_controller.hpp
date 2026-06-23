@@ -42,6 +42,7 @@ public:
     using TurnStateFn    = std::function<void(uint8_t left, uint8_t right)>;
     using BrakeStateFn   = std::function<void(uint8_t on)>;
     using ReverseStateFn = std::function<void(uint8_t on)>;
+    using TailStateFn    = std::function<void(uint8_t on)>;
 
     /// Thread-safe mutable state — all fields guarded by `mutex_`.
     struct State {
@@ -64,6 +65,7 @@ public:
     void set_logical_turn_callback(TurnStateFn fn) { logical_turn_cb_ = std::move(fn); }
     void set_brake_callback(BrakeStateFn fn)     { brake_cb_   = std::move(fn); }
     void set_reverse_callback(ReverseStateFn fn) { reverse_cb_ = std::move(fn); }
+    void set_tail_callback(TailStateFn fn)       { tail_cb_    = std::move(fn); }
 
     // ── Lifecycle ───────────────────────────────────────────────────────────
 
@@ -83,8 +85,10 @@ public:
     /// Enable / disable the tail-light baseline.
     void set_tail(bool on) {
         xSemaphoreTake(mutex_, portMAX_DELAY);
+        const bool changed = (state_.tail_on != on);
         state_.tail_on = on;
         xSemaphoreGive(mutex_);
+        if (changed) maybe_emit_tail(on ? 1 : 0);
         notify_task();
     }
 
@@ -177,6 +181,13 @@ public:
         return s;
     }
 
+    bool is_tail_on() const {
+        xSemaphoreTake(mutex_, portMAX_DELAY);
+        bool v = state_.tail_on;
+        xSemaphoreGive(mutex_);
+        return v;
+    }
+
     bool is_brake_on() const {
         xSemaphoreTake(mutex_, portMAX_DELAY);
         bool v = state_.brake_on;
@@ -210,6 +221,7 @@ private:
     TurnStateFn       logical_turn_cb_;
     BrakeStateFn      brake_cb_;
     ReverseStateFn    reverse_cb_;
+    TailStateFn       tail_cb_;
 
     // Cached previous callback values for deduplication.
     uint8_t last_turn_left_  = 0;
@@ -218,6 +230,7 @@ private:
     uint8_t last_logical_right_ = 0;
     uint8_t last_brake_      = 0;
     uint8_t last_reverse_    = 0;
+    uint8_t last_tail_       = 0;
 
     // ── Matrix helpers ──────────────────────────────────────────────────────
 
@@ -277,6 +290,13 @@ private:
         if (reverse_cb_ && on != last_reverse_) {
             last_reverse_ = on;
             reverse_cb_(on);
+        }
+    }
+
+    void maybe_emit_tail(uint8_t on) {
+        if (tail_cb_ && on != last_tail_) {
+            last_tail_ = on;
+            tail_cb_(on);
         }
     }
 

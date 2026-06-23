@@ -10,6 +10,7 @@ export function useLightsData() {
     const setHazardLights = useStore((state) => state.setHazardLights);
     const setHeadlights = useStore((state) => state.setHeadlights);
     const setHighBeams = useStore((state) => state.setHighBeams);
+    const setTailLights = useStore((state) => state.setTailLights);
 
     useEffect(() => {
         const cleanup = window.sero.onLightsMessage((incomingPacket: string) => {
@@ -26,6 +27,9 @@ export function useLightsData() {
                     break;
                 case LightsCommands.GET_HIGH_BEAMS:
                     setHighBeams([parsed.value[0] === 1, parsed.value[1] === 1]);
+                    break;
+                case LightsCommands.GET_TAIL_LIGHTS:
+                    setTailLights(parsed.value[0] === 1);
                     break;
                 default:
                     log.error("Invalid command (data type) received in lights message!");

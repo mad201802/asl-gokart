@@ -49,6 +49,11 @@ export function startSeroService(mainWindow: BrowserWindow) {
                 // Pass [on, on] so existing UI expecting [left, right] still works
                 handleHeadlightsEvent(mainWindow, Buffer.from([payload[0], payload[0]]));
             });
+            // Subscribe to Tail state change events (event ID 0x8007: [on])
+            runtime.subscribeEvent(0x0001, 0x8007, (svcId, evtId, payload) => {
+                log.debug(`[SERO] Tail state event: on=${payload[0]}`);
+                handleTailEvent(mainWindow, payload);
+            });
             // Subscribe to high beam state change events (event ID 0x8003: [left, right])
             runtime.subscribeEvent(0x0001, 0x8003, (svcId, evtId, payload) => {
                 log.debug(`[SERO] High beam state event: left=${payload[0]}, right=${payload[1]}`);
@@ -127,6 +132,9 @@ function handleLightsCommand(command: LightsCommands, value?: any) {
         case LightsCommands.SET_TOGGLE_DRL:
             rt.fireAndForget(0x0001, 0x0009);
             break;
+        case LightsCommands.SET_TOGGLE_TAIL_LIGHT:
+            rt.fireAndForget(0x0001, 0x000D);
+            break;
         case LightsCommands.TRIGGER_WELCOME_LIGHT:
             rt.fireAndForget(0x0001, 0x000A);
             break;
@@ -178,6 +186,16 @@ function handleHighBeamsEvent(mainWindow: BrowserWindow, payload: Buffer<ArrayBu
         zone: Zones.LIGHTS,
         command: LightsCommands.GET_HIGH_BEAMS,
         value: [left, right],
+    };
+
+    mainWindow.webContents.send(SERO_LIGHTS_MESSAGE_CHANNEL, JSON.stringify(incomingPacket));
+}
+
+function handleTailEvent(mainWindow: BrowserWindow, payload: Buffer<ArrayBufferLike>) {
+    const incomingPacket: IncomingPacket = {
+        zone: Zones.LIGHTS,
+        command: LightsCommands.GET_TAIL_LIGHTS,
+        value: [payload[0]],
     };
 
     mainWindow.webContents.send(SERO_LIGHTS_MESSAGE_CHANNEL, JSON.stringify(incomingPacket));

@@ -61,6 +61,8 @@ export enum LightsCommands {
     SET_TOGGLE_BRAKE = "setToggleBrake",
     SET_TOGGLE_REVERSE = "setToggleReverse",
     SET_TOGGLE_DRL = "setToggleDrl",
+    GET_TAIL_LIGHTS = "getTailLights",
+    SET_TOGGLE_TAIL_LIGHT = "setToggleTailLight",
 }
 
 export class ZoneController{

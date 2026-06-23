@@ -74,6 +74,10 @@ public:
                 rear_.set_reverse(!rear_.is_reverse_on());
                 return sero::ReturnCode::E_OK;
 
+            case Esp32ServiceConfig::ZC_LIGHTS_TAIL_ID:
+                rear_.set_tail(!rear_.is_tail_on());
+                return sero::ReturnCode::E_OK;
+
             // ── Front DRLs ──────────────────────────────────────────────────
 
             case Esp32ServiceConfig::ZC_LIGHTS_DRL_ID: {

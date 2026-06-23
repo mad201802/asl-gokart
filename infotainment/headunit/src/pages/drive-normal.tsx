@@ -12,7 +12,7 @@ import { HeaderBar } from "@/components/shared/header-bar";
 import ResetDailyDistanceDialog from "@/components/shared/reset-daily-distance-dialog";
 import React, { useState, useEffect } from "react";
 import { LightsCommands } from "@/data/zonecontrollers/zonecontrollers";
-import { Lightbulb, OctagonAlert, Spotlight, SquareArrowLeft, SquareArrowRight, TriangleAlert } from "lucide-react";
+import { Construction, Lightbulb, OctagonAlert, Spotlight, SquareArrowLeft, SquareArrowRight, TriangleAlert } from "lucide-react";
 import { THROTTLE_BOUNDARIES, THROTTLE_SEGMENTS, RPM_SEGMENTS } from "@/data/gauge-config";
 import { interpolateColor } from "@/lib/utils/gauge-utils";
 import TemperatureBox from "@/components/shared/temperature-scale/temperature-box";
@@ -34,7 +34,7 @@ const DriveNormalPage = () => {
     return () => observer.disconnect();
   }, []);
 
-  const { gear, rawThrottle, throttle, showRawThrottle, rpm, speed, rpmBoundaries, batteryPercentage, turnSignalRight, turnSignalLeft, hazardLights, headlights, highBeams, avgBatteryTemp, leftMotorData, rightMotorData } = useStore(
+  const { gear, rawThrottle, throttle, showRawThrottle, rpm, speed, rpmBoundaries, batteryPercentage, turnSignalRight, turnSignalLeft, hazardLights, headlights, highBeams, tailLights, avgBatteryTemp, leftMotorData, rightMotorData } = useStore(
     useShallow((state) => ({
       gear: state.gear,
       rawThrottle: state.rawThrottle,
@@ -49,6 +49,7 @@ const DriveNormalPage = () => {
       hazardLights: state.hazardLights,
       headlights: state.headlights,
       highBeams: state.highBeams,
+      tailLights: state.tailLights,
       avgBatteryTemp: state.avgBatteryTemp,
       leftMotorData: state.leftMotorData,
       rightMotorData: state.rightMotorData,
@@ -168,8 +169,12 @@ const DriveNormalPage = () => {
                   :
                   <Spotlight size={36} className="text-gray-700" onClick={() => window.sero.sendLightsCommand(LightsCommands.SET_TOGGLE_HIGH_BEAMS)} />
                 }
-                {/* <OctagonAlert size={36} className="text-red-500" /> */}
-                <OctagonAlert size={36} className="text-gray-700" />
+                {
+                  (tailLights) ?
+                  <Construction size={36} className="text-green-600" onClick={() => window.sero.sendLightsCommand(LightsCommands.SET_TOGGLE_TAIL_LIGHT)} />
+                  :
+                  <Construction size={36} className="text-gray-700" onClick={() => window.sero.sendLightsCommand(LightsCommands.SET_TOGGLE_TAIL_LIGHT)} />
+                }
 
           </div>
           <div className="flex flex-row justify-evenly">
