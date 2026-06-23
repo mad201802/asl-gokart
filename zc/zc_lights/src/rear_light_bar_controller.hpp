@@ -61,6 +61,7 @@ public:
     // ── Callbacks ───────────────────────────────────────────────────────────
 
     void set_turn_callback(TurnStateFn fn)       { turn_cb_    = std::move(fn); }
+    void set_logical_turn_callback(TurnStateFn fn) { logical_turn_cb_ = std::move(fn); }
     void set_brake_callback(BrakeStateFn fn)     { brake_cb_   = std::move(fn); }
     void set_reverse_callback(ReverseStateFn fn) { reverse_cb_ = std::move(fn); }
 
@@ -122,6 +123,7 @@ public:
         xSemaphoreGive(mutex_);
         Serial.printf("[rear] turn → %s\n", turn_state_name(s));
         emit_turn_for(s);
+        emit_logical_turn_for(s);
         notify_task();
     }
 
@@ -140,6 +142,7 @@ public:
         xSemaphoreGive(mutex_);
         Serial.printf("[rear] turn → %s\n", turn_state_name(s));
         emit_turn_for(s);
+        emit_logical_turn_for(s);
         notify_task();
     }
 
@@ -153,6 +156,7 @@ public:
         xSemaphoreGive(mutex_);
         Serial.printf("[rear] turn → %s\n", turn_state_name(s));
         emit_turn_for(s);
+        emit_logical_turn_for(s);
         notify_task();
     }
 
@@ -203,12 +207,15 @@ private:
     StripType*        strip_;
 
     TurnStateFn       turn_cb_;
+    TurnStateFn       logical_turn_cb_;
     BrakeStateFn      brake_cb_;
     ReverseStateFn    reverse_cb_;
 
     // Cached previous callback values for deduplication.
     uint8_t last_turn_left_  = 0;
     uint8_t last_turn_right_ = 0;
+    uint8_t last_logical_left_  = 0;
+    uint8_t last_logical_right_ = 0;
     uint8_t last_brake_      = 0;
     uint8_t last_reverse_    = 0;
 
@@ -278,6 +285,21 @@ private:
         const uint8_t l = (s == BlinkerState::LEFT  || s == BlinkerState::HAZARD) ? 1 : 0;
         const uint8_t r = (s == BlinkerState::RIGHT || s == BlinkerState::HAZARD) ? 1 : 0;
         maybe_emit_turn(l, r);
+    }
+
+    void emit_logical_turn_for(BlinkerState s) {
+        xSemaphoreTake(mutex_, portMAX_DELAY);
+        const uint8_t l = (s == BlinkerState::LEFT  || s == BlinkerState::HAZARD) ? 1 : 0;
+        const uint8_t r = (s == BlinkerState::RIGHT || s == BlinkerState::HAZARD) ? 1 : 0;
+        const bool changed = (l != last_logical_left_ || r != last_logical_right_);
+        if (changed) {
+            last_logical_left_  = l;
+            last_logical_right_ = r;
+        }
+        xSemaphoreGive(mutex_);
+        if (changed && logical_turn_cb_) {
+            logical_turn_cb_(l, r);
+        }
     }
 
     void notify_task() const {
