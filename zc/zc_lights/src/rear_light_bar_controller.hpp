@@ -33,6 +33,7 @@
 #include <algorithm>
 #include <NeoPixelBus.h>
 #include <config.hpp>
+#include <rear_welcome_animation.hpp>
 
 class RearLightBarController {
 public:
@@ -51,6 +52,7 @@ public:
         bool         reverse_on = false;         ///< White in the reverse zones
         BlinkerState turn       = BlinkerState::OFF;  ///< Turn signal / hazard state
         uint8_t      brightness = 255;           ///< Global brightness multiplier (0–255)
+        bool         welcome_active = false;     ///< Welcome animation in progress
     };
 
     RearLightBarController()
@@ -81,6 +83,23 @@ public:
     }
 
     // ── Public mutators (safe to call from any task) ────────────────────────
+
+    /// Start the welcome sweep animation with the given color.
+    void trigger_welcome(RgbColor color) {
+        xSemaphoreTake(mutex_, portMAX_DELAY);
+        welcome_anim_.set_color(color);
+        state_.welcome_active = true;
+        Serial.println("[rear] WELCOME triggered");
+        xSemaphoreGive(mutex_);
+        notify_task();
+    }
+
+    /// Update the welcome color without starting the animation.
+    void set_welcome_color(RgbColor color) {
+        xSemaphoreTake(mutex_, portMAX_DELAY);
+        welcome_anim_.set_color(color);
+        xSemaphoreGive(mutex_);
+    }
 
     /// Enable / disable the tail-light baseline.
     void set_tail(bool on) {
@@ -222,6 +241,12 @@ private:
     BrakeStateFn      brake_cb_;
     ReverseStateFn    reverse_cb_;
     TailStateFn       tail_cb_;
+
+    RearWelcomeAnimation welcome_anim_{
+        WelcomeConfig::COLOR_DEFAULT,
+        WelcomeConfig::REAR_PHASE_SWEEP_MS,
+        WelcomeConfig::REAR_PHASE_PAUSE_MS
+    };
 
     // Cached previous callback values for deduplication.
     uint8_t last_turn_left_  = 0;
@@ -461,6 +486,12 @@ private:
         while (true) {
             State snap = self->snapshot_state();
 
+            // ── Welcome animation (highest priority) ────────────────────
+            if (snap.welcome_active) {
+                self->run_welcome();
+                continue;
+            }
+
             if (snap.turn != last_turn) {
                 next_cycle_tick = xTaskGetTickCount();
             }
@@ -551,6 +582,53 @@ private:
             if (xTaskNotifyWait(0, ULONG_MAX, nullptr, remaining) == pdTRUE) {
                 next_cycle_tick = xTaskGetTickCount();
                 continue;  // state changed — restart
+            }
+        }
+    }
+
+    // ── Welcome animation subroutine ────────────────────────────────────────
+
+    /// Execute the welcome animation, frame by frame.
+    /// Returns when the animation completes or is preempted by a turn signal.
+    void run_welcome() {
+        welcome_anim_.start();
+        const uint32_t start_ms = millis();
+
+        while (true) {
+            const uint32_t elapsed = millis() - start_ms;
+
+            xSemaphoreTake(mutex_, portMAX_DELAY);
+            const uint8_t br = state_.brightness;
+            const bool still_active = state_.welcome_active;
+            xSemaphoreGive(mutex_);
+
+            if (!still_active) {
+                clear_and_show();
+                return;
+            }
+
+            const bool running = welcome_anim_.tick(
+                strip_, elapsed,
+                Cfg::WIDTH, Cfg::HEIGHT,
+                pixel_index, br);
+
+            strip_->Show();
+
+            if (!running) {
+                // Animation finished — clear flag, transition to normal mode.
+                xSemaphoreTake(mutex_, portMAX_DELAY);
+                state_.welcome_active = false;
+                Serial.println("[rear] WELCOME complete");
+                xSemaphoreGive(mutex_);
+                return;
+            }
+
+            // Wait one frame or wake on state change.
+            if (xTaskNotifyWait(0, ULONG_MAX, nullptr,
+                                pdMS_TO_TICKS(FRAME_INTERVAL_MS)) == pdTRUE) {
+                // State changed — check if welcome was cancelled
+                // (e.g. by turn signal toggling). Next loop iteration
+                // will re-check still_active.
             }
         }
     }

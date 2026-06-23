@@ -90,6 +90,7 @@ public:
             // ── Welcome animation ───────────────────────────────────────────
 
             case Esp32ServiceConfig::ZC_LIGHTS_WELCOME_ID:
+                rear_.trigger_welcome(welcome_color_);
                 front_left_.trigger_welcome(welcome_color_);
                 front_right_.trigger_welcome(welcome_color_);
                 return sero::ReturnCode::E_OK;
@@ -171,6 +172,7 @@ private:
         welcome_color_ = RgbColor(payload[0], payload[1], payload[2]);
         front_left_.set_welcome_color(welcome_color_);
         front_right_.set_welcome_color(welcome_color_);
+        rear_.set_welcome_color(welcome_color_);
         Serial.printf("[lights] welcome color R=%u G=%u B=%u\n",
                       payload[0], payload[1], payload[2]);
         return sero::ReturnCode::E_OK;
