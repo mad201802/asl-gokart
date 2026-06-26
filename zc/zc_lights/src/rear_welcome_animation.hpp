@@ -34,6 +34,7 @@ public:
     void start() override {
         started_ = true;
         phase_   = 0;
+        clear_on_next_tick_ = true;
     }
 
     bool tick(NeoPixelBus<NeoGrbFeature, NeoEsp32Rmt0Ws2812xMethod>* strip,
@@ -44,6 +45,13 @@ public:
               uint8_t  brightness) override
     {
         if (!started_) return false;
+
+        if (clear_on_next_tick_) {
+            for (uint16_t i = 0; i < width * height; ++i) {
+                strip->SetPixelColor(i, RgbColor(0, 0, 0));
+            }
+            clear_on_next_tick_ = false;
+        }
 
         const uint16_t center_left  = (width / 2) - 1;   // 71
         const uint16_t center_right = width / 2;          // 72
@@ -122,6 +130,7 @@ private:
     uint32_t  pause_ms_;
     bool      started_;
     uint8_t   phase_ = 0;
+    bool      clear_on_next_tick_ = false;
 
     // ── Render helpers ──────────────────────────────────────────────────
 
@@ -145,14 +154,13 @@ private:
                 dist = 0;  // one of the two center columns
             }
 
-            const bool lit = (dist < cols_reached);
-            const RgbColor c = lit ? lit_color : RgbColor(0, 0, 0);
-
-            for (uint16_t row = 0; row < height; ++row) {
-                if (middle_only && row != middle_row) {
-                    strip->SetPixelColor(pixel_index(col, row), RgbColor(0, 0, 0));
+            if (dist < cols_reached) {
+                if (middle_only) {
+                    strip->SetPixelColor(pixel_index(col, middle_row), lit_color);
                 } else {
-                    strip->SetPixelColor(pixel_index(col, row), c);
+                    for (uint16_t row = 0; row < height; ++row) {
+                        strip->SetPixelColor(pixel_index(col, row), lit_color);
+                    }
                 }
             }
         }
@@ -170,11 +178,10 @@ private:
             // Distance from nearest edge
             uint16_t dist_from_edge = std::min(col,
                                                static_cast<uint16_t>(width - 1 - col));
-            const bool lit = (dist_from_edge < cols_reached);
-            const RgbColor c = lit ? lit_color : RgbColor(0, 0, 0);
-
-            for (uint16_t row = 0; row < height; ++row) {
-                strip->SetPixelColor(pixel_index(col, row), c);
+            if (dist_from_edge < cols_reached) {
+                for (uint16_t row = 0; row < height; ++row) {
+                    strip->SetPixelColor(pixel_index(col, row), lit_color);
+                }
             }
         }
     }
