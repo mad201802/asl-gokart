@@ -378,8 +378,8 @@ private:
             }
         }
 
-        // Brake zone
-        if (col >= Cfg::BRAKE_START && col < Cfg::BRAKE_END) {
+        // Brake (covers entire center zone, lower priority than reverse)
+        if (col >= Cfg::CENTER_START && col < Cfg::CENTER_END) {
             if (snap.brake_on) {
                 out_color  = Cfg::COLOR_BRAKE;
                 out_bright = Cfg::BRIGHTNESS_BRAKE;
@@ -387,7 +387,7 @@ private:
             }
         }
 
-        // Center tail zone (cols 36–107)
+        // Center tail zone (cols 36–107) baseline
         if (col >= Cfg::CENTER_START && col < Cfg::CENTER_END) {
             if (snap.tail_on) {
                 out_color  = Cfg::COLOR_TAIL;
