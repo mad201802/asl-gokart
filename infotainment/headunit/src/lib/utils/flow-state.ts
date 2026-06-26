@@ -13,7 +13,7 @@ export const calculateFlowState = (batteryCurrent: number, throttle: number, rpm
     if (Math.abs(batteryCurrent) < 5) {
         return FlowState.IDLE;
     }
-    // Positive current = discharging = power mode
-    // Negative current = charging = regen mode
-    return batteryCurrent > 0 ? FlowState.POWER : FlowState.REGEN;
+    // Negative current = discharging = power mode
+    // Positive current = charging = regen mode
+    return batteryCurrent > 0 ? FlowState.REGEN : FlowState.POWER;
 }
