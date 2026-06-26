@@ -71,6 +71,10 @@ void WiFiEvent(WiFiEvent_t event) {
 }
 
 void connect_ethernet() {
+  // Hold Ethernet PHY in reset during initial startup delay
+  pinMode(12, OUTPUT);
+  digitalWrite(12, LOW);
+
   esp_log_level_set("*", ESP_LOG_VERBOSE);
     Serial.begin(115200);
     delay(1000);
@@ -79,6 +83,11 @@ void connect_ethernet() {
     Serial.println("");
     Serial.println("Authors: AEROSPACE-LAB Team Gokart");
     Serial.println("####################################");
+
+    // Power up Ethernet PHY
+    digitalWrite(12, HIGH);
+    delay(200);
+
     // Initialize Ethernet
     WiFi.onEvent(WiFiEvent);
     ETH.begin();
@@ -118,9 +127,11 @@ void setup() {
     front_drl_left.set_drl(true);       // white DRL always on
     front_drl_right.set_drl(true);
 
-    // Play welcome animation on boot
-    front_drl_left.trigger_welcome(FrontDrlConfig::COLOR_WELCOME);
-    front_drl_right.trigger_welcome(FrontDrlConfig::COLOR_WELCOME);
+    // Play welcome animation on boot (rear bar + both DRLs)
+    RgbColor welcome_color = WelcomeConfig::COLOR_DEFAULT;
+    rear_light_bar.trigger_welcome(welcome_color);
+    front_drl_left.trigger_welcome(welcome_color);
+    front_drl_right.trigger_welcome(welcome_color);
 
     // ── Transport ───────────────────────────────────────────────
     if (!transport.init(Esp32ServiceConfig::ESP32_UNICAST_PORT)) {
@@ -141,14 +152,18 @@ void setup() {
     rt.register_event(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_EVENT_BRAKE_STATE_ID);
     rt.register_event(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_EVENT_REVERSE_STATE_ID);
     rt.register_event(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_EVENT_DRL_STATE_ID);
+    rt.register_event(Esp32ServiceConfig::ZC_LIGHTS_ID, Esp32ServiceConfig::ZC_LIGHTS_EVENT_TAIL_STATE_ID);
 
     // ── Wire up callbacks ───────────────────────────────────────
 
-    // Rear light bar: turn signal state
-    rear_light_bar.set_turn_callback([](uint8_t left, uint8_t right) {
+    // Rear light bar: logical turn state (for front DRL animation)
+    rear_light_bar.set_logical_turn_callback([](uint8_t left, uint8_t right) {
         front_drl_left.set_turn_signal(left != 0);
         front_drl_right.set_turn_signal(right != 0);
+    });
 
+    // Rear light bar: physical blink state (for headunit UI)
+    rear_light_bar.set_turn_callback([](uint8_t left, uint8_t right) {
         if (!runtime_ptr) return;
         uint8_t payload[2] = { left, right };
         runtime_ptr->notify_event(Esp32ServiceConfig::ZC_LIGHTS_ID,
@@ -171,6 +186,15 @@ void setup() {
         uint8_t payload[1] = { on };
         runtime_ptr->notify_event(Esp32ServiceConfig::ZC_LIGHTS_ID,
                                   Esp32ServiceConfig::ZC_LIGHTS_EVENT_REVERSE_STATE_ID,
+                                  payload, 1);
+    });
+
+    // Rear light bar: tail state
+    rear_light_bar.set_tail_callback([](uint8_t on) {
+        if (!runtime_ptr) return;
+        uint8_t payload[1] = { on };
+        runtime_ptr->notify_event(Esp32ServiceConfig::ZC_LIGHTS_ID,
+                                  Esp32ServiceConfig::ZC_LIGHTS_EVENT_TAIL_STATE_ID,
                                   payload, 1);
     });
 

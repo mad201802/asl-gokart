@@ -26,7 +26,7 @@ static Daly_BMS_UART bms(BMS_SERIAL);
 
 // --- Timing -----------------------------------------------------
 
-static constexpr uint32_t BMS_POLL_INTERVAL_MS  = 1000;
+static constexpr uint32_t BMS_POLL_INTERVAL_MS  = 100;
 static constexpr uint32_t TEMP_POLL_INTERVAL_MS = 2000;
 
 static uint32_t last_bms_poll     = 0;
@@ -68,6 +68,10 @@ void WiFiEvent(WiFiEvent_t event) {
 }
 
 void connect_ethernet() {
+    // Hold Ethernet PHY in reset during initial startup delay
+    pinMode(12, OUTPUT);
+    digitalWrite(12, LOW);
+
     esp_log_level_set("*", ESP_LOG_VERBOSE);
     Serial.begin(115200);
     delay(1000);
@@ -76,6 +80,10 @@ void connect_ethernet() {
     Serial.println("");
     Serial.println("Authors: AEROSPACE-LAB Team Gokart");
     Serial.println("####################################");
+
+    // Power up Ethernet PHY
+    digitalWrite(12, HIGH);
+    delay(200);
 
     WiFi.onEvent(WiFiEvent);
     ETH.begin();

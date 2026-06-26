@@ -5,8 +5,8 @@ export const BATTERY_MAX_VOLTAGE = 67.2;
 
 export const SOC_BOUNDARIES: [number, number] = [0, 100];
 
-export const HEATMAP_MIN_TEMP = 12.5;
-export const HEATMAP_MAX_TEMP = 40;
+export const HEATMAP_MIN_TEMP = 0;
+export const HEATMAP_MAX_TEMP = 45;
 
 export const SOC_SEGMENTS: Segment[] = [
     { value: 0,   color: "#f87171" }, // red-400

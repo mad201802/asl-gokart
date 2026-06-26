@@ -57,6 +57,7 @@ struct Esp32ServiceConfig {
     static constexpr uint16_t ZC_LIGHTS_WELCOME_ID           = 0x000A;  // Trigger welcome light animation
     static constexpr uint16_t ZC_LIGHTS_SET_BRIGHTNESS_ID    = 0x000B;  // Set brightness [target, value]
     static constexpr uint16_t ZC_LIGHTS_SET_WELCOME_COLOR_ID = 0x000C;  // Set welcome color [R, G, B]
+    static constexpr uint16_t ZC_LIGHTS_TAIL_ID              = 0x000D;  // Toggle rear tail light
 
     // Reserved OTA trigger method (present on every ZC, bit 15 = 0).
     // Payload: UTF-8 URL string of the firmware binary served by the headunit.
@@ -68,6 +69,7 @@ struct Esp32ServiceConfig {
     static constexpr uint16_t ZC_LIGHTS_EVENT_BRAKE_STATE_ID   = 0x8004;  // Brake state [on]
     static constexpr uint16_t ZC_LIGHTS_EVENT_REVERSE_STATE_ID = 0x8005;  // Reverse state [on]
     static constexpr uint16_t ZC_LIGHTS_EVENT_DRL_STATE_ID     = 0x8006;  // DRL state [on]
+    static constexpr uint16_t ZC_LIGHTS_EVENT_TAIL_STATE_ID    = 0x8007;  // Tail state [on]
 };
 
 // ── Hardware Pin Assignments ────────────────────────────────────
@@ -139,6 +141,19 @@ struct RearLightBarConfig {
     inline static const RgbColor COLOR_REVERSE = RgbColor(255, 255, 255);
 };
 
+// ── Welcome Animation Configuration (shared by DRL + rear bar) ──
+struct WelcomeConfig {
+    // Shared default welcome color (both DRL glow and rear sweep)
+    inline static const RgbColor COLOR_DEFAULT = RgbColor(  0, 100, 255);  // blue
+
+    // ── Rear welcome animation phase durations ──────────────────
+    static constexpr uint32_t REAR_PHASE_SWEEP_MS = 800;   // per sweep phase
+    static constexpr uint32_t REAR_PHASE_PAUSE_MS = 0;   // pause between phases
+
+    // ── DRL welcome glow duration ───────────────────────────────
+    static constexpr uint32_t DRL_GLOW_DURATION_MS = 3000;
+};
+
 // ── Front DRL Strip Configuration ───────────────────────────────
 struct FrontDrlConfig {
     // Strip dimensions (1D)
@@ -147,7 +162,7 @@ struct FrontDrlConfig {
     // ── Animation timing ────────────────────────────────────────
     static constexpr uint32_t BLINK_SWEEP_DURATION_MS  = 400;
     static constexpr uint32_t BLINK_OFF_DURATION_MS    = 300;
-    static constexpr uint32_t WELCOME_GLOW_DURATION_MS = 1500;
+    static constexpr uint32_t WELCOME_GLOW_DURATION_MS = WelcomeConfig::DRL_GLOW_DURATION_MS;
 
     // ── Brightness defaults ─────────────────────────────────────
     static constexpr uint8_t BRIGHTNESS_DRL  = 128;
@@ -157,5 +172,5 @@ struct FrontDrlConfig {
     inline static const RgbColor COLOR_OFF     = RgbColor(  0,   0,   0);
     inline static const RgbColor COLOR_DRL     = RgbColor(255, 255, 255);
     inline static const RgbColor COLOR_TURN    = RgbColor(255,  40,   0);
-    inline static const RgbColor COLOR_WELCOME = RgbColor(  0, 100, 255); // default blue
+    inline static const RgbColor COLOR_WELCOME = WelcomeConfig::COLOR_DEFAULT;
 };

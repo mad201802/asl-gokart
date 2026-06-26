@@ -33,6 +33,7 @@
 #include <algorithm>
 #include <NeoPixelBus.h>
 #include <config.hpp>
+#include <rear_welcome_animation.hpp>
 
 class RearLightBarController {
 public:
@@ -42,6 +43,7 @@ public:
     using TurnStateFn    = std::function<void(uint8_t left, uint8_t right)>;
     using BrakeStateFn   = std::function<void(uint8_t on)>;
     using ReverseStateFn = std::function<void(uint8_t on)>;
+    using TailStateFn    = std::function<void(uint8_t on)>;
 
     /// Thread-safe mutable state — all fields guarded by `mutex_`.
     struct State {
@@ -50,6 +52,7 @@ public:
         bool         reverse_on = false;         ///< White in the reverse zones
         BlinkerState turn       = BlinkerState::OFF;  ///< Turn signal / hazard state
         uint8_t      brightness = 255;           ///< Global brightness multiplier (0–255)
+        bool         welcome_active = false;     ///< Welcome animation in progress
     };
 
     RearLightBarController()
@@ -61,8 +64,10 @@ public:
     // ── Callbacks ───────────────────────────────────────────────────────────
 
     void set_turn_callback(TurnStateFn fn)       { turn_cb_    = std::move(fn); }
+    void set_logical_turn_callback(TurnStateFn fn) { logical_turn_cb_ = std::move(fn); }
     void set_brake_callback(BrakeStateFn fn)     { brake_cb_   = std::move(fn); }
     void set_reverse_callback(ReverseStateFn fn) { reverse_cb_ = std::move(fn); }
+    void set_tail_callback(TailStateFn fn)       { tail_cb_    = std::move(fn); }
 
     // ── Lifecycle ───────────────────────────────────────────────────────────
 
@@ -79,11 +84,30 @@ public:
 
     // ── Public mutators (safe to call from any task) ────────────────────────
 
+    /// Start the welcome sweep animation with the given color.
+    void trigger_welcome(RgbColor color) {
+        xSemaphoreTake(mutex_, portMAX_DELAY);
+        welcome_anim_.set_color(color);
+        state_.welcome_active = true;
+        Serial.println("[rear] WELCOME triggered");
+        xSemaphoreGive(mutex_);
+        notify_task();
+    }
+
+    /// Update the welcome color without starting the animation.
+    void set_welcome_color(RgbColor color) {
+        xSemaphoreTake(mutex_, portMAX_DELAY);
+        welcome_anim_.set_color(color);
+        xSemaphoreGive(mutex_);
+    }
+
     /// Enable / disable the tail-light baseline.
     void set_tail(bool on) {
         xSemaphoreTake(mutex_, portMAX_DELAY);
+        const bool changed = (state_.tail_on != on);
         state_.tail_on = on;
         xSemaphoreGive(mutex_);
+        if (changed) maybe_emit_tail(on ? 1 : 0);
         notify_task();
     }
 
@@ -122,6 +146,7 @@ public:
         xSemaphoreGive(mutex_);
         Serial.printf("[rear] turn → %s\n", turn_state_name(s));
         emit_turn_for(s);
+        emit_logical_turn_for(s);
         notify_task();
     }
 
@@ -140,6 +165,7 @@ public:
         xSemaphoreGive(mutex_);
         Serial.printf("[rear] turn → %s\n", turn_state_name(s));
         emit_turn_for(s);
+        emit_logical_turn_for(s);
         notify_task();
     }
 
@@ -153,6 +179,7 @@ public:
         xSemaphoreGive(mutex_);
         Serial.printf("[rear] turn → %s\n", turn_state_name(s));
         emit_turn_for(s);
+        emit_logical_turn_for(s);
         notify_task();
     }
 
@@ -171,6 +198,13 @@ public:
         BlinkerState s = state_.turn;
         xSemaphoreGive(mutex_);
         return s;
+    }
+
+    bool is_tail_on() const {
+        xSemaphoreTake(mutex_, portMAX_DELAY);
+        bool v = state_.tail_on;
+        xSemaphoreGive(mutex_);
+        return v;
     }
 
     bool is_brake_on() const {
@@ -203,14 +237,25 @@ private:
     StripType*        strip_;
 
     TurnStateFn       turn_cb_;
+    TurnStateFn       logical_turn_cb_;
     BrakeStateFn      brake_cb_;
     ReverseStateFn    reverse_cb_;
+    TailStateFn       tail_cb_;
+
+    RearWelcomeAnimation welcome_anim_{
+        WelcomeConfig::COLOR_DEFAULT,
+        WelcomeConfig::REAR_PHASE_SWEEP_MS,
+        WelcomeConfig::REAR_PHASE_PAUSE_MS
+    };
 
     // Cached previous callback values for deduplication.
     uint8_t last_turn_left_  = 0;
     uint8_t last_turn_right_ = 0;
+    uint8_t last_logical_left_  = 0;
+    uint8_t last_logical_right_ = 0;
     uint8_t last_brake_      = 0;
     uint8_t last_reverse_    = 0;
+    uint8_t last_tail_       = 0;
 
     // ── Matrix helpers ──────────────────────────────────────────────────────
 
@@ -273,11 +318,33 @@ private:
         }
     }
 
+    void maybe_emit_tail(uint8_t on) {
+        if (tail_cb_ && on != last_tail_) {
+            last_tail_ = on;
+            tail_cb_(on);
+        }
+    }
+
     /// Convenience: derive (left_on, right_on) from a BlinkerState and emit.
     void emit_turn_for(BlinkerState s) {
         const uint8_t l = (s == BlinkerState::LEFT  || s == BlinkerState::HAZARD) ? 1 : 0;
         const uint8_t r = (s == BlinkerState::RIGHT || s == BlinkerState::HAZARD) ? 1 : 0;
         maybe_emit_turn(l, r);
+    }
+
+    void emit_logical_turn_for(BlinkerState s) {
+        xSemaphoreTake(mutex_, portMAX_DELAY);
+        const uint8_t l = (s == BlinkerState::LEFT  || s == BlinkerState::HAZARD) ? 1 : 0;
+        const uint8_t r = (s == BlinkerState::RIGHT || s == BlinkerState::HAZARD) ? 1 : 0;
+        const bool changed = (l != last_logical_left_ || r != last_logical_right_);
+        if (changed) {
+            last_logical_left_  = l;
+            last_logical_right_ = r;
+        }
+        xSemaphoreGive(mutex_);
+        if (changed && logical_turn_cb_) {
+            logical_turn_cb_(l, r);
+        }
     }
 
     void notify_task() const {
@@ -311,8 +378,8 @@ private:
             }
         }
 
-        // Brake zone
-        if (col >= Cfg::BRAKE_START && col < Cfg::BRAKE_END) {
+        // Brake (covers entire center zone, lower priority than reverse)
+        if (col >= Cfg::CENTER_START && col < Cfg::CENTER_END) {
             if (snap.brake_on) {
                 out_color  = Cfg::COLOR_BRAKE;
                 out_bright = Cfg::BRIGHTNESS_BRAKE;
@@ -320,7 +387,7 @@ private:
             }
         }
 
-        // Center tail zone (cols 36–107)
+        // Center tail zone (cols 36–107) baseline
         if (col >= Cfg::CENTER_START && col < Cfg::CENTER_END) {
             if (snap.tail_on) {
                 out_color  = Cfg::COLOR_TAIL;
@@ -419,6 +486,12 @@ private:
         while (true) {
             State snap = self->snapshot_state();
 
+            // ── Welcome animation (highest priority) ────────────────────
+            if (snap.welcome_active) {
+                self->run_welcome();
+                continue;
+            }
+
             if (snap.turn != last_turn) {
                 next_cycle_tick = xTaskGetTickCount();
             }
@@ -509,6 +582,53 @@ private:
             if (xTaskNotifyWait(0, ULONG_MAX, nullptr, remaining) == pdTRUE) {
                 next_cycle_tick = xTaskGetTickCount();
                 continue;  // state changed — restart
+            }
+        }
+    }
+
+    // ── Welcome animation subroutine ────────────────────────────────────────
+
+    /// Execute the welcome animation, frame by frame.
+    /// Returns when the animation completes or is preempted by a turn signal.
+    void run_welcome() {
+        welcome_anim_.start();
+        const uint32_t start_ms = millis();
+
+        while (true) {
+            const uint32_t elapsed = millis() - start_ms;
+
+            xSemaphoreTake(mutex_, portMAX_DELAY);
+            const uint8_t br = state_.brightness;
+            const bool still_active = state_.welcome_active;
+            xSemaphoreGive(mutex_);
+
+            if (!still_active) {
+                clear_and_show();
+                return;
+            }
+
+            const bool running = welcome_anim_.tick(
+                strip_, elapsed,
+                Cfg::WIDTH, Cfg::HEIGHT,
+                pixel_index, br);
+
+            strip_->Show();
+
+            if (!running) {
+                // Animation finished — clear flag, transition to normal mode.
+                xSemaphoreTake(mutex_, portMAX_DELAY);
+                state_.welcome_active = false;
+                Serial.println("[rear] WELCOME complete");
+                xSemaphoreGive(mutex_);
+                return;
+            }
+
+            // Wait one frame or wake on state change.
+            if (xTaskNotifyWait(0, ULONG_MAX, nullptr,
+                                pdMS_TO_TICKS(FRAME_INTERVAL_MS)) == pdTRUE) {
+                // State changed — check if welcome was cancelled
+                // (e.g. by turn signal toggling). Next loop iteration
+                // will re-check still_active.
             }
         }
     }

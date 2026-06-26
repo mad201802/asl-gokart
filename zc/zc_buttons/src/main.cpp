@@ -154,6 +154,10 @@ void WiFiEvent(WiFiEvent_t event) {
 }
 
 void connect_ethernet() {
+  // Hold Ethernet PHY in reset during initial startup delay
+  pinMode(12, OUTPUT);
+  digitalWrite(12, LOW);
+
   esp_log_level_set("*", ESP_LOG_VERBOSE);
     Serial.begin(115200);
     delay(1000);
@@ -162,6 +166,11 @@ void connect_ethernet() {
     Serial.println("");
     Serial.println("Authors: AEROSPACE-LAB Team Gokart");
     Serial.println("####################################");
+
+    // Power up Ethernet PHY
+    digitalWrite(12, HIGH);
+    delay(200);
+
     // Initialize Ethernet
     WiFi.onEvent(WiFiEvent);
     ETH.begin();
