@@ -147,11 +147,11 @@ struct WelcomeConfig {
     inline static const RgbColor COLOR_DEFAULT = RgbColor(  0, 100, 255);  // blue
 
     // ── Rear welcome animation phase durations ──────────────────
-    static constexpr uint32_t REAR_PHASE_SWEEP_MS = 400;   // per sweep phase
-    static constexpr uint32_t REAR_PHASE_PAUSE_MS = 100;   // pause between phases
+    static constexpr uint32_t REAR_PHASE_SWEEP_MS = 800;   // per sweep phase
+    static constexpr uint32_t REAR_PHASE_PAUSE_MS = 0;   // pause between phases
 
     // ── DRL welcome glow duration ───────────────────────────────
-    static constexpr uint32_t DRL_GLOW_DURATION_MS = 1500;
+    static constexpr uint32_t DRL_GLOW_DURATION_MS = 3000;
 };
 
 // ── Front DRL Strip Configuration ───────────────────────────────
