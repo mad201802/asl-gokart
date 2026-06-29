@@ -33,6 +33,9 @@ const SettingsPage = () => {
     analyticsEnabled,
     logLevel,
     adminMode,
+    autoStart,
+    fullscreenOnStartup,
+    devToolsEnabled,
     setDriveMode,
     setSpeedLimit,
     setAppVersion,
@@ -40,6 +43,9 @@ const SettingsPage = () => {
     setLogLevel,
     setAdminMode,
     setAdminPin,
+    setAutoStart,
+    setFullscreenOnStartup,
+    setDevToolsEnabled,
   } = useStore(
     useShallow((state) => ({
       driveMode: state.driveMode,
@@ -50,6 +56,9 @@ const SettingsPage = () => {
       analyticsEnabled: state.analyticsEnabled,
       logLevel: state.logLevel,
       adminMode: state.adminMode,
+      autoStart: state.autoStart,
+      fullscreenOnStartup: state.fullscreenOnStartup,
+      devToolsEnabled: state.devToolsEnabled,
       setDriveMode: state.setDriveMode,
       setSpeedLimit: state.setSpeedLimit,
       setAppVersion: state.setAppVersion,
@@ -57,6 +66,9 @@ const SettingsPage = () => {
       setLogLevel: state.setLogLevel,
       setAdminMode: state.setAdminMode,
       setAdminPin: state.setAdminPin,
+      setAutoStart: state.setAutoStart,
+      setFullscreenOnStartup: state.setFullscreenOnStartup,
+      setDevToolsEnabled: state.setDevToolsEnabled,
     }))
   );
 
@@ -85,9 +97,36 @@ const SettingsPage = () => {
         log.error(e);
       }
     };
+    const fetchAutoStart = async () => {
+      try {
+        const enabled = await window.app.getAutoStart();
+        setAutoStart(enabled);
+      } catch (e) {
+        log.error(e);
+      }
+    };
+    const fetchFullscreenOnStartup = async () => {
+      try {
+        const enabled = await window.app.getFullscreenOnStartup();
+        setFullscreenOnStartup(enabled);
+      } catch (e) {
+        log.error(e);
+      }
+    };
+    const fetchDevToolsEnabled = async () => {
+      try {
+        const enabled = await window.app.getDevToolsEnabled();
+        setDevToolsEnabled(enabled);
+      } catch (e) {
+        log.error(e);
+      }
+    };
     fetchAppVersion();
     fetchLogLevel();
-  }, [setAppVersion, setLogLevel]);
+    fetchAutoStart();
+    fetchFullscreenOnStartup();
+    fetchDevToolsEnabled();
+  }, [setAppVersion, setLogLevel, setAutoStart, setFullscreenOnStartup, setDevToolsEnabled]);
 
   const handleToggleAnalytics = (enabled: boolean) => {
     window.app.toggleAnalytics(enabled).then((result) => {
@@ -95,6 +134,7 @@ const SettingsPage = () => {
       toast(`Cloud Analytics ${result ? "enabled" : "disabled"}!`);
     });
   };
+
 
   const handleLogLevelChange = async (level: LogLevel) => {
     setLogLevel(level);
@@ -185,6 +225,8 @@ const SettingsPage = () => {
           <Label className="text-base">Power Menu</Label>
           <PowerMenu />
         </div>
+
+
 
         {/* ── Access / Admin Mode ── */}
         <p className="text-xs uppercase tracking-widest text-muted-foreground pb-1 pt-5">Access</p>

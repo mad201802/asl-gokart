@@ -31,6 +31,12 @@ interface AppContext {
     getLogLevel: () => Promise<string>;
     getAnalyticsInterface: () => Promise<ResolvedInterface | null>;
     setAnalyticsInterface: (mac: string | null) => Promise<ResolvedInterface | null>;
+    getAutoStart: () => Promise<boolean>;
+    setAutoStart: (enabled: boolean) => Promise<boolean>;
+    getFullscreenOnStartup: () => Promise<boolean>;
+    setFullscreenOnStartup: (enabled: boolean) => Promise<boolean>;
+    getDevToolsEnabled: () => Promise<boolean>;
+    setDevToolsEnabled: (enabled: boolean) => Promise<boolean>;
 }
 
 interface SeroContext {
