@@ -3,6 +3,7 @@ import log from "electron-log/main";
 import registerListeners from "./helpers/ipc/listeners-register";
 import path from "path";
 import { stopSeroService } from "./helpers/ipc/sero/sero-service";
+import { getFullscreenOnStartup, getDevToolsEnabled } from "./helpers/ipc/application/system-config";
 
 // Initialize electron-log before anything else
 log.initialize();
@@ -17,9 +18,11 @@ if (require("electron-squirrel-startup")) {
 
 function createWindow() {
     const preload = path.join(__dirname, "preload.js");
+    const isFullscreen = getFullscreenOnStartup();
     const mainWindow = new BrowserWindow({
         width: 1024,
         height: 600,
+        fullscreen: isFullscreen,
         webPreferences: {
             devTools: true,
             contextIsolation: true,
@@ -40,7 +43,10 @@ function createWindow() {
             path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
         );
     }
-    mainWindow.webContents.openDevTools();
+    const devToolsEnabled = getDevToolsEnabled();
+    if (devToolsEnabled) {
+        mainWindow.webContents.openDevTools();
+    }
 }
 
 app.whenReady().then(createWindow);

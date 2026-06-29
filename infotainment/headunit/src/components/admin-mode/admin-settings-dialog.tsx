@@ -15,6 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { useStore } from "@/stores/useStore";
 import { useShallow } from "zustand/react/shallow";
 import React, { useState } from "react";
+import { toast } from "sonner";
 
 type AdminSettingsDialogProps = {
     trigger?: React.ReactNode;
@@ -22,23 +23,75 @@ type AdminSettingsDialogProps = {
 
 const AdminSettingsDialog = ({ trigger }: AdminSettingsDialogProps = {}) => {
 
-    const { adminMode, maxSettableSpeed, minSettableSpeed, pipeThroughRawThrottle, pedalMultiplier, setMaxSettableSpeed, setMinSettableSpeed, setPipeThroughRawThrottle, setPedalMultiplier } = useStore(
+    const { 
+        adminMode, 
+        maxSettableSpeed, 
+        minSettableSpeed, 
+        pipeThroughRawThrottle, 
+        pedalMultiplier, 
+        autoStart,
+        fullscreenOnStartup,
+        devToolsEnabled,
+        setMaxSettableSpeed, 
+        setMinSettableSpeed, 
+        setPipeThroughRawThrottle, 
+        setPedalMultiplier,
+        setAutoStart,
+        setFullscreenOnStartup,
+        setDevToolsEnabled,
+    } = useStore(
         useShallow((state) => ({
             adminMode: state.adminMode,
             maxSettableSpeed: state.maxSettableSpeed,
             minSettableSpeed: state.minSettableSpeed,
             pipeThroughRawThrottle: state.pipeThroughRawThrottle,
             pedalMultiplier: state.pedalMultiplier,
+            autoStart: state.autoStart,
+            fullscreenOnStartup: state.fullscreenOnStartup,
+            devToolsEnabled: state.devToolsEnabled,
             setMaxSettableSpeed: state.setMaxSettableSpeed,
             setMinSettableSpeed: state.setMinSettableSpeed,
             setPipeThroughRawThrottle: state.setPipeThroughRawThrottle,
             setPedalMultiplier: state.setPedalMultiplier,
+            setAutoStart: state.setAutoStart,
+            setFullscreenOnStartup: state.setFullscreenOnStartup,
+            setDevToolsEnabled: state.setDevToolsEnabled,
         }))
     );
 
     const [liveMaxSpeed, setLiveMaxSpeed] = useState(maxSettableSpeed);
     const [liveMinSpeed, setLiveMinSpeed] = useState(minSettableSpeed);
     const [livePedalMultiplier, setLivePedalMultiplier] = useState(pedalMultiplier);
+
+    const handleToggleAutoStart = (enabled: boolean) => {
+        window.app.setAutoStart(enabled).then((result) => {
+            setAutoStart(result);
+            toast(`Auto-start ${result ? "enabled" : "disabled"}!`);
+        }).catch((e) => {
+            console.error(e);
+            toast.error("Failed to change Auto-start settings!");
+        });
+    };
+
+    const handleToggleFullscreenOnStartup = (enabled: boolean) => {
+        window.app.setFullscreenOnStartup(enabled).then((result) => {
+            setFullscreenOnStartup(result);
+            toast(`Start in Fullscreen ${result ? "enabled" : "disabled"}!`);
+        }).catch((e) => {
+            console.error(e);
+            toast.error("Failed to change Fullscreen settings!");
+        });
+    };
+
+    const handleToggleDevTools = (enabled: boolean) => {
+        window.app.setDevToolsEnabled(enabled).then((result) => {
+            setDevToolsEnabled(result);
+            toast(`Developer Tools ${result ? "enabled" : "disabled"}!`);
+        }).catch((e) => {
+            console.error(e);
+            toast.error("Failed to change Developer Tools settings!");
+        });
+    };
 
     return (
         <Dialog onOpenChange={(open) => {
@@ -123,6 +176,42 @@ const AdminSettingsDialog = ({ trigger }: AdminSettingsDialogProps = {}) => {
                         <Switch
                             checked={pipeThroughRawThrottle}
                             onCheckedChange={setPipeThroughRawThrottle}
+                        />
+                    </div>
+
+                    <Separator />
+
+                    {/* Auto-start on Boot */}
+                    <div className="flex items-center justify-between">
+                        <Label htmlFor="auto-start" className="text-base">Auto-start on Boot</Label>
+                        <Switch
+                            id="auto-start"
+                            checked={autoStart}
+                            onCheckedChange={handleToggleAutoStart}
+                        />
+                    </div>
+
+                    <Separator />
+
+                    {/* Start in Fullscreen */}
+                    <div className="flex items-center justify-between">
+                        <Label htmlFor="fullscreen-on-startup" className="text-base">Start in Fullscreen</Label>
+                        <Switch
+                            id="fullscreen-on-startup"
+                            checked={fullscreenOnStartup}
+                            onCheckedChange={handleToggleFullscreenOnStartup}
+                        />
+                    </div>
+
+                    <Separator />
+
+                    {/* Developer Tools */}
+                    <div className="flex items-center justify-between">
+                        <Label htmlFor="devtools-enabled" className="text-base">Enable Developer Tools</Label>
+                        <Switch
+                            id="devtools-enabled"
+                            checked={devToolsEnabled}
+                            onCheckedChange={handleToggleDevTools}
                         />
                     </div>
 

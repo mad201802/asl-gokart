@@ -12,6 +12,9 @@ export interface SystemSlice {
     gokartLanConnected: boolean,
     showParticleEffects: boolean,
     logLevel: LogLevel,
+    autoStart: boolean,
+    fullscreenOnStartup: boolean,
+    devToolsEnabled: boolean,
     setScreenBrightness: (screenBrightness: number) => void,
     setAdminPin: (adminPin: string) => void,
     setAppVersion: (appVersion: string) => void,
@@ -21,6 +24,9 @@ export interface SystemSlice {
     setGokartLanConnected: (connected: boolean) => void,
     setShowParticleEffects: (showParticleEffects: boolean) => void,
     setLogLevel: (logLevel: LogLevel) => void,
+    setAutoStart: (autoStart: boolean) => void,
+    setFullscreenOnStartup: (fullscreenOnStartup: boolean) => void,
+    setDevToolsEnabled: (devToolsEnabled: boolean) => void,
   }
 
 export const createSystemSlice: StateCreator<
@@ -39,6 +45,9 @@ export const createSystemSlice: StateCreator<
     gokartLanConnected: false,
     showParticleEffects: true,
     logLevel: "info",
+    autoStart: false,
+    fullscreenOnStartup: false,
+    devToolsEnabled: true,
     setScreenBrightness: (screenBrightness: number) => set({ screenBrightness }),
     setAdminPin: (adminPin: string) => set({ adminPin }),
     setAppVersion: (appVersion: string) => set({ appVersion }),
@@ -48,4 +57,7 @@ export const createSystemSlice: StateCreator<
     setGokartLanConnected: (gokartLanConnected: boolean) => set({ gokartLanConnected }),
     setShowParticleEffects: (showParticleEffects: boolean) => set({ showParticleEffects }),
     setLogLevel: (logLevel: LogLevel) => set({ logLevel }),
+    setAutoStart: (autoStart: boolean) => set({ autoStart }),
+    setFullscreenOnStartup: (fullscreenOnStartup: boolean) => set({ fullscreenOnStartup }),
+    setDevToolsEnabled: (devToolsEnabled: boolean) => set({ devToolsEnabled }),
 })

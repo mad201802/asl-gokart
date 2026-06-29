@@ -19,7 +19,7 @@ export default function registerListeners(mainWindow: BrowserWindow) {
     startWebSocketServer(mainWindow);
     startSeroService(mainWindow);
     registerSeroHandlers();
-    addAppEventListeners();
+    addAppEventListeners(mainWindow);
     registerHardwareListeners();
     startFirmwareServer();
     registerFirmwareListeners();
