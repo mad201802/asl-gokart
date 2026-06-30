@@ -48,6 +48,9 @@ struct Esp32ServiceConfig {
     // Payload: UTF-8 URL string of the firmware binary served by the headunit.
     static constexpr uint16_t ZC_MOTOR_OTA_METHOD_ID = 0x00FF;
 
+    // Method to toggle individual relays (payload: [relay_idx]).
+    static constexpr uint16_t ZC_MOTOR_TOGGLE_RELAY_METHOD_ID = 0x0005;
+
     // Event: [Motor L/R] each 8 bytes: [rpm u16 BE][throttle u8][brake_pedal u8][switches bitfield][bat_v u8][mot_temp u8][ctrl_temp u8]
     static constexpr uint16_t    ZC_MOTOR_EVENT_RPM_ID            = 0x8001;
     static constexpr std::size_t ZC_MOTOR_EVENT_RPM_PAYLOAD_SIZE  = 16;
@@ -64,4 +67,6 @@ struct Esp32HwConfig {
     static constexpr int8_t   KELLY_LEFT_RX_PIN     = 36;
     static constexpr int8_t   KELLY_RIGHT_TX_PIN    = 32;
     static constexpr int8_t   KELLY_RIGHT_RX_PIN    = 33;
+    static constexpr int8_t   RELAY_1_PIN           = 14;
+    static constexpr int8_t   RELAY_2_PIN           = 15;
 };

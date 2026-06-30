@@ -30,7 +30,7 @@ export function exposeSeroContext()  {
 
         // Send commands to the SERO zone controller for motor control
         sendMotorCommand: (command: MotorCommands, value?: any) => {
-            ipcRenderer.send(SERO_SEND_MOTOR_CHANNEL, { command, value });
+            return ipcRenderer.invoke(SERO_SEND_MOTOR_CHANNEL, { command, value });
         },
         // Listen for motor status updates from SERO
         onMotorMessage: (callback: (motorMessage: string) => void) => {

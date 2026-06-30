@@ -47,7 +47,7 @@ interface SeroContext {
     sendBatteryCommand: (command: BatteryCommands, value?: boolean | boolean[]) => void;
     onBatteryMessage: (callback: (batteryMessage: string) => void) => () => void;
     // zc_motor
-    sendMotorCommand: (command: MotorCommands, value?: any) => void;
+    sendMotorCommand: (command: MotorCommands, value?: any) => Promise<boolean>;
     onMotorMessage: (callback: (motorMessage: string) => void) => () => void;
 }
 
