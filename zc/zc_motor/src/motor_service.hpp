@@ -18,8 +18,8 @@ public:
     void begin() {
         pinMode(Esp32HwConfig::RELAY_1_PIN, OUTPUT);
         pinMode(Esp32HwConfig::RELAY_2_PIN, OUTPUT);
-        digitalWrite(Esp32HwConfig::RELAY_1_PIN, LOW);
-        digitalWrite(Esp32HwConfig::RELAY_2_PIN, LOW);
+        digitalWrite(Esp32HwConfig::RELAY_1_PIN, HIGH);
+        digitalWrite(Esp32HwConfig::RELAY_2_PIN, HIGH);
         relay1_state_ = false;
         relay2_state_ = false;
     }
@@ -58,12 +58,12 @@ public:
                 uint8_t relay_idx = payload[0];
                 if (relay_idx == 0) {
                     relay1_state_ = !relay1_state_;
-                    digitalWrite(Esp32HwConfig::RELAY_1_PIN, relay1_state_ ? HIGH : LOW);
+                    digitalWrite(Esp32HwConfig::RELAY_1_PIN, relay1_state_ ? LOW : HIGH);
                     Serial.printf("[relay] Relay 1 toggled to %s\n", relay1_state_ ? "ON" : "OFF");
                     return sero::ReturnCode::E_OK;
                 } else if (relay_idx == 1) {
                     relay2_state_ = !relay2_state_;
-                    digitalWrite(Esp32HwConfig::RELAY_2_PIN, relay2_state_ ? HIGH : LOW);
+                    digitalWrite(Esp32HwConfig::RELAY_2_PIN, relay2_state_ ? LOW : HIGH);
                     Serial.printf("[relay] Relay 2 toggled to %s\n", relay2_state_ ? "ON" : "OFF");
                     return sero::ReturnCode::E_OK;
                 } else {

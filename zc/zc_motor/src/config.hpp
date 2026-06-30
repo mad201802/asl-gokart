@@ -67,6 +67,6 @@ struct Esp32HwConfig {
     static constexpr int8_t   KELLY_LEFT_RX_PIN     = 36;
     static constexpr int8_t   KELLY_RIGHT_TX_PIN    = 32;
     static constexpr int8_t   KELLY_RIGHT_RX_PIN    = 33;
-    static constexpr int8_t   RELAY_1_PIN           = 14;
-    static constexpr int8_t   RELAY_2_PIN           = 15;
+    static constexpr int8_t   RELAY_1_PIN           = 13;
+    static constexpr int8_t   RELAY_2_PIN           = 16;
 };
