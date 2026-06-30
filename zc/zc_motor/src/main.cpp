@@ -99,6 +99,9 @@ void connect_ethernet() {
 void setup() {
     connect_ethernet();
 
+    // Initialize motor service (includes relay setup)
+    motor_svc.begin();
+
     // ── Kelly motor controllers ─────────────────────────────────────────────
     motor_left.begin(Esp32HwConfig::KELLY_BAUD_RATE,
                       Esp32HwConfig::KELLY_LEFT_RX_PIN,

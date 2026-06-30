@@ -9,6 +9,12 @@ import { EnergyFlowCanvas } from "@/components/shared/energy-flow-canvas";
 import { ParticleToggle } from "@/components/shared/particle-toggle";
 import { ErrorBoundary } from "@/components/shared/error-boundary";
 
+// UI imports for relays control
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { MotorCommands } from "@/data/zonecontrollers/zonecontrollers";
+
 const MotorPage = () => {
     const containerRef = useRef<HTMLDivElement>(null);
     const leftMotorRef = useRef<HTMLImageElement>(null);
@@ -23,6 +29,12 @@ const MotorPage = () => {
         left: { x: 0, y: 0 },
         right: { x: 0, y: 0 },
     });
+
+    // Relay control states
+    const [relay1On, setRelay1On] = useState(false);
+    const [relay2On, setRelay2On] = useState(false);
+    const [relay1Pending, setRelay1Pending] = useState(false);
+    const [relay2Pending, setRelay2Pending] = useState(false);
 
     // Listen for theme changes
     useEffect(() => {
@@ -99,6 +111,40 @@ const MotorPage = () => {
         };
     }, []);
 
+    const handleRelay1Toggle = async (checked: boolean) => {
+        setRelay1Pending(true);
+        try {
+            const success = await window.sero.sendMotorCommand(MotorCommands.TOGGLE_RELAY, 0);
+            if (success) {
+                setRelay1On(checked);
+                toast.success(`Relay 1 turned ${checked ? "ON" : "OFF"}`);
+            } else {
+                toast.error("Failed to toggle Relay 1");
+            }
+        } catch (err) {
+            toast.error("Error communicating with motor controller");
+        } finally {
+            setRelay1Pending(false);
+        }
+    };
+
+    const handleRelay2Toggle = async (checked: boolean) => {
+        setRelay2Pending(true);
+        try {
+            const success = await window.sero.sendMotorCommand(MotorCommands.TOGGLE_RELAY, 1);
+            if (success) {
+                setRelay2On(checked);
+                toast.success(`Relay 2 turned ${checked ? "ON" : "OFF"}`);
+            } else {
+                toast.error("Failed to toggle Relay 2");
+            }
+        } catch (err) {
+            toast.error("Error communicating with motor controller");
+        } finally {
+            setRelay2Pending(false);
+        }
+    };
+
     const motor = isDarkMode ? motorDark : motorLight;
 
     return (
@@ -129,6 +175,34 @@ const MotorPage = () => {
                     alt="Right Motor"
                     className="max-h-[50%] w-auto object-contain"
                 />
+            </div>
+
+            {/* Relay Switches Control Panel */}
+            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 flex flex-row gap-12 bg-background/60 dark:bg-background/40 backdrop-blur-md px-8 py-5 rounded-2xl border border-border shadow-xl">
+                <div className="flex items-center gap-4">
+                    <Label htmlFor="relay-1-switch" className="text-base font-medium select-none cursor-pointer">
+                        Relay 1
+                    </Label>
+                    <Switch
+                        id="relay-1-switch"
+                        checked={relay1On}
+                        disabled={relay1Pending}
+                        onCheckedChange={handleRelay1Toggle}
+                        className="data-[state=checked]:bg-blue-600"
+                    />
+                </div>
+                <div className="flex items-center gap-4">
+                    <Label htmlFor="relay-2-switch" className="text-base font-medium select-none cursor-pointer">
+                        Relay 2
+                    </Label>
+                    <Switch
+                        id="relay-2-switch"
+                        checked={relay2On}
+                        disabled={relay2Pending}
+                        onCheckedChange={handleRelay2Toggle}
+                        className="data-[state=checked]:bg-blue-600"
+                    />
+                </div>
             </div>
 
             {/* Settings toggle in top-right corner */}

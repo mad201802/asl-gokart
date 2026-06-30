@@ -8,8 +8,21 @@
 #include "ota_handler.hpp"
 
 class MotorService : public sero::IService<MotorService> {
+private:
+    bool relay1_state_ = false;
+    bool relay2_state_ = false;
+
 public:
     MotorService() = default;
+
+    void begin() {
+        pinMode(Esp32HwConfig::RELAY_1_PIN, OUTPUT);
+        pinMode(Esp32HwConfig::RELAY_2_PIN, OUTPUT);
+        digitalWrite(Esp32HwConfig::RELAY_1_PIN, LOW);
+        digitalWrite(Esp32HwConfig::RELAY_2_PIN, LOW);
+        relay1_state_ = false;
+        relay2_state_ = false;
+    }
 
     bool impl_is_ready() const { return true; }
 
@@ -35,6 +48,28 @@ public:
                     return sero::ReturnCode::E_NOT_OK;
                 }
                 return sero::ReturnCode::E_OK;
+            }
+
+            case Esp32ServiceConfig::ZC_MOTOR_TOGGLE_RELAY_METHOD_ID: {
+                if (payload_length != 1) {
+                    Serial.println("[relay] Invalid payload length");
+                    return sero::ReturnCode::E_NOT_OK;
+                }
+                uint8_t relay_idx = payload[0];
+                if (relay_idx == 0) {
+                    relay1_state_ = !relay1_state_;
+                    digitalWrite(Esp32HwConfig::RELAY_1_PIN, relay1_state_ ? HIGH : LOW);
+                    Serial.printf("[relay] Relay 1 toggled to %s\n", relay1_state_ ? "ON" : "OFF");
+                    return sero::ReturnCode::E_OK;
+                } else if (relay_idx == 1) {
+                    relay2_state_ = !relay2_state_;
+                    digitalWrite(Esp32HwConfig::RELAY_2_PIN, relay2_state_ ? HIGH : LOW);
+                    Serial.printf("[relay] Relay 2 toggled to %s\n", relay2_state_ ? "ON" : "OFF");
+                    return sero::ReturnCode::E_OK;
+                } else {
+                    Serial.printf("[relay] Invalid relay index: %d\n", relay_idx);
+                    return sero::ReturnCode::E_NOT_OK;
+                }
             }
 
             default:

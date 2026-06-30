@@ -4,7 +4,7 @@ import {
 } from '@asl-gokart/sero-node';
 import { BrowserWindow, ipcMain, ipcRenderer } from 'electron';
 import log from 'electron-log/main';
-import { SERO_SEND_LIGHTS_CHANNEL, SERO_LIGHTS_MESSAGE_CHANNEL, SERO_BATTERY_MESSAGE_CHANNEL, SERO_MOTOR_MESSAGE_CHANNEL } from './sero-channels';
+import { SERO_SEND_LIGHTS_CHANNEL, SERO_LIGHTS_MESSAGE_CHANNEL, SERO_BATTERY_MESSAGE_CHANNEL, SERO_MOTOR_MESSAGE_CHANNEL, SERO_SEND_MOTOR_CHANNEL } from './sero-channels';
 import { BatteryCommands, LightsCommands, MotorCommands, Zones } from '@/data/zonecontrollers/zonecontrollers';
 import { IncomingPacket } from '@/data/zonecontrollers/packets';
 import { getBindAddress } from '@/helpers/ipc/hardware/network-config';
@@ -333,6 +333,41 @@ export function restartSeroService(): void {
     startSeroService(storedMainWindow);
 }
 
+async function handleMotorCommand(command: MotorCommands, value?: any): Promise<boolean> {
+    if (!rt) {
+        log.error('[SERO] Cannot send motor command: SeroRuntime not initialized');
+        return false;
+    }
+    switch (command) {
+        case MotorCommands.TOGGLE_RELAY: {
+            if (typeof value !== 'number') {
+                log.error('[SERO] Invalid payload for TOGGLE_RELAY: value must be a number');
+                return false;
+            }
+            const serviceId = 0x0004; // zc_motor
+            const methodId = 0x0005;  // ZC_MOTOR_TOGGLE_RELAY_METHOD_ID
+            const payload = Buffer.from([value]);
+            try {
+                log.info(`[SERO] Sending TOGGLE_RELAY request to zc_motor for relay ${value}`);
+                const result = await rt.request(serviceId, methodId, payload);
+                if (result.returnCode === 0 /* E_OK */) {
+                    log.info(`[SERO] Relay ${value} toggle request succeeded`);
+                    return true;
+                } else {
+                    log.error(`[SERO] Relay ${value} toggle request failed with returnCode=${result.returnCode}`);
+                    return false;
+                }
+            } catch (err) {
+                log.error(`[SERO] Relay ${value} toggle request errored:`, err);
+                return false;
+            }
+        }
+        default:
+            log.error('[SERO] Unknown motor command:', command);
+            return false;
+    }
+}
+
 // Handles IPC messages from the renderer
 export function registerSeroHandlers() {
     // Listen for commands to control turn signals
@@ -340,5 +375,12 @@ export function registerSeroHandlers() {
         log.debug(`[SERO_SEND_LIGHTS_CHANNEL] Received command: ${JSON.stringify(args)}`);
         const { command, value } = args;
         handleLightsCommand(command, value);
+    });
+
+    // Listen for commands to control motors
+    ipcMain.handle(SERO_SEND_MOTOR_CHANNEL, async (_, args) => {
+        log.debug(`[SERO_SEND_MOTOR_CHANNEL] Received command: ${JSON.stringify(args)}`);
+        const { command, value } = args;
+        return handleMotorCommand(command, value);
     });
 }
