@@ -212,6 +212,10 @@ void loop() {
         payload[14] = right_a.motor_temp;
         payload[15] = right_a.controller_temp;
 
+        // ponytail: Pack relay states into telemetry event
+        payload[16] = motor_svc.get_relay1_state() ? 1 : 0;
+        payload[17] = motor_svc.get_relay2_state() ? 1 : 0;
+
         if (!rt.notify_event(
                 Esp32ServiceConfig::ZC_MOTOR_ID,
                 Esp32ServiceConfig::ZC_MOTOR_EVENT_RPM_ID,

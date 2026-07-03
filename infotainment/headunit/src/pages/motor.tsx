@@ -14,6 +14,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { MotorCommands } from "@/data/zonecontrollers/zonecontrollers";
+import { useStore } from "@/stores/useStore";
+import { useShallow } from "zustand/react/shallow";
 
 const MotorPage = () => {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -30,11 +32,28 @@ const MotorPage = () => {
         right: { x: 0, y: 0 },
     });
 
-    // Relay control states
-    const [relay1On, setRelay1On] = useState(false);
-    const [relay2On, setRelay2On] = useState(false);
-    const [relay1Pending, setRelay1Pending] = useState(false);
-    const [relay2Pending, setRelay2Pending] = useState(false);
+    // Relay control states from Zustand store
+    const {
+        relay1On,
+        relay2On,
+        relay1Pending,
+        relay2Pending,
+        setRelay1On,
+        setRelay2On,
+        setRelay1Pending,
+        setRelay2Pending,
+    } = useStore(
+        useShallow((state) => ({
+            relay1On: state.relay1On,
+            relay2On: state.relay2On,
+            relay1Pending: state.relay1Pending,
+            relay2Pending: state.relay2Pending,
+            setRelay1On: state.setRelay1On,
+            setRelay2On: state.setRelay2On,
+            setRelay1Pending: state.setRelay1Pending,
+            setRelay2Pending: state.setRelay2Pending,
+        }))
+    );
 
     // Listen for theme changes
     useEffect(() => {

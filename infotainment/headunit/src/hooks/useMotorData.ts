@@ -8,6 +8,8 @@ export function useMotorData() {
     const setRpm = useStore((state) => state.setRpm);
     const setLeftMotorData = useStore((state) => state.setLeftMotorData);
     const setRightMotorData = useStore((state) => state.setRightMotorData);
+    const setRelay1On = useStore((state) => state.setRelay1On);
+    const setRelay2On = useStore((state) => state.setRelay2On);
 
     useEffect(() => {
         const cleanup = window.sero.onMotorMessage((incomingPacket: string) => {
@@ -22,6 +24,10 @@ export function useMotorData() {
                     break;
                 case MotorCommands.GET_RIGHT_MOTOR_DATA:
                     setRightMotorData(parsed.value);
+                    break;
+                case MotorCommands.GET_RELAY_STATES:
+                    setRelay1On(parsed.value[0]);
+                    setRelay2On(parsed.value[1]);
                     break;
                 default:
                     log.error("Invalid command (data type) received in motor message!");
