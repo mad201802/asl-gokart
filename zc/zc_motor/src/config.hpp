@@ -52,8 +52,9 @@ struct Esp32ServiceConfig {
     static constexpr uint16_t ZC_MOTOR_TOGGLE_RELAY_METHOD_ID = 0x0005;
 
     // Event: [Motor L/R] each 8 bytes: [rpm u16 BE][throttle u8][brake_pedal u8][switches bitfield][bat_v u8][mot_temp u8][ctrl_temp u8]
+    // And extra: [relay 1 u8][relay 2 u8][reverse u8]
     static constexpr uint16_t    ZC_MOTOR_EVENT_RPM_ID            = 0x8001;
-    static constexpr std::size_t ZC_MOTOR_EVENT_RPM_PAYLOAD_SIZE  = 18;
+    static constexpr std::size_t ZC_MOTOR_EVENT_RPM_PAYLOAD_SIZE  = 19;
 };
 
 // ── Hardware pin assignments ─────────────────────────────────────────────────
