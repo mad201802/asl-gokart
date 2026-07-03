@@ -37,6 +37,9 @@ interface AppContext {
     setFullscreenOnStartup: (enabled: boolean) => Promise<boolean>;
     getDevToolsEnabled: () => Promise<boolean>;
     setDevToolsEnabled: (enabled: boolean) => Promise<boolean>;
+    isNetworkReady: () => Promise<boolean>;
+    onNetworkStatusChange: (callback: (status: { ready: boolean }) => void) => () => void;
+    skipNetworkGate: () => Promise<void>;
 }
 
 interface SeroContext {

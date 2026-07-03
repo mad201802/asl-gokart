@@ -65,5 +65,16 @@ export function exposeAppContext() {
         setDevToolsEnabled: async (enabled: boolean): Promise<boolean> => {
             return await ipcRenderer.invoke(APP_SET_DEV_TOOLS_CHANNEL, enabled);
         },
+        isNetworkReady: async (): Promise<boolean> => {
+            return await ipcRenderer.invoke("network-gate:get-status");
+        },
+        onNetworkStatusChange: (callback: (status: { ready: boolean }) => void) => {
+            const listener = (_: unknown, status: { ready: boolean }) => callback(status);
+            ipcRenderer.on("network-gate:status", listener);
+            return () => ipcRenderer.removeListener("network-gate:status", listener);
+        },
+        skipNetworkGate: async (): Promise<void> => {
+            return await ipcRenderer.invoke("network-gate:skip");
+        },
     });
 }
