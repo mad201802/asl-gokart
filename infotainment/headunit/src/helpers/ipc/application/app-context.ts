@@ -73,5 +73,8 @@ export function exposeAppContext() {
             ipcRenderer.on("network-gate:status", listener);
             return () => ipcRenderer.removeListener("network-gate:status", listener);
         },
+        skipNetworkGate: async (): Promise<void> => {
+            return await ipcRenderer.invoke("network-gate:skip");
+        },
     });
 }

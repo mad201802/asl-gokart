@@ -1,8 +1,18 @@
 import React from "react";
-import { Loader2, WifiOff } from "lucide-react";
+import { Loader2, WifiOff, SkipForward, Power } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function NetworkGateScreen() {
     // ponytail: Simple fullscreen screen gating app launch until network is ready
+    
+    const handleSkip = () => {
+        window.app.skipNetworkGate();
+    };
+
+    const handleQuit = () => {
+        window.electronWindow.close();
+    };
+
     return (
         <div className="flex flex-col items-center justify-center w-full h-full min-h-screen bg-slate-950 text-slate-50 p-6 selection:bg-slate-800">
             <div className="relative flex flex-col items-center space-y-6 max-w-md text-center">
@@ -15,7 +25,7 @@ export default function NetworkGateScreen() {
                 </div>
 
                 <div className="space-y-2 relative">
-                    <h1 className="text-2xl font-bold tracking-tight bg-linear-to-b from-white to-slate-400 bg-clip-text text-transparent">
+                    <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-b from-white to-slate-400 bg-clip-text text-transparent">
                         Waiting for Car Network
                     </h1>
                     <p className="text-sm text-slate-400 leading-relaxed">
@@ -26,6 +36,26 @@ export default function NetworkGateScreen() {
                 <div className="flex items-center space-x-2 text-xs text-blue-400/80 bg-blue-950/40 border border-blue-900/30 px-3 py-1.5 rounded-full relative">
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     <span>Searching for interface MAC...</span>
+                </div>
+
+                {/* Control Actions */}
+                <div className="flex items-center justify-center gap-4 w-full pt-4 relative">
+                    <Button 
+                        onClick={handleSkip}
+                        variant="secondary"
+                        className="bg-slate-900/80 hover:bg-slate-800 text-slate-200 border border-slate-800 flex items-center gap-2 h-10 px-4"
+                    >
+                        <SkipForward className="w-4 h-4" />
+                        <span>Skip Check</span>
+                    </Button>
+                    <Button 
+                        onClick={handleQuit}
+                        variant="destructive"
+                        className="flex items-center gap-2 h-10 px-4"
+                    >
+                        <Power className="w-4 h-4" />
+                        <span>Quit</span>
+                    </Button>
                 </div>
             </div>
         </div>
