@@ -15,6 +15,10 @@ private:
 public:
     MotorService() = default;
 
+    // ponytail: simple getters for relay states
+    bool get_relay1_state() const { return relay1_state_; }
+    bool get_relay2_state() const { return relay2_state_; }
+
     void begin() {
         pinMode(Esp32HwConfig::RELAY_1_PIN, OUTPUT);
         pinMode(Esp32HwConfig::RELAY_2_PIN, OUTPUT);

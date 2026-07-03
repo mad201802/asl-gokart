@@ -283,6 +283,18 @@ function handleZcMotorEvent(mainWindow: BrowserWindow, payload: any) {
         value: rightData,
     };
     mainWindow.webContents.send(SERO_MOTOR_MESSAGE_CHANNEL, JSON.stringify(rightPacket));
+
+    // ponytail: Parse relay states from telemetry if present
+    if (payload.length >= 18) {
+        const relay1 = payload[16] === 1;
+        const relay2 = payload[17] === 1;
+        const relaysPacket: IncomingPacket = {
+            zone: Zones.MOTOR,
+            command: MotorCommands.GET_RELAY_STATES,
+            value: [relay1, relay2],
+        };
+        mainWindow.webContents.send(SERO_MOTOR_MESSAGE_CHANNEL, JSON.stringify(relaysPacket));
+    }
 }
 
 // -----------------------------------------------------------------------------------------
