@@ -12,18 +12,24 @@ import { registerHardwareListeners } from "./hardware/hardware-listeners";
 import { registerFirmwareListeners } from "./firmware/firmware-listeners";
 import { startFirmwareServer } from "./firmware/firmware-server";
 import { registerUpdaterListeners } from "./updater/updater-listeners";
+import { waitForCarNetwork } from "./network-gate";
 
 export default function registerListeners(mainWindow: BrowserWindow) {
     addWindowEventListeners(mainWindow);
     addThemeEventListeners();
-    startWebSocketServer(mainWindow);
-    startSeroService(mainWindow);
     registerSeroHandlers();
     addAppEventListeners(mainWindow);
     registerHardwareListeners();
-    startFirmwareServer();
     registerFirmwareListeners();
     registerUpdaterListeners(mainWindow);
+
+    // ponytail: Defer network-bound services until car network interface is available
+    waitForCarNetwork(mainWindow).then(() => {
+        log.info("[listeners-register] Car network ready, starting network services...");
+        startWebSocketServer(mainWindow);
+        startSeroService(mainWindow);
+        startFirmwareServer();
+    });
 
     ipcMain.on(WEBSOCKET_SEND_CHANNEL, (event, message: OutgoingPacket, zoneToSendTo: Zones) => {
         // Send the message to the zone controller matching the specified zone

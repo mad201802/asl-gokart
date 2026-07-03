@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { syncThemeWithLocal } from "./helpers/theme-helpers";
 import { useTranslation } from "react-i18next";
@@ -22,8 +22,9 @@ import { useBatteryData } from "./hooks/useBatteryData";
 import { useLightsData } from "./hooks/useLightsData";
 import { useConnectionData } from "./hooks/useConnectionData";
 import { initHardwareCommandSubscriber } from "./services/hardware-command-subscriber";
+import NetworkGateScreen from "./components/shared/network-gate-screen";
 
-export default function App() {
+function MainAppContent() {
     const { i18n } = useTranslation();
 
     useMotorData();
@@ -87,6 +88,35 @@ export default function App() {
                 <Toaster />
             </div>
     );
+}
+
+export default function App() {
+    const [networkReady, setNetworkReady] = useState<boolean | null>(null);
+
+    useEffect(() => {
+        // Query initial network readiness
+        window.app.isNetworkReady().then((ready) => {
+            setNetworkReady(ready);
+        });
+
+        // Listen for network gate readiness updates
+        const unsubscribe = window.app.onNetworkStatusChange((status) => {
+            setNetworkReady(status.ready);
+        });
+
+        return unsubscribe;
+    }, []);
+
+    if (networkReady === null) {
+        // Blanks render while fetching status, preventing flash of gate screen
+        return <div className="w-full h-full min-h-screen bg-slate-950" />;
+    }
+
+    if (!networkReady) {
+        return <NetworkGateScreen />;
+    }
+
+    return <MainAppContent />;
 }
 
 const root = createRoot(document.getElementById("root")!);
