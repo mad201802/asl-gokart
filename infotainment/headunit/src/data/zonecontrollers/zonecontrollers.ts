@@ -28,6 +28,7 @@ export enum MotorCommands {
     GET_RIGHT_MOTOR_DATA = "getRightMotorData",
     TOGGLE_RELAY = "toggleRelay",
     GET_RELAY_STATES = "getRelayStates",
+    GET_REVERSE = "getReverse",
 }
 
 export enum ThrottleCommands {

@@ -295,6 +295,17 @@ function handleZcMotorEvent(mainWindow: BrowserWindow, payload: any) {
         };
         mainWindow.webContents.send(SERO_MOTOR_MESSAGE_CHANNEL, JSON.stringify(relaysPacket));
     }
+
+    // ponytail: Parse reverse active state from telemetry if present
+    if (payload.length >= 19) {
+        const reverseActive = payload[18] === 1;
+        const reversePacket: IncomingPacket = {
+            zone: Zones.MOTOR,
+            command: MotorCommands.GET_REVERSE,
+            value: reverseActive ? 1 : 0,
+        };
+        mainWindow.webContents.send(SERO_MOTOR_MESSAGE_CHANNEL, JSON.stringify(reversePacket));
+    }
 }
 
 // -----------------------------------------------------------------------------------------

@@ -214,6 +214,8 @@ void loop() {
         // ponytail: Pack relay states into telemetry event
         payload[16] = motor_svc.get_relay1_state() ? 1 : 0;
         payload[17] = motor_svc.get_relay2_state() ? 1 : 0;
+        // ponytail: Pack real reverse state (AND logic)
+        payload[18] = (left_a.reverse && right_a.reverse) ? 1 : 0;
 
         if (!rt.notify_event(
                 Esp32ServiceConfig::ZC_MOTOR_ID,
