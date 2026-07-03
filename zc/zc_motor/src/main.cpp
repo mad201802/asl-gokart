@@ -154,8 +154,8 @@ void setup() {
 
 // ── loop ──────────────────────────────────────────────────────────────────────
 
-// Number of poll iterations between published RPM events (matches rust_impl).
-static constexpr uint8_t PUBLISH_EVERY_N_POLLS = 1;
+// Rate limit Kelly controller polling to prevent blocking Sero protocol runtime
+static constexpr uint32_t KELLY_POLL_INTERVAL_MS = 100;
 
 void loop() {
     Runtime& rt = *runtime_ptr;
@@ -164,15 +164,14 @@ void loop() {
     // Drive the Sero protocol — must be called every iteration.
     rt.process(now);
 
-    // Poll both Kelly controllers every iteration (faults tracked via
-    // fault_count(), not the per-call bool — see KellyController::poll()).
-    motor_left.poll();
-    motor_right.poll();
+    static uint32_t last_poll_time = 0;
+    if (now - last_poll_time >= KELLY_POLL_INTERVAL_MS) {
+        last_poll_time = now;
 
-    static uint8_t poll_count = 0;
-    ++poll_count;
-    if (poll_count >= PUBLISH_EVERY_N_POLLS) {
-        poll_count = 0;
+        // Poll both Kelly controllers (faults tracked via
+        // fault_count(), not the per-call bool — see KellyController::poll()).
+        motor_left.poll();
+        motor_right.poll();
 
         const kelly::PacketA& left_a  = motor_left.packet_a();
         const kelly::PacketA& right_a = motor_right.packet_a();
