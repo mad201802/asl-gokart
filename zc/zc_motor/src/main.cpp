@@ -217,6 +217,14 @@ void loop() {
         // ponytail: Pack real reverse state (AND logic)
         payload[18] = (left_a.reverse && right_a.reverse) ? 1 : 0;
 
+        // Pack phase current values
+        const uint16_t left_current  = motor_left.phase_current();
+        const uint16_t right_current = motor_right.phase_current();
+        payload[19] = static_cast<uint8_t>(left_current >> 8);
+        payload[20] = static_cast<uint8_t>(left_current);
+        payload[21] = static_cast<uint8_t>(right_current >> 8);
+        payload[22] = static_cast<uint8_t>(right_current);
+
         if (!rt.notify_event(
                 Esp32ServiceConfig::ZC_MOTOR_ID,
                 Esp32ServiceConfig::ZC_MOTOR_EVENT_RPM_ID,

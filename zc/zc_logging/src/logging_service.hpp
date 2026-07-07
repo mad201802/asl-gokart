@@ -30,11 +30,13 @@ public:
         uint8_t  motor_l_brake;
         uint8_t  motor_l_temp;
         uint8_t  motor_l_ctrl_temp;
+        uint16_t motor_l_current;
         uint16_t motor_r_rpm;
         uint8_t  motor_r_throttle;
         uint8_t  motor_r_brake;
         uint8_t  motor_r_temp;
         uint8_t  motor_r_ctrl_temp;
+        uint16_t motor_r_current;
         uint8_t  reverse_state;
         uint8_t  relay1_state;
         uint8_t  relay2_state;
@@ -113,6 +115,15 @@ public:
                     relay1_state_  = payload[16];
                     relay2_state_  = payload[17];
                     reverse_state_ = payload[18];
+
+                    // Unpack phase current values (bytes 19-22)
+                    if (payload_length >= 23) {
+                        motor_l_current_ = (payload[19] << 8) | payload[20];
+                        motor_r_current_ = (payload[21] << 8) | payload[22];
+                    } else {
+                        motor_l_current_ = 0;
+                        motor_r_current_ = 0;
+                    }
                 }
             }
         }
@@ -155,8 +166,8 @@ public:
         if (file) {
             file.println("Uptime_ms,RTC_Time,Battery_Online,Battery_Voltage_V,Battery_Current_A,"
                          "Battery_Temp0_C,Battery_Temp1_C,Battery_Temp2_C,Motor_Online,"
-                         "Motor_L_RPM,Motor_L_Throttle,Motor_L_Brake,Motor_L_Temp_C,Motor_L_Ctrl_Temp_C,"
-                         "Motor_R_RPM,Motor_R_Throttle,Motor_R_Brake,Motor_R_Temp_C,Motor_R_Ctrl_Temp_C,"
+                         "Motor_L_RPM,Motor_L_Throttle,Motor_L_Brake,Motor_L_Temp_C,Motor_L_Ctrl_Temp_C,Motor_L_Current_A,"
+                         "Motor_R_RPM,Motor_R_Throttle,Motor_R_Brake,Motor_R_Temp_C,Motor_R_Ctrl_Temp_C,Motor_R_Current_A,"
                          "Reverse,Relay1,Relay2");
             file.close();
             Serial.println("[log] Header written successfully.");
@@ -244,12 +255,14 @@ public:
                 record.motor_l_brake = motor_l_brake_;
                 record.motor_l_temp = motor_l_temp_;
                 record.motor_l_ctrl_temp = motor_l_ctrl_temp_;
+                record.motor_l_current = motor_l_current_;
 
                 record.motor_r_rpm = motor_r_rpm_;
                 record.motor_r_throttle = motor_r_throttle_;
                 record.motor_r_brake = motor_r_brake_;
                 record.motor_r_temp = motor_r_temp_;
                 record.motor_r_ctrl_temp = motor_r_ctrl_temp_;
+                record.motor_r_current = motor_r_current_;
 
                 record.reverse_state = reverse_state_;
                 record.relay1_state = relay1_state_;
@@ -260,12 +273,14 @@ public:
                 record.motor_l_brake = 0;
                 record.motor_l_temp = 0;
                 record.motor_l_ctrl_temp = 0;
+                record.motor_l_current = 0;
 
                 record.motor_r_rpm = 0;
                 record.motor_r_throttle = 0;
                 record.motor_r_brake = 0;
                 record.motor_r_temp = 0;
                 record.motor_r_ctrl_temp = 0;
+                record.motor_r_current = 0;
 
                 record.reverse_state = 0;
                 record.relay1_state = 0;
@@ -323,12 +338,14 @@ private:
                 char mot_l_brk_str[16] = "null";
                 char mot_l_t_str[16]   = "null";
                 char mot_l_ct_str[16]  = "null";
+                char mot_l_curr_str[16] = "null";
 
                 char mot_r_rpm_str[16] = "null";
                 char mot_r_thr_str[16] = "null";
                 char mot_r_brk_str[16] = "null";
                 char mot_r_t_str[16]   = "null";
                 char mot_r_ct_str[16]  = "null";
+                char mot_r_curr_str[16] = "null";
 
                 char rev_str[16] = "null";
                 char r1_str[16]  = "null";
@@ -340,12 +357,14 @@ private:
                     snprintf(mot_l_brk_str, sizeof(mot_l_brk_str), "%u", record.motor_l_brake);
                     snprintf(mot_l_t_str, sizeof(mot_l_t_str), "%u", record.motor_l_temp);
                     snprintf(mot_l_ct_str, sizeof(mot_l_ct_str), "%u", record.motor_l_ctrl_temp);
+                    snprintf(mot_l_curr_str, sizeof(mot_l_curr_str), "%u", record.motor_l_current);
 
                     snprintf(mot_r_rpm_str, sizeof(mot_r_rpm_str), "%u", record.motor_r_rpm);
                     snprintf(mot_r_thr_str, sizeof(mot_r_thr_str), "%u", record.motor_r_throttle);
                     snprintf(mot_r_brk_str, sizeof(mot_r_brk_str), "%u", record.motor_r_brake);
                     snprintf(mot_r_t_str, sizeof(mot_r_t_str), "%u", record.motor_r_temp);
                     snprintf(mot_r_ct_str, sizeof(mot_r_ct_str), "%u", record.motor_r_ctrl_temp);
+                    snprintf(mot_r_curr_str, sizeof(mot_r_curr_str), "%u", record.motor_r_current);
 
                     snprintf(rev_str, sizeof(rev_str), "%u", record.reverse_state);
                     snprintf(r1_str, sizeof(r1_str), "%u", record.relay1_state);
@@ -354,14 +373,14 @@ private:
 
                 char csv_line[256];
                 int len = snprintf(csv_line, sizeof(csv_line),
-                    "%lu,%lu,%d,%s,%s,%s,%s,%s,%d,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
+                    "%lu,%lu,%d,%s,%s,%s,%s,%s,%d,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
                     record.uptime_ms,
                     record.rtc_time,
                     record.battery_online ? 1 : 0,
                     bat_v_str, bat_i_str, bat_t0_str, bat_t1_str, bat_t2_str,
                     record.motor_online ? 1 : 0,
-                    mot_l_rpm_str, mot_l_thr_str, mot_l_brk_str, mot_l_t_str, mot_l_ct_str,
-                    mot_r_rpm_str, mot_r_thr_str, mot_r_brk_str, mot_r_t_str, mot_r_ct_str,
+                    mot_l_rpm_str, mot_l_thr_str, mot_l_brk_str, mot_l_t_str, mot_l_ct_str, mot_l_curr_str,
+                    mot_r_rpm_str, mot_r_thr_str, mot_r_brk_str, mot_r_t_str, mot_r_ct_str, mot_r_curr_str,
                     rev_str, r1_str, r2_str
                 );
 
@@ -402,12 +421,14 @@ private:
     uint8_t  motor_l_brake_ = 0;
     uint8_t  motor_l_temp_ = 0;
     uint8_t  motor_l_ctrl_temp_ = 0;
+    uint16_t motor_l_current_ = 0;
 
     uint16_t motor_r_rpm_ = 0;
     uint8_t  motor_r_throttle_ = 0;
     uint8_t  motor_r_brake_ = 0;
     uint8_t  motor_r_temp_ = 0;
     uint8_t  motor_r_ctrl_temp_ = 0;
+    uint16_t motor_r_current_ = 0;
 
     uint8_t  reverse_state_ = 0;
     uint8_t  relay1_state_ = 0;

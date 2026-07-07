@@ -135,6 +135,7 @@ public:
     }
 
     uint16_t rpm() const noexcept { return rpm_; }
+    uint16_t phase_current() const noexcept { return phase_current_; }
     bool reverse() const noexcept { return packet_a_.reverse; }
     const kelly::PacketA& packet_a() const noexcept { return packet_a_; }
     uint32_t fault_count() const noexcept { return fault_count_; }
@@ -153,6 +154,7 @@ private:
                     kelly::PacketB b{};
                     kelly::parse_packet_b(buf, b);
                     rpm_ = static_cast<uint16_t>(b.rpm / 4U);
+                    phase_current_ = b.phase_current;
                 }
             } else {
                 Serial.printf("[motor] Validation failed! type=%d, checksum_ok=%d\n", 
@@ -165,6 +167,7 @@ private:
                 packet_a_ = kelly::PacketA{};
             } else {
                 rpm_ = 0;
+                phase_current_ = 0;
             }
         }
         return ok;
@@ -217,6 +220,7 @@ private:
 
     HardwareSerial& serial_;
     uint16_t       rpm_         = 0;
+    uint16_t       phase_current_ = 0;
     kelly::PacketA packet_a_{};
     uint32_t       fault_count_ = 0;
 };
