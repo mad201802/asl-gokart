@@ -42,16 +42,18 @@ struct Esp32Config {
 struct Esp32ServiceConfig {
     static constexpr uint16_t ESP32_UNICAST_PORT = 30491;
 
-    // TODO: Assign a unique service ID from the project's ID registry.
-    static constexpr uint16_t ZC_TEMPLATE_ID = 0x00FF;
+    // Assigned service ID for zc_logging
+    static constexpr uint16_t ZC_LOGGING_ID = 0x0005;
 
-    // Method callable by remote nodes (bit 15 = 0).
-    static constexpr uint16_t ZC_TEMPLATE_METHOD_EXAMPLE_ID = 0x0001;
+    // Reserved OTA trigger method
+    static constexpr uint16_t ZC_LOGGING_OTA_METHOD_ID = 0x00FF;
 
-    // Reserved OTA trigger method (present on every ZC, bit 15 = 0).
-    // Payload: UTF-8 URL string of the firmware binary served by the headunit.
-    static constexpr uint16_t ZC_TEMPLATE_OTA_METHOD_ID = 0x00FF;
+    // Target ZCs to log
+    static constexpr uint16_t ZC_BATTERY_ID = 0x0003;
+    static constexpr uint16_t ZC_BATTERY_EVENT_VOLTAGE_ID = 0x8001;
+    static constexpr uint16_t ZC_BATTERY_EVENT_CURRENT_ID = 0x8002;
+    static constexpr uint16_t ZC_BATTERY_EVENT_TEMP_ID = 0x8003;
 
-    // Event emitted periodically to subscribers (bit 15 = 1).
-    static constexpr uint16_t ZC_TEMPLATE_EVENT_EXAMPLE_ID = 0x8001;
+    static constexpr uint16_t ZC_MOTOR_ID = 0x0004;
+    static constexpr uint16_t ZC_MOTOR_EVENT_RPM_ID = 0x8001;
 };

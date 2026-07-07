@@ -2,9 +2,9 @@
 #include <ETH.h>
 #include <sero.hpp>
 #include "udp_transport_esp32.hpp"
-#include "template_service.hpp"
+#include "logging_service.hpp"
 
-const char* FIRMWARE_VERSION = "0.1.0";
+const char* FIRMWARE_VERSION = "0.2.0";
 
 // ── Type Aliases ─────────────────────────────────────────────────────────────
 
@@ -15,7 +15,7 @@ using Addr    = sero::Address<Esp32Config>;
 
 static esp32_app::UdpTransportEsp32 transport;
 static Runtime*                     runtime_ptr = nullptr;
-static TemplateService              template_svc;
+static LoggingService               logging_svc;
 
 // ── Forward Declarations ──────────────────────────────────────────────────────
 
@@ -92,6 +92,12 @@ void connect_ethernet() {
 void setup() {
     connect_ethernet();
 
+    // ── Logging Service Init ─────────────────────────────────────────────────
+    if (!logging_svc.begin()) {
+        Serial.println("[ERROR] Logging service init failed!");
+        // Keep running Sero runtime even if logging hardware (SD card) failed, so OTA still works
+    }
+
     // ── Transport ────────────────────────────────────────────────────────────
     if (!transport.init(Esp32ServiceConfig::ESP32_UNICAST_PORT)) {
         Serial.println("[ERROR] Transport init failed!");
@@ -105,35 +111,62 @@ void setup() {
 
     uint32_t now = millis();
 
-    // Register the event this service will emit to subscribers.
-    if (!rt.register_event(
-            Esp32ServiceConfig::ZC_TEMPLATE_ID,
-            Esp32ServiceConfig::ZC_TEMPLATE_EVENT_EXAMPLE_ID)) {
-        Serial.println("[ERROR] register_event failed!");
-    }
-
-    // Register the service implementation (handles incoming method calls).
+    // Register the service implementation (handles incoming method calls / OTA).
     if (!rt.register_service(
-            Esp32ServiceConfig::ZC_TEMPLATE_ID,
-            template_svc,
+            Esp32ServiceConfig::ZC_LOGGING_ID,
+            logging_svc,
             /*major=*/1, /*minor=*/0,
             /*auth_required=*/false)) {
         Serial.println("[ERROR] register_service failed!");
     }
 
     // Announce service to the network.
-    if (!rt.offer_service(Esp32ServiceConfig::ZC_TEMPLATE_ID, /*ttl_s=*/30, now)) {
+    if (!rt.offer_service(Esp32ServiceConfig::ZC_LOGGING_ID, /*ttl_s=*/30, now)) {
         Serial.println("[ERROR] offer_service failed!");
     }
 
-    Serial.printf("[template] Service 0x%04X offered\n",
-                  Esp32ServiceConfig::ZC_TEMPLATE_ID);
+    Serial.printf("[logging] Service 0x%04X offered\n",
+                  Esp32ServiceConfig::ZC_LOGGING_ID);
+
+    // ── Service Discovery / Subscriptions ────────────────────────────────────
+    (void)rt.find_service(Esp32ServiceConfig::ZC_BATTERY_ID, 1, now);
+    (void)rt.find_service(Esp32ServiceConfig::ZC_MOTOR_ID, 1, now);
+
+    if (!rt.subscribe_event(
+            Esp32ServiceConfig::ZC_BATTERY_ID,
+            Esp32ServiceConfig::ZC_BATTERY_EVENT_VOLTAGE_ID,
+            logging_svc,
+            Esp32Config::SubscriptionTtlSeconds,
+            now)) {
+        Serial.println("[ERROR] Failed to subscribe to Battery Voltage!");
+    }
+    if (!rt.subscribe_event(
+            Esp32ServiceConfig::ZC_BATTERY_ID,
+            Esp32ServiceConfig::ZC_BATTERY_EVENT_CURRENT_ID,
+            logging_svc,
+            Esp32Config::SubscriptionTtlSeconds,
+            now)) {
+        Serial.println("[ERROR] Failed to subscribe to Battery Current!");
+    }
+    if (!rt.subscribe_event(
+            Esp32ServiceConfig::ZC_BATTERY_ID,
+            Esp32ServiceConfig::ZC_BATTERY_EVENT_TEMP_ID,
+            logging_svc,
+            Esp32Config::SubscriptionTtlSeconds,
+            now)) {
+        Serial.println("[ERROR] Failed to subscribe to Battery Temp!");
+    }
+    if (!rt.subscribe_event(
+            Esp32ServiceConfig::ZC_MOTOR_ID,
+            Esp32ServiceConfig::ZC_MOTOR_EVENT_RPM_ID,
+            logging_svc,
+            Esp32Config::SubscriptionTtlSeconds,
+            now)) {
+        Serial.println("[ERROR] Failed to subscribe to Motor RPM!");
+    }
 }
 
 // ── loop ──────────────────────────────────────────────────────────────────────
-
-// Interval at which the example event is emitted (milliseconds).
-static constexpr uint32_t EVENT_INTERVAL_MS = 5000;
 
 void loop() {
     Runtime& rt = *runtime_ptr;
@@ -142,26 +175,6 @@ void loop() {
     // Drive the Sero protocol — must be called every iteration.
     rt.process(now);
 
-    // Emit the example event periodically.
-    static uint32_t last_event_ms = 0;
-    if (now - last_event_ms >= EVENT_INTERVAL_MS) {
-        last_event_ms = now;
-
-        // TODO: Replace with real sensor / state payload.
-        uint8_t payload[4];
-        payload[0] = static_cast<uint8_t>(now >> 24);
-        payload[1] = static_cast<uint8_t>(now >> 16);
-        payload[2] = static_cast<uint8_t>(now >> 8);
-        payload[3] = static_cast<uint8_t>(now);
-
-        if (!rt.notify_event(
-                Esp32ServiceConfig::ZC_TEMPLATE_ID,
-                Esp32ServiceConfig::ZC_TEMPLATE_EVENT_EXAMPLE_ID,
-                payload, sizeof(payload))) {
-            Serial.println("[template] notify_event failed (no subscribers?)");
-        }
-
-        Serial.printf("[template] event_example emitted (uptime=%lu ms)\n",
-                      static_cast<unsigned long>(now));
-    }
+    // Drive the logging service.
+    logging_svc.update(rt, now);
 }
