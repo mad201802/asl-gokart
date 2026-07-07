@@ -94,9 +94,9 @@ export function startSeroService(mainWindow: BrowserWindow) {
         log.debug('Subscription acknowledged:', ack);
     });
 
-    runtime.findService(0x0001);
+    runtime.findService(0x0001); // zc_lights
     runtime.findService(0x0002); // zc_buttons
-    runtime.findService(0x0003);
+    runtime.findService(0x0003); // zc_battery
     runtime.findService(0x0004); // zc_motor
 }
 
